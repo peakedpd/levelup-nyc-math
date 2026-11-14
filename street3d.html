@@ -401,11 +401,16 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   {const g0=supportAt(P.x,P.z,P.fy);if(P.fy<=g0+.001&&P.vy<=0){P.fy=g0;P.vy=0;P.onG=true}else{P.vy-=22*dt;P.fy+=P.vy*dt;P.onG=false;if(P.fy<g0){P.fy=g0;P.vy=0;P.onG=true}}}
   const ground=P.fy;P.y=0;
   if(!moving&&AREA==="school"&&TCH.meet)P.yaw=Math.atan2(TCH.x-P.x,TCH.z-P.z);
-  {const d=Math.hypot(P.x-TH.x,P.z-TH.z);if(!moving&&d<2.6&&!(AREA==="school"&&TCH.meet)){P.yaw=Math.atan2(TH.x-P.x,TH.z-P.z);if(!TH.chat)TH.chat={t:now,l:THEO_LINES[Math.floor(Math.random()*THEO_LINES.length)]}}else if(moving)TH.chat=null}
+  {const d=Math.hypot(P.x-TH.x,P.z-TH.z);if(!moving&&d<2.6&&!(AREA==="school"&&TCH.meet)){if(d<1.5)P.yaw=Math.atan2(TH.x-P.x,TH.z-P.z);if(!TH.chat)TH.chat={t:now,l:THEO_LINES[Math.floor(Math.random()*THEO_LINES.length)]}}else if(moving)TH.chat=null}
   const H=ACT.hero;const fp=camDist<1.3;if(H){H.g.visible=!fp;H.g.position.set(P.x,ground+P.y,P.z);turn(H,P.yaw,dt);step(H,moving&&P.onG,dt,K.shift?7.5:4.2,!P.onG)}
   // Theo follows
-  const tdx=P.x-TH.x,tdz=P.z-TH.z,td=Math.hypot(tdx,tdz),tmv=td>2.2;if(tmv){const sp=Math.min(5,td*1.6);moveBody(TH,tdx/td*sp*dt,tdz/td*sp*dt);if(td>8){TH.x=P.x+1;TH.z=P.z}}TH.fy=supportAt(TH.x,TH.z,TH.fy+.3);
-  if(ACT.theo){ACT.theo.g.position.set(TH.x,TH.fy,TH.z);turn(ACT.theo,tmv?Math.atan2(tdx,tdz):(AREA==="school"&&TCH.meet?Math.atan2(TCH.x-TH.x,TCH.z-TH.z):Math.atan2(tdx,tdz)),dt);if(TH.chat&&now-TH.chat.t<3500)say("Theo",TH.chat.l,TH.x,2.4+TH.fy,TH.z);step(ACT.theo,tmv,dt,Math.min(5,td*1.6))}
+  const tdx=P.x-TH.x,tdz=P.z-TH.z,td=Math.hypot(tdx,tdz);
+  /* Theo walks in a "buddy slot" beside the hero on the camera's side-line (never between camera and hero) */
+  const rx=Math.cos(camYaw),rz=-Math.sin(camYaw),fx=-Math.sin(camYaw),fz=-Math.cos(camYaw);if(TH.side===undefined)TH.side=1;{const cur=(TH.x-P.x)*rx+(TH.z-P.z)*rz;if(Math.abs(cur)>.8)TH.side=Math.sign(cur)}
+  const sx=P.x+rx*1.7*TH.side+fx*.5,sz=P.z+rz*1.7*TH.side+fz*.5,sdx=sx-TH.x,sdz=sz-TH.z,sd=Math.hypot(sdx,sdz),tmv=sd>.55&&!(QG&&QG.npc==="Theo")&&!(window.W2&&(W2.boss||W2.teach||W2.hand));
+  if(tmv){const sp=Math.min(moving&&K.shift?7.8:5,sd*2.2+.6);moveBody(TH,sdx/sd*Math.min(sp*dt,sd),sdz/sd*Math.min(sp*dt,sd));if(td>8){TH.x=sx;TH.z=sz}}
+  TH.fy=supportAt(TH.x,TH.z,TH.fy+.3);
+  if(ACT.theo){ACT.theo.g.position.set(TH.x,TH.fy,TH.z);turn(ACT.theo,tmv?Math.atan2(sdx,sdz):(AREA==="school"&&TCH.meet?Math.atan2(TCH.x-TH.x,TCH.z-TH.z):Math.atan2(tdx,tdz)),dt);if(TH.chat&&now-TH.chat.t<3500)say("Theo",TH.chat.l,TH.x,2.4+TH.fy,TH.z);step(ACT.theo,tmv,dt,Math.min(5,sd*2.2+.6))}
   // Marcia patrols
   const maG=QG&&QG.npc==="Ms. Marcia";if(maG){if(QG.phase==="hand"){const dx=P.x-MA.x,dz=P.z-MA.z,d=Math.hypot(dx,dz);if(d>1.3){MA.x+=dx/d*2*dt;MA.z+=dz/d*2*dt}}}else{MA.x+=MA.d*1.4*dt;if(MA.x>20)MA.d=-1;if(MA.x<-20)MA.d=1;if(Math.abs(MA.z+7.6)>.01)MA.z+=(-7.6-MA.z)*Math.min(1,dt*2)}
   if(ACT.marcia){ACT.marcia.g.visible=AREA==="street";ACT.marcia.g.position.set(MA.x,.12,MA.z);turn(ACT.marcia,maG?Math.atan2(P.x-MA.x,P.z-MA.z):(MA.d>0?Math.PI/2:-Math.PI/2),dt);step(ACT.marcia,!maG||QG.phase==="hand",dt,1.4*1.6)}

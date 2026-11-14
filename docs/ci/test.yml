@@ -1,0 +1,44 @@
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  verify:
+    name: Math + diagnostic verification (node)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Adaptive diagnostic simulation (placement accuracy, formats, gaps, misconceptions, reassessment)
+        run: node tools/verify_assess.js
+      - name: Item generators (9 skills x 6 levels x 3000 seeds)
+        run: node tools/verify_learn.js
+      - name: Shipped build consistency
+        run: node tools/check_dist.js
+  e2e:
+    name: Headless browser play-tests
+    runs-on: ubuntu-latest
+    needs: verify
+    timeout-minutes: 30
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      CHROME: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-save --no-audit --no-fund playwright@1.65.1
+      - name: Serve the site
+        run: (python3 -m http.server 8765 >/dev/null 2>&1 &) && sleep 2
+      - name: Mission answer-key verification (independent key)
+        run: node tools/verify_math.js
+      - name: Placement Quest e2e (desktop)
+        run: TAG=ci_diag HOOK=./p1diag.js node test/play.js
+      - name: 3D street smoke (phone 390x844, touch)
+        run: TAG=ci_phone W=390 H=844 TOUCH=1 node test/play.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: screenshots, path: shots/, retention-days: 7 }

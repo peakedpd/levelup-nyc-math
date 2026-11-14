@@ -8,7 +8,7 @@
    5. Ticket Blaster: a real arcade action game for the math (streak powers)
    6. Touch controls (joystick + buttons) for phones and Chromebooks
    ===================================================================== */
-const W2={};
+const W2={};window.W2=W2;
 function solidsOf(g){g.updateMatrixWorld(true);g.traverse(o=>{if(o.isMesh&&o.userData.solid&&!o.userData.inSol){o.userData.inSol=1;const b=new T.Box3().setFromObject(o);SOL.push({x0:b.min.x,x1:b.max.x,z0:b.min.z,z1:b.max.z,y0:b.min.y,top:b.max.y})}})}
 function canvasTex(w,h,draw){const c=document.createElement("canvas");c.width=w;c.height=h;draw(c.getContext("2d"),w,h);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=4;return t}
 function sign(g,txt,x,y,z,w,h,bg="#14123a",fg="#ffd23f",ry=0){const t=canvasTex(1024,Math.round(1024*h/w),(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.strokeStyle=fg;c.lineWidth=14;c.strokeRect(10,10,W-20,H-20);c.fillStyle=fg;c.textAlign="center";c.textBaseline="middle";const fs=Math.min(H*.55,1800/Math.max(6,txt.length));c.font=`900 ${fs}px Trebuchet MS,sans-serif`;c.fillText(txt,W/2,H/2+fs*.05)});const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshStandardMaterial({map:t,roughness:.7,emissive:0xffffff,emissiveMap:t,emissiveIntensity:.25}));m.position.set(x,y,z);m.rotation.y=ry;g.add(m);return m}
@@ -391,7 +391,8 @@ function updateHeroSprite(dt,now){if(!HS.mesh||!ACT.hero)return;const H=ACT.hero
   else if(k===0){if(tx.front_w1)key=f%2?"front_w2":"front_w1";else{key="fq"}}
   else if(k===4){key="back";mir=f%2===1}
   else if(k===2){key=(f%2&&tx.side_idle)?"side_idle":"side"}
-  else key=["","fq","","bq"][k];
+  else{const b=k===1?"fq_b":"bq_b";key=(f%2&&tx[b])?b:["","fq","","bq"][k]}
+  if(!moving&&k<=1&&tx.blink){HS.bl=(HS.bl||0)-dt;if(HS.bl<-.14)HS.bl=2.4+Math.random()*2.6;if(HS.bl<0)key="blink"}
   const t2=tx[key]||tx.fq;if(HS.mat.map!==t2){HS.mat.map=t2;HS.mat.needsUpdate=true}
   const h=2.0,asp=HS.asp[key]||HS.asp.fq||.55,flip=((k>0&&k<4&&rel<0)?-1:1)*HS.FLIP*(mir?-1:1),ph=HS.t*walkHz*Math.PI,bob=moving?Math.abs(Math.sin(ph))*.07:Math.sin(now/650)*.012;
   HS.mesh.scale.set(h*asp*flip*(moving?1:1+bob*.15),h*(1+(moving?0:bob*.6)),1);HS.mesh.position.set(g.position.x,g.position.y+(moving?bob:0),g.position.z);HS.mesh.rotation.set(0,ca,moving?Math.sin(ph)*.025:0)}
