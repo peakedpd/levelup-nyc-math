@@ -18,6 +18,8 @@ jobs:
         run: node tools/verify_mastery.js
       - name: Item generators (9 skills x 6 levels x 3000 seeds)
         run: node tools/verify_learn.js
+      - name: Item bank (verified answer/explanation, standard, difficulty, misconceptions, review status)
+        run: node tools/verify_itembank.js
       - name: Shipped build consistency
         run: node tools/check_dist.js
   e2e:
@@ -41,6 +43,8 @@ jobs:
         run: TAG=ci_diag HOOK=./p1diag.js node test/play.js
       - name: Mastery e2e (Tower Climb evidence, Memory Checks, mastery)
         run: TAG=ci_mastery HOOK=./p2mastery.js node test/play.js
+      - name: Educator review page e2e
+        run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)
         run: TAG=ci_phone W=390 H=844 TOUCH=1 node test/play.js
       - uses: actions/upload-artifact@v4

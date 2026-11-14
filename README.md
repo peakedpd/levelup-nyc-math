@@ -17,6 +17,11 @@ real-world problems with Ms. Okafor (teacher), Theo, Ms. Marcia, Mr. Sal (clothi
   erase practice evidence.
 - **Teach Me** — mini-lessons with worked examples and 3D desk demos
 - **Mini-games** — Ticket Blaster, Tower Climb, Lightning Round, rooftop boss fight (Number Muncher)
+- **Educator verification** — `item_bank.json` lists every question template and fixed item (208 records: generator
+  templates, transfer contexts, story missions, Practice Lab, boss problems) with a machine-verified answer and explanation,
+  CCSS standard, difficulty, misconception tags and an educator review status (default **pending review**).
+  [`review.html`](https://peakedpd.github.io/levelup-nyc-math/review.html) lets a Grade 4 educator approve or flag each
+  item with notes and export `approvals.json`; `tools/build_itembank.js` merges approvals back without overwriting them.
 - **Teacher/parent dashboard** — mastery, accuracy, time on task, growth, misconception flags, CSV/print
 - Grade-4 coverage: multiplication & division, place value, rounding, multi-digit add/sub, factors &
   multiples, multi-step word problems, fractions. Every generated item is checked by a verification script.
@@ -33,6 +38,8 @@ Works on desktop (WASD/mouse) and phones (touch joystick). Static site — no in
 | `tools/verify_mastery.js` | mastery rules (first-try, representations, independence, spaced retention, transfer, retake handling) + 20,400 transfer items keep the source answer, choices and numbers |
 | `tools/verify_learn.js` | every item generator: 9 skills × 6 levels × 3,000 seeds (answers recomputed independently) |
 | `tools/verify_math.js` | every story-mission item against an independent hand-made answer key (headless Chrome) |
+| `tools/verify_itembank.js` | every bank item has verified answer + explanation, CCSS code, difficulty, misconception codes, valid review status; 81,000 fresh generator instances map to a bank template and pass the answer key |
+| `test/p3review.js` | review page: approve, flag (note required), persist, filter, export + import approvals.json |
 | `tools/check_dist.js` | shipped files match their sources, scripts wired in order, no file over 95 MB |
 | `test/play.js` (+ `test/p1diag.js`) | headless play-test: hero → 3D street → rooms → games, then a full Placement Quest, pause/resume, Check-Up and dashboard (`p1diag.js`), Tower Climb evidence, Memory Checks and mastery (`p2mastery.js`); fails on any console error or failed request |
 

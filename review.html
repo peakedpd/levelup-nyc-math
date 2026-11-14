@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Level Up NYC — Educator Item Review</title><link rel="icon" href="data:,">
+<style>
+:root{--navy:#14123a;--line:#d9d4f0}*{box-sizing:border-box}body{margin:0;font:15px/1.45 system-ui,Segoe UI,sans-serif;background:#f6f4ff;color:var(--navy)}
+header{position:sticky;top:0;z-index:5;background:#14123a;color:#fff;padding:.6rem 1rem;display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+header h1{font-size:1.1rem;margin:0 1rem 0 0}header input,header select{font:inherit;padding:.3rem .45rem;border-radius:8px;border:0}
+.btn{font:700 .9rem system-ui;padding:.38rem .7rem;border-radius:9px;border:2px solid var(--navy);background:#fff;cursor:pointer}.btn.ok{background:#2fbf71;color:#fff;border-color:#1b7a3a}.btn.fl{background:#ff8a65;border-color:#b3501e}.btn.sm{font-size:.78rem;padding:.2rem .5rem}
+header .btn{border-color:#fff}
+.bar{display:flex;gap:1rem;flex-wrap:wrap;padding:.5rem 1rem;background:#fff;border-bottom:2px solid var(--line);font-size:.9rem}
+.bar b{font-size:1.05rem}#list{padding:.8rem 1rem;display:grid;gap:.7rem;max-width:1100px;margin:auto}
+.card{background:#fff;border:2px solid var(--line);border-radius:14px;padding:.7rem .9rem}.card.approved{border-color:#2fbf71;background:#f1fff6}.card.flagged{border-color:#ff8a65;background:#fff5f0}
+.q{font-weight:700;font-size:1.02rem}.meta{display:flex;flex-wrap:wrap;gap:.35rem;margin:.3rem 0}.tag{font:700 .72rem system-ui;padding:.12rem .45rem;border-radius:99px;background:#ece9ff}.tag.v{background:#c8f7d6}.tag.x{background:#ffd0d0}
+.grid{display:grid;grid-template-columns:140px 1fr;gap:.15rem .6rem;font-size:.88rem}.grid dt{color:#5b5880;font-weight:700}.grid dd{margin:0}
+.mis li{margin:.1rem 0}.act{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.4rem}.act input{flex:1;min-width:200px;font:inherit;padding:.3rem .45rem;border:2px solid var(--line);border-radius:8px}
+.st{font-weight:800}.small{font-size:.8rem;color:#5b5880}
+</style></head><body>
+<header><h1>🧑‍🏫 Item Review — Grade 4 educator approval</h1>
+<input id="who" placeholder="Reviewer name" aria-label="Reviewer name" style="width:150px">
+<select id="fSrc" aria-label="Source"><option value="">All sources</option></select>
+<select id="fSk" aria-label="Skill"><option value="">All skills</option></select>
+<select id="fSt" aria-label="Status"><option value="">Any status</option><option>pending review</option><option>approved</option><option>flagged</option></select>
+<input id="fQ" placeholder="Search text / standard / id" aria-label="Search" style="width:200px">
+<button class="btn sm" id="exp">⬇️ Export approvals.json</button><button class="btn sm" id="csv">⬇️ CSV</button><label class="btn sm">⬆️ Import<input id="imp" type="file" accept=".json" hidden></label>
+</header>
+<div class="bar" id="bar"></div>
+<div id="list" aria-live="polite"></div>
+<script>
+const KEY="lu_review_v1";let BANK=null,D=JSON.parse(localStorage.getItem(KEY)||"{}"),SHOWN=[],PAGE=60;
+const $=s=>document.querySelector(s),esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const who=$("#who");who.value=localStorage.getItem("lu_reviewer")||"";who.oninput=()=>localStorage.setItem("lu_reviewer",who.value);
+const stOf=it=>(D[it.id]&&D[it.id].status)||it.review.status;
+function save(){localStorage.setItem(KEY,JSON.stringify(D));bar()}
+function decide(id,status,note){if(status==="pending review"){delete D[id]}else D[id]={status,reviewer:who.value||"(unnamed)",date:new Date().toISOString(),note:note||""};save()}
+function bar(){const c={"pending review":0,approved:0,flagged:0};BANK.items.forEach(it=>c[stOf(it)]++);const v=BANK.items.filter(i=>i.verification.answer.ok&&i.verification.explanation.ok).length;
+  $("#bar").innerHTML=`<span><b>${BANK.total}</b> items</span><span>✅ answer + explanation machine-verified: <b>${v}</b></span><span>⏳ pending: <b id="nPend">${c["pending review"]}</b></span><span>👍 approved: <b id="nAppr">${c.approved}</b></span><span>🚩 flagged: <b id="nFlag">${c.flagged}</b></span><span class="small">Bank built ${BANK.built.slice(0,10)} · decisions are saved in this browser until you export them</span><button class="btn sm ok" id="bulk">Approve all ${SHOWN.length} shown</button>`;
+  $("#bulk").onclick=()=>{if(!SHOWN.length)return;if(!confirm(`Approve all ${SHOWN.length} items currently shown? Only do this after reading them.`))return;SHOWN.forEach(it=>{if(stOf(it)==="pending review")decide(it.id,"approved","bulk-approved after review")});render()}}
+function card(it){const st=stOf(it),d=D[it.id]||{};const ok=it.verification.answer.ok,eo=it.verification.explanation.ok;
+  return`<div class="card ${st.split(" ")[0]}" data-id="${esc(it.id)}"><div class="meta"><span class="tag">${esc(it.source)}</span><span class="tag">${esc(it.skillName||it.skill)}</span><span class="tag">${esc(it.standard)}</span><span class="tag">L${it.level} · ${esc(it.difficulty.band)}</span>
+   <span class="tag ${ok?"v":"x"}">${ok?"✔":"✘"} answer verified</span><span class="tag ${eo?"v":"x"}">${eo?"✔":"✘"} explanation verified</span><span class="small">${esc(it.id)}</span></div>
+   <div class="q">${esc(it.example)}</div>${it.template&&it.template!==it.example?`<div class="small">Template: ${esc(it.template)}</div>`:""}
+   <dl class="grid"><dt>Answer</dt><dd><b>${esc(it.answer)}</b>${it.choices?` <span class="small">choices: ${it.choices.map(esc).join(" · ")}</span>`:""}</dd><dt>Explanation</dt><dd>${esc(it.explanation)}</dd><dt>Hint</dt><dd>${esc(it.hint)}</dd>
+   <dt>Misconceptions</dt><dd><ul class="mis">${it.misconceptions.map(m=>`<li><b>${esc(m.choice)}</b> → <span class="tag">${esc(m.name)}</span> ${esc(m.text)}</li>`).join("")}</ul></dd>
+   <dt>Verification</dt><dd class="small">${esc(it.verification.answer.method)}${it.verification.answer.instancesChecked?` (${it.verification.answer.instancesChecked} instances)`:""}; ${esc(it.verification.explanation.method)}</dd>${it.standardDraft?`<dt>Draft standard</dt><dd class="small">${esc(it.standardDraft)}</dd>`:""}</dl>
+   <div class="act"><span class="st">${st==="approved"?"👍 Approved":st==="flagged"?"🚩 Flagged":"⏳ Pending review"}</span>${d.reviewer?`<span class="small">by ${esc(d.reviewer)} ${esc((d.date||"").slice(0,10))}</span>`:""}
+   <input placeholder="Note (required to flag): what is wrong / how to fix" value="${esc(d.note||"")}" aria-label="note"><button class="btn sm ok" data-a="approved">Approve</button><button class="btn sm fl" data-a="flagged">Flag</button><button class="btn sm" data-a="pending review">Reset</button></div></div>`}
+function render(){const s=$("#fSrc").value,k=$("#fSk").value,t=$("#fSt").value,q=$("#fQ").value.toLowerCase();
+  SHOWN=BANK.items.filter(it=>(!s||it.source===s)&&(!k||it.skill===k)&&(!t||stOf(it)===t)&&(!q||(it.example+" "+it.standard+" "+it.id+" "+(it.template||"")).toLowerCase().includes(q)));
+  $("#list").innerHTML=SHOWN.slice(0,PAGE).map(card).join("")+(SHOWN.length>PAGE?`<button class="btn" id="more">Show more (${SHOWN.length-PAGE} left)</button>`:"");const m=$("#more");if(m)m.onclick=()=>{PAGE+=60;render()};bar()}
+$("#list").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;const c=b.closest(".card"),note=c.querySelector("input").value.trim();if(b.dataset.a==="flagged"&&!note){c.querySelector("input").focus();c.querySelector("input").placeholder="Please add a note before flagging";return}decide(c.dataset.id,b.dataset.a,note);const it=BANK.items.find(i=>i.id===c.dataset.id);c.outerHTML=card(it)});
+["#fSrc","#fSk","#fSt"].forEach(s=>$(s).onchange=()=>{PAGE=60;render()});$("#fQ").oninput=()=>{PAGE=60;render()};
+function dl(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),300)}
+$("#exp").onclick=()=>dl("approvals.json",JSON.stringify({bank:BANK.built,reviewer:who.value,exported:new Date().toISOString(),decisions:D},null,1),"application/json");
+$("#csv").onclick=()=>{const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;dl("item_review.csv",[["id","source","skill","standard","level","status","reviewer","date","note","question","answer"]].concat(BANK.items.map(it=>{const d=D[it.id]||it.review;return[it.id,it.source,it.skill,it.standard,it.level,stOf(it),d.reviewer||"",d.date||"",d.note||"",it.example,it.answer]})).map(r=>r.map(q).join(",")).join("\n"),"text/csv")};
+$("#imp").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());const n=Object.keys(j.decisions||{}).length;Object.assign(D,j.decisions||{});save();render();alert(`Imported ${n} decisions.`)}catch(x){alert("Not a valid approvals.json")}};
+fetch("item_bank.json").then(r=>r.json()).then(b=>{BANK=b;[...new Set(b.items.map(i=>i.source))].forEach(s=>$("#fSrc").insertAdjacentHTML("beforeend",`<option>${esc(s)}</option>`));[...new Set(b.items.map(i=>i.skill))].forEach(s=>$("#fSk").insertAdjacentHTML("beforeend",`<option>${esc(s)}</option>`));render();window.__reviewReady=1});
+</script></body></html>

@@ -1,0 +1,21 @@
+// P3 e2e: educator review page — loads the bank, approve / flag (note required) / persist / export approvals.json / import.
+const { chromium } = require('playwright'); const fs = require('fs'), path = require('path');
+const URL = (process.env.URL || 'http://localhost:8765/').replace(/index\.html$/, ''); const OUT = path.join(__dirname, '..', 'shots', process.env.TAG || 'p3review'); fs.mkdirSync(OUT, { recursive: true });
+(async () => { const b = await chromium.launch({ executablePath: process.env.CHROME || '/usr/bin/google-chrome' }); const ctx = await b.newContext({ acceptDownloads: true, viewport: { width: +(process.env.W || 1100), height: +(process.env.H || 800) } }); const pg = await ctx.newPage();
+  const errs = []; pg.on('pageerror', e => errs.push(String(e))); pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()) }); const res = { assert: [] }; const ok = (c, m) => { if (!c) res.assert.push(m) };
+  await pg.goto(URL + 'review.html'); await pg.waitForFunction(() => window.__reviewReady); await pg.fill('#who', 'Test Educator');
+  res.start = await pg.evaluate(() => ({ cards: document.querySelectorAll('.card').length, pend: +document.querySelector('#nPend').textContent, total: BANK.total }));
+  ok(res.start.pend === res.start.total && res.start.cards > 0, 'all items start pending review');
+  await pg.screenshot({ path: OUT + '/r1_list.png' });
+  const ids = await pg.evaluate(() => [...document.querySelectorAll('.card')].slice(0, 2).map(c => c.dataset.id));
+  await pg.click(`.card[data-id="${ids[0]}"] [data-a=approved]`);
+  await pg.click(`.card[data-id="${ids[1]}"] [data-a=flagged]`); res.flagNoNote = await pg.evaluate(id => (JSON.parse(localStorage.lu_review_v1 || '{}')[id] || {}).status || null, ids[1]); ok(res.flagNoNote === null, 'flag requires a note');
+  await pg.fill(`.card[data-id="${ids[1]}"] input`, 'Distractor 15 is also plausible; reword.'); await pg.click(`.card[data-id="${ids[1]}"] [data-a=flagged]`);
+  await pg.reload(); await pg.waitForFunction(() => window.__reviewReady);
+  res.after = await pg.evaluate(() => ({ appr: +document.querySelector('#nAppr').textContent, flag: +document.querySelector('#nFlag').textContent })); ok(res.after.appr === 1 && res.after.flag === 1, 'decisions persist after reload');
+  await pg.selectOption('#fSt', 'flagged'); await pg.screenshot({ path: OUT + '/r2_flagged.png' }); res.filtered = await pg.evaluate(() => document.querySelectorAll('.card').length); ok(res.filtered === 1, 'status filter');
+  const [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('#exp')]); const f = path.join(OUT, 'approvals.json'); await dl.saveAs(f); const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+  res.exported = Object.values(j.decisions).map(d => d.status + ':' + d.reviewer); ok(j.decisions[ids[0]].status === 'approved' && j.decisions[ids[1]].note.length > 5, 'export approvals.json');
+  await pg.evaluate(() => localStorage.removeItem('lu_review_v1')); await pg.reload(); await pg.waitForFunction(() => window.__reviewReady); pg.on('dialog', d => d.accept());
+  await pg.setInputFiles('#imp', f); await pg.waitForTimeout(500); res.imported = await pg.evaluate(() => +document.querySelector('#nAppr').textContent + +document.querySelector('#nFlag').textContent); ok(res.imported === 2, 'import approvals.json');
+  res.errors = errs; console.log(JSON.stringify(res, null, 1)); await b.close(); const bad = errs.length + res.assert.length; console.log(bad ? 'REVIEW TEST FAIL' : 'REVIEW TEST PASS'); process.exit(bad ? 1 : 0) })();
