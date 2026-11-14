@@ -27,6 +27,7 @@ function merge(a,b){if(!a)return b;if(!b)return a;const A=a.learn||{},B=b.learn|
   return{id:a.id||b.id,name:newer.name,classCode:newer.classCode||a.classCode||b.classCode,at:Math.max(a.at||0,b.at||0),xp:Math.max(a.xp||0,b.xp||0),coins:newer.coins,
     learn:{m,log:byT(A.log,B.log).slice(-1500),time,diag:hist.length?hist[hist.length-1]:(A.diag||B.diag),base:A.base||B.base,history:hist,sessions:Math.max(A.sessions||0,B.sessions||0),interventions:iv,responses:resp,reasons:byT(A.reasons,B.reasons,r=>r.t),depth:byT(A.depth,B.depth,r=>r.t),assignments:byT(A.assignments,B.assignments,x=>x.id)}}}
 /* ---------- class analytics ---------- */
+const NAMES={placevalue:"Place Value",groups:"Equal Groups",addsub:"Add & Subtract",rounding:"Rounding",mult:"Multiplication",factors:"Factors & Multiples",divide:"Division",fractions:"Fractions",multistep:"Multi-Step Problems"};
 const SK=["placevalue","groups","addsub","rounding","mult","factors","divide","fractions","multistep"];
 function lvOf(m){return m?(m.done?6:m.lv||1):1}
 function studentRow(s,now){now=now||Date.now();const L=s.learn||{},m=L.m||{};const log=(L.log||[]).filter(e=>e.src!=="diag");const recent=log.filter(e=>now-e.t<14*864e5);
@@ -47,9 +48,9 @@ const MISSKILL={regroup:"addsub",remainder:"divide",fraction:"fractions",partial
 const PRE={placevalue:[],groups:[],rounding:["placevalue"],addsub:["placevalue"],mult:["groups","placevalue"],divide:["groups","mult"],factors:["groups"],multistep:["addsub","mult","divide"],fractions:["factors","groups"]};
 function recommend(s,now){const r=studentRow(s,now);const out=[];
   Object.entries(r.mis).filter(([c,k])=>k>=2&&MISSKILL[c]&&!r.openMissions.includes(c)).sort((a,b)=>b[1]-a[1]).slice(0,2).forEach(([c,k])=>out.push({type:"mission",code:c,why:`${k} recent errors of this kind`,priority:k>=4?1:2}));
-  for(const g of r.gaps)if(r.levels[g.prereq]<=2)out.push({type:"prereq",sk:g.prereq,why:`building block for ${g.skill}`,priority:1});
+  for(const g of r.gaps)if(r.levels[g.prereq]<=2)out.push({type:"prereq",sk:g.prereq,why:`building block for ${NAMES[g.skill]||g.skill}`,priority:1});
   r.due.slice(0,2).forEach(d=>out.push({type:"memory",sk:d.sk,lv:d.lv,why:"Memory Check is due",priority:2}));
-  const low=SK.filter(k=>r.levels[k]<=2&&!(PRE[k]||[]).some(p=>r.levels[p]<=2));low.slice(0,2).forEach(k=>out.push({type:"practice",sk:k,why:`placed at L${r.levels[k]}`,priority:3}));
+  const low=SK.filter(k=>r.levels[k]<=2&&!(PRE[k]||[]).some(p=>r.levels[p]<=2));low.slice(0,2).forEach(k=>out.push({type:"practice",sk:k,why:`working at L${r.levels[k]}`,priority:3}));
   if(r.firstTry14!=null&&r.firstTry14<60)out.push({type:"conference",why:`first-try accuracy ${r.firstTry14}% in the last 2 weeks — check in 1:1`,priority:1});
   const seen=new Set();return out.filter(x=>{const k=x.type+(x.code||x.sk||"");if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>a.priority-b.priority).slice(0,6)}
 /* ---------- teacher-assigned missions ---------- */
@@ -64,15 +65,44 @@ function growthReport(s,now){const r=studentRow(s,now),L=s.learn||{};const h=(L.
   return{name:s.name,generated:new Date(now||Date.now()).toISOString().slice(0,10),scale:h.map(x=>({d:x.d,kind:x.kind||"full",scale:x.scale})),growth:r.growth,
     skills:SK.map(k=>{const m=(L.m||{})[k]||{};const ev=(m.ev||[]).filter(e=>e.src!=="diag");return{sk:k,placed:base[k]||null,now:r.levels[k],change:base[k]?r.levels[k]-base[k]:null,status:m.done?"mastered":m.secure?"secure":"learning",firstTry:ev.length?Math.round(ev.filter(e=>e.first).length/ev.length*100):null,memoryChecks:ev.filter(e=>e.src==="check").length}}),
     minutes:r.mins,missions:(L.interventions||[]).map(x=>({code:x.code||x.id,status:x.status,from:x.from})),recommendations:recommend(s,now)}}
+/* ---------- assignment progress ---------- */
+function assignmentStatus(s,a){const L=s.learn||{},log=L.log||[],iv=L.interventions||[];
+  const items=(a.items||[]).map(it=>{let done=false,progress="";
+    if(it.type==="mission"){const x=iv.find(x=>(x.code||x.id)===it.code&&(x.t||0)>=a.at-6e4)||iv.find(x=>(x.code||x.id)===it.code&&x.from==="teacher");done=!!(x&&x.status==="completed");progress=x?x.status:"not started"}
+    else if(it.type==="practice"||it.type==="prereq"){const n=log.filter(e=>e.sk===it.sk&&e.src!=="diag"&&e.t>=a.at&&(!it.lv||e.lv>=it.lv)).length;done=n>=5;progress=n+"/5 problems"}
+    else if(it.type==="memory"){const ev=(((L.m||{})[it.sk]||{}).ev||[]).filter(e=>e.src==="check"&&e.t>=a.at);done=ev.length>0;progress=done?"checked":"due"}
+    else if(it.type==="checkup"){done=(L.history||[]).some(h=>h.t>=a.at);progress=done?"taken":"not yet"}
+    return Object.assign({},it,{done,progress})});
+  return{id:a.id,items,done:items.filter(x=>x.done).length,of:items.length,complete:items.length>0&&items.every(x=>x.done)}}
+/* ---------- class CSV (one row per student) ---------- */
+function classCSV(students,now){const A=analytics(students,now);const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+  const head=["student","scale score","growth","first-try % (14d)","items (14d)","minutes","mastered","open missions","top misconception","last active"].concat(SK.map(k=>k+" level"));
+  const rows=A.rows.map(r=>{const top=Object.entries(r.mis).sort((a,b)=>b[1]-a[1])[0];return[r.name,r.scale,r.growth,r.firstTry14,r.items14,r.mins,r.mastered.length,r.openMissions.join(" "),top?top[0]+" x"+top[1]:"",r.lastActive?new Date(r.lastActive).toISOString().slice(0,10):"never"].concat(SK.map(k=>r.levels[k]))});
+  return[head].concat(rows).map(r=>r.map(q).join(",")).join("\n")}
 /* ---------- pluggable sync ---------- */
+/* Every adapter: push(snapshot) -> merged/ok, pull(id) -> snapshot|null. Class-level: pullClass(code) -> [snapshots], pushAssignment(a), pullAssignments(code).
+   Supabase design (docs/backend/SETUP.md + schema.sql): teacher = Supabase Auth email (magic link); students = anonymous sign-in joined to a class by class code (no student emails, COPPA-friendly);
+   Row Level Security: a student reads/writes only their own progress row, the class teacher reads every row in their class. */
+function sbHeaders(cfg,session,extra){return Object.assign({apikey:cfg.anonKey,Authorization:`Bearer ${session&&session.access_token||cfg.anonKey}`,"Content-Type":"application/json"},extra||{})}
+function sbFetch(){return(typeof fetch!=="undefined"?fetch:null)}
 const ADAPTERS={
  local:{name:"This device",ready:()=>true,
    async push(snap,store){store=store||(typeof localStorage!=="undefined"?localStorage:null);if(!store)return false;const k="lu_sync_"+(snap.id||snap.name);const prev=store.getItem(k);const m=merge(prev?JSON.parse(prev):null,snap);store.setItem(k,JSON.stringify(m));return m},
    async pull(id,store){store=store||(typeof localStorage!=="undefined"?localStorage:null);const v=store&&store.getItem("lu_sync_"+id);return v?JSON.parse(v):null}},
  file:{name:"Class code / progress file",ready:()=>true,async push(snap){return encode("progress",snap)},async pull(code){const d=decode(code);if(d.kind!=="progress")throw new Error("That is not a progress code");return d.data}},
- supabase:{name:"Supabase (centralized accounts)",ready:cfg=>!!(cfg&&cfg.url&&cfg.anonKey),
-   async push(snap,cfg,session){if(!this.ready(cfg))throw new Error("Backend not configured");const r=await fetch(`${cfg.url}/rest/v1/progress?on_conflict=student_id`,{method:"POST",headers:{apikey:cfg.anonKey,Authorization:`Bearer ${session&&session.access_token||cfg.anonKey}`,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates"},body:JSON.stringify({student_id:snap.id,class_code:snap.classCode,data:snap,updated_at:new Date(snap.at).toISOString()})});if(!r.ok)throw new Error("sync failed "+r.status);return true},
-   async pull(id,cfg,session){if(!this.ready(cfg))throw new Error("Backend not configured");const r=await fetch(`${cfg.url}/rest/v1/progress?student_id=eq.${encodeURIComponent(id)}&select=data`,{headers:{apikey:cfg.anonKey,Authorization:`Bearer ${session&&session.access_token||cfg.anonKey}`}});if(!r.ok)throw new Error("pull failed "+r.status);const j=await r.json();return j[0]?j[0].data:null}}};
+ supabase:{name:"Supabase (centralized accounts)",ready:cfg=>!!(cfg&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(cfg.url||"")&&cfg.anonKey),
+   async signInAnon(cfg,f){f=f||sbFetch();const r=await f(`${cfg.url}/auth/v1/signup`,{method:"POST",headers:sbHeaders(cfg),body:JSON.stringify({data:{}})});if(!r.ok)throw new Error("anonymous sign-in failed "+r.status);return r.json()},
+   async magicLink(cfg,email,redirect,f){f=f||sbFetch();const r=await f(`${cfg.url}/auth/v1/otp`,{method:"POST",headers:sbHeaders(cfg),body:JSON.stringify({email,create_user:true,options:{email_redirect_to:redirect}})});if(!r.ok)throw new Error("magic link failed "+r.status);return true},
+   sessionFromHash(hash){const p=new URLSearchParams(String(hash||"").replace(/^#/,""));return p.get("access_token")?{access_token:p.get("access_token"),refresh_token:p.get("refresh_token"),expires_at:Date.now()+(+p.get("expires_in")||3600)*1000}:null},
+   async joinClass(cfg,session,classCode,nickname,f){f=f||sbFetch();const r=await f(`${cfg.url}/rest/v1/rpc/join_class`,{method:"POST",headers:sbHeaders(cfg,session),body:JSON.stringify({p_class_code:classCode,p_nickname:nickname})});if(!r.ok)throw new Error("join failed "+r.status);return r.json()},
+   async push(snap,cfg,session,f){if(!this.ready(cfg))throw new Error("Backend not configured");f=f||sbFetch();
+     /* merge with the server copy first so two devices never overwrite each other */
+     let server=null;try{server=await this.pull(snap.id,cfg,session,f)}catch(e){}const m=merge(server,snap);
+     const r=await f(`${cfg.url}/rest/v1/progress?on_conflict=student_id`,{method:"POST",headers:sbHeaders(cfg,session,{Prefer:"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify({student_id:m.id,class_code:m.classCode,data:m,updated_at:new Date(m.at).toISOString()})});if(!r.ok)throw new Error("sync failed "+r.status);return m},
+   async pull(id,cfg,session,f){if(!this.ready(cfg))throw new Error("Backend not configured");f=f||sbFetch();const r=await f(`${cfg.url}/rest/v1/progress?student_id=eq.${encodeURIComponent(id)}&select=data`,{headers:sbHeaders(cfg,session)});if(!r.ok)throw new Error("pull failed "+r.status);const j=await r.json();return j[0]?j[0].data:null},
+   async pullClass(classCode,cfg,session,f){f=f||sbFetch();const r=await f(`${cfg.url}/rest/v1/progress?class_code=eq.${encodeURIComponent(classCode)}&select=data`,{headers:sbHeaders(cfg,session)});if(!r.ok)throw new Error("class pull failed "+r.status);return(await r.json()).map(x=>x.data)},
+   async pushAssignment(a,classCode,cfg,session,f){f=f||sbFetch();const r=await f(`${cfg.url}/rest/v1/assignments`,{method:"POST",headers:sbHeaders(cfg,session,{Prefer:"return=minimal"}),body:JSON.stringify({id:a.id,class_code:classCode,data:a})});if(!r.ok)throw new Error("assign failed "+r.status);return true},
+   async pullAssignments(classCode,cfg,session,f){f=f||sbFetch();const r=await f(`${cfg.url}/rest/v1/assignments?class_code=eq.${encodeURIComponent(classCode)}&select=data&order=created_at.desc&limit=50`,{headers:sbHeaders(cfg,session)});if(!r.ok)throw new Error("assignments pull failed "+r.status);return(await r.json()).map(x=>x.data)}}};
 function adapter(cfg){return cfg&&ADAPTERS.supabase.ready(cfg)?"supabase":"local"}
-const API={VERSION,encode,decode,fnv,snapshot,merge,analytics,studentRow,recommend,assignment,applyAssignment,growthReport,ADAPTERS,adapter,SK,MISSKILL};
+const API={VERSION,encode,decode,fnv,snapshot,merge,analytics,studentRow,recommend,assignment,applyAssignment,growthReport,assignmentStatus,classCSV,ADAPTERS,adapter,SK,MISSKILL,PRE};
 if(typeof module!=="undefined"&&module.exports)module.exports=API;else root.CLASSROOM=API})(typeof window!=="undefined"?window:globalThis);

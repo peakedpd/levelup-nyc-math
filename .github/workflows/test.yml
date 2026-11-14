@@ -22,6 +22,8 @@ jobs:
         run: node tools/verify_itembank.js
       - name: Instructional depth (multi-step, strategies, reasoning, rubric, interventions)
         run: node tools/verify_depth.js
+      - name: Teacher platform (codes, cross-device merge, analytics, recommendations, assignments, sync adapters)
+        run: node tools/verify_classroom.js
       - name: Shipped build consistency
         run: node tools/check_dist.js
   e2e:
@@ -47,6 +49,8 @@ jobs:
         run: TAG=ci_mastery HOOK=./p2mastery.js node test/play.js
       - name: Depth e2e (reasoning, multi-step, showdown, explain-it, intervention mission)
         run: TAG=ci_depth HOOK=./p4depth.js node test/play.js
+      - name: Teacher Hub + My Class e2e (class code, analytics, assignments, growth report, cross-device merge)
+        run: TAG=ci_class HOOK=./p5class.js node test/play.js
       - name: Educator review page e2e
         run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)

@@ -28,6 +28,14 @@ real-world problems with Ms. Okafor (teacher), Theo, Ms. Marcia, Mr. Sal (clothi
   benchmark ½ — find the strategy with the mistake), **Explain It** open responses auto-scored 0–3 by rubric and
   re-scored by the teacher, and **Intervention Missions** (mini-lesson + targeted items) assigned automatically when a
   misconception repeats.
+- **Teacher Hub (teacher platform)** — create a class (class code `LUC-…`), roster from this device plus progress
+  codes/files collected from other devices, class heatmap (9 skills × L1–L6), average scale score and growth,
+  students needing attention, most common misconceptions with one-tap mission assignment, suggested small groups,
+  per-student recommended next steps, teacher-assigned missions (delivered instantly on this device, by assignment
+  code `LUA-…` elsewhere) with completion tracking, printable growth reports, class CSV. Students use **My Path → My
+  Class** to join, see assignments, share their progress code, and combine progress from another device (merge never
+  loses answers). Sync is pluggable: local + codes work now; Supabase accounts/sync switch on with a project URL +
+  anon key — see [docs/backend/SETUP.md](docs/backend/SETUP.md).
 - **Teacher/parent dashboard** — mastery, accuracy, time on task, growth, misconception flags, CSV/print
 - Grade-4 coverage: multiplication & division, place value, rounding, multi-digit add/sub, factors &
   multiples, multi-step word problems, fractions. Every generated item is checked by a verification script.
@@ -48,6 +56,8 @@ Works on desktop (WASD/mouse) and phones (touch joystick). Static site — no in
 | `test/p3review.js` | review page: approve, flag (note required), persist, filter, export + import approvals.json |
 | `tools/verify_depth.js` | 15,000 multi-step tasks (every step equation re-computed, numbers traceable to the story), 9,000 strategy comparisons (error flags + wrong step correct), reasoning prompts for every item type, rubric sanity, intervention targeting |
 | `test/p4depth.js` | reasoning prompt, Multi-Step Quest, Strategy Showdown, Explain It, misconception-triggered mission, teacher scoring |
+| `tools/verify_classroom.js` | class/progress/assignment codes (round-trip, tamper detection), cross-device merge (no lost evidence, idempotent, order-independent, slips respected), class analytics, recommendations, assignment delivery/status, growth reports, CSV, Supabase adapter against a mock REST server |
+| `test/p5class.js` | Teacher Hub end-to-end: create class, import progress codes, heatmap, assign mission (on-device + code), student plan, growth report; student joins, shares, merges progress, opens assigned mission |
 | `tools/check_dist.js` | shipped files match their sources, scripts wired in order, no file over 95 MB |
 | `test/play.js` (+ `test/p1diag.js`) | headless play-test: hero → 3D street → rooms → games, then a full Placement Quest, pause/resume, Check-Up and dashboard (`p1diag.js`), Tower Climb evidence, Memory Checks and mastery (`p2mastery.js`); fails on any console error or failed request |
 
