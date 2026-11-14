@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LevelUp — NYC Math Adventure (Grade 4 Playable Slice)</title>
+<style>
+:root{--navy:#1d2b64;--navy2:#2b3d8f;--yellow:#ffc93c;--red:#e8452c;--teal:#1fb6a6;--cream:#fff8ea;--ink:#1c2140;--ok:#1b9e5a;--warn:#d9822b;--line:#e6dcc3}
+*{box-sizing:border-box}
+html{font-size:17px}
+body{margin:0;font-family:"Trebuchet MS",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:#14193d;overflow:hidden}
+body.big{font-size:20px}
+body.easy,body.easy *{font-family:Verdana,"Trebuchet MS",sans-serif!important;letter-spacing:.04em;word-spacing:.12em}
+body.hc{--navy:#000;--navy2:#000;--cream:#fff;--ink:#000;--line:#000}
+body.hc .panel,body.hc .card,body.hc .btn,body.hc .chip{min-width:44px;border-color:#000!important;border-width:3px!important}
+body.hc .small{color:#000!important}
+body.nomo *{animation:none!important;transition:none!important}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:4px solid #5aa9ff;outline-offset:2px}
+#app{position:fixed;inset:0}
+.screen{position:absolute;inset:0;display:none}
+.screen.active{display:flex}
+.btn{background:var(--yellow);color:var(--ink);border:0;border-radius:14px;padding:.7rem 1.2rem;font-weight:800;box-shadow:0 4px 0 #c9971a;min-height:48px}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #c9971a}
+.btn.alt{background:#fff;box-shadow:0 4px 0 #c9bfa5;border:2px solid var(--line)}
+.btn.good{background:var(--ok);color:#fff;box-shadow:0 4px 0 #0f6e3e}
+.btn.sm{padding:.4rem .8rem;min-height:40px;font-size:.9rem}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+/* title */
+#s-title{align-items:center;justify-content:center;background:linear-gradient(160deg,#1d2b64,#3a2a86 55%,#e8452c);text-align:center;color:#fff;flex-direction:column;padding:1rem}
+#s-title h1{font-size:clamp(2.6rem,9vw,5rem);margin:.2em 0;letter-spacing:.02em;text-shadow:0 5px 0 rgba(0,0,0,.3)}
+#s-title h1 span{color:var(--yellow)}
+#s-title p{max-width:34rem;opacity:.95}
+.tline{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;margin-top:1rem}
+/* creator */
+#s-create{background:var(--cream);flex-direction:row;gap:1rem;padding:1rem;overflow:auto;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.cprev{background:linear-gradient(#bfe6ff,#fff8ea 70%);border-radius:20px;padding:.5rem;border:3px solid var(--navy);text-align:center}
+.copts{max-width:560px;flex:1 1 360px}
+.copts h2{margin:.2rem 0}
+.row{margin:.6rem 0}
+.row>label{display:block;font-weight:800;margin-bottom:.3rem}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap}
+.chip{border:3px solid var(--line);background:#fff;border-radius:12px;padding:.35rem .7rem;min-height:44px;font-weight:700}
+.chip[aria-pressed=true]{border-color:var(--navy);background:#e4e9ff}
+.sw{width:44px;height:44px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 0 2px var(--line);padding:0}
+.sw[aria-pressed=true]{box-shadow:0 0 0 4px var(--navy)}
+input[type=text],input[type=number],select{font:inherit;padding:.55rem .7rem;border:3px solid var(--line);border-radius:12px;min-height:46px;background:#fff;color:var(--ink)}
+/* map */
+#s-map{background:#14193d;flex-direction:column}
+#hud{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:.4rem .6rem;background:var(--navy);color:#fff;min-height:56px}
+#hud .pill{background:rgba(255,255,255,.14);border-radius:999px;padding:.25rem .7rem;font-weight:800;white-space:nowrap}
+#xpbar{width:120px;height:12px;background:rgba(255,255,255,.25);border-radius:8px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:.4rem}
+#xpbar i{display:block;height:100%;background:var(--yellow);width:0}
+#hud .sp{flex:1}
+#acts{flex:none;max-height:190px;overflow:auto;background:#141a45;border-top:3px solid #2b3a8f;padding:.5rem .7rem .9rem}#acts h3{color:#ffd24a;margin:.5rem 0 .3rem;font-size:.95rem;letter-spacing:.02em}#acts .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.45rem}#acts .act{display:flex;align-items:center;gap:.5rem;text-align:left;background:#fff;color:#1d2b64;border:0;border-radius:14px;padding:.55rem .7rem;min-height:48px;font-weight:800;font-size:.95rem;box-shadow:0 3px 0 #d8cfa8;cursor:pointer}#acts .act small{display:block;font-weight:600;color:#5a6286;font-size:.74rem}#acts .act.go{background:#ffd24a;box-shadow:0 3px 0 #c99b00}#street3d{width:min(100%,calc((100vh - 170px)*16/9));aspect-ratio:16/9;border:0;border-radius:14px;background:#1b1640;display:block}#mapwrap.flat #street3d{display:none}#mapwrap:not(.flat) #map,#mapwrap:not(.flat) .hint-bar,#mapwrap:not(.flat) #actBtn{display:none!important}#mapToggle{position:absolute;top:8px;right:8px;z-index:5}
+#mapwrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;position:relative}
+#map{width:100%;max-width:calc((100vh - 280px)*1.78);height:auto;max-height:calc(100vh - 280px);background:#8fd0f5;touch-action:none;image-rendering:auto}
+#actBtn{position:absolute;left:50%;bottom:3.4rem;transform:translateX(-50%);z-index:5;font-size:1.1rem;padding:.8rem 1.6rem}
+.hint-bar{position:absolute;left:.5rem;bottom:.4rem;color:#fff;background:rgba(0,0,0,.45);border-radius:10px;padding:.2rem .6rem;font-size:.8rem}
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(10,14,40,.7);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:1rem;z-index:20}
+#modal.open{display:flex}
+.panel{background:var(--cream);border-radius:22px;padding:1.1rem 1.3rem;max-width:940px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.4);border:4px solid var(--navy);margin:auto}
+.panel h2{margin:.1rem 0 .4rem;color:var(--navy)}
+.phead{display:flex;gap:1rem;align-items:center;justify-content:space-between}
+.npc{display:flex;gap:.9rem;align-items:center;background:#fff;border:3px solid var(--line);border-radius:18px;padding:.6rem .9rem;margin:.6rem 0}
+.npc canvas{background:#e4f1ff;border-radius:14px;flex:none}
+.npc .who{font-weight:900;color:var(--navy)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.8rem;margin:.6rem 0}
+.card{background:#fff;border:3px solid var(--line);border-radius:16px;padding:.7rem .8rem;display:flex;flex-direction:column;gap:.35rem}
+.card.done{border-color:var(--ok)}
+.card.lock{opacity:.65}
+.tag{display:inline-block;font-size:.75rem;font-weight:800;border-radius:8px;padding:.1rem .5rem;background:#e4e9ff;color:var(--navy)}
+.tag.ok{background:#d9f5e5;color:#0f6e3e}
+.tag.gold{background:#fff0c2;color:#7a5600}
+.tag.lock{background:#eee;color:#555}
+.tcols{display:flex;gap:1rem;flex-wrap:wrap}
+.tcols>div{flex:1 1 280px}
+.bar{height:16px;background:#e6dcc3;border-radius:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--yellow))}
+/* dialogue */
+#dlg{position:fixed;left:0;right:0;bottom:0;padding:.6rem;z-index:40;display:none;justify-content:center}
+#dlg.open{display:flex}
+.dbox{background:#fff;border:4px solid var(--navy);border-radius:20px;padding:.7rem .9rem;max-width:760px;width:100%;display:flex;gap:.8rem;align-items:center;box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.dbox canvas{background:#e4f1ff;border-radius:14px;flex:none}
+.dbox .t{flex:1}
+.dbox .who{font-weight:900;color:var(--navy)}
+.dbox .b{display:flex;flex-direction:column;gap:.4rem}
+/* mission */
+#s-mission{background:linear-gradient(#e9f3ff,var(--cream));z-index:30;flex-direction:column;overflow:auto;padding:.6rem}
+.mwrap{max-width:860px;width:100%;margin:0 auto}
+.mhead{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;justify-content:space-between}
+.dots{display:flex;gap:6px}
+.dots i{width:16px;height:16px;border-radius:50%;background:#d8cfb6;border:2px solid #fff;box-shadow:0 0 0 2px #cfc5aa}
+.dots i.ok{background:var(--ok)}.dots i.help{background:var(--warn)}.dots i.cur{box-shadow:0 0 0 3px var(--navy)}
+#modal.arc-mode .card,#modal.arc-mode .qcard{background:#241a5e;color:#fff;border:4px solid #ff5fd2;box-shadow:0 0 18px #7a5cff,inset 0 0 12px rgba(255,95,210,.25)}#modal.arc-mode .phead h2{color:#7a1fa8}#modal.arc-mode .chip:disabled{color:#cfd3ff;background:#33287a}#modal.arc-mode .chip{border:3px solid #6fe3ff}.qcard{background:#fff;border:4px solid var(--navy);border-radius:22px;padding:1rem 1.2rem;margin-top:.6rem}
+.qtext{font-size:1.3rem;font-weight:700;line-height:1.35;margin:.2rem 0 .6rem}
+.vis{text-align:center;margin:.4rem 0}
+.vis svg{max-width:100%;height:auto;max-height:260px}
+.ans{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.5rem}
+.ans input{width:9rem;font-size:1.5rem;font-weight:800;text-align:center}
+.mc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.6rem;width:100%}
+.mc button{color:#14123a;font-size:1.15rem;background:#fff;border:3px solid var(--line);border-radius:14px;padding:.8rem;font-weight:800;text-align:left;min-height:56px}
+.mc button[aria-pressed=true]{border-color:var(--navy);background:#e4e9ff}
+.mc button.right{border-color:var(--ok);background:#d9f5e5}
+.mc button.nope{opacity:.5;text-decoration:line-through;cursor:not-allowed}
+#fb{margin-top:.7rem;min-height:3.2rem}
+.fb{border-radius:14px;padding:.7rem .9rem;font-weight:800;font-size:1.08em;border:3px solid;color:#14123a}.fb *{color:inherit}
+.fb.ok{background:#d9f5e5;color:#0b4a2a;border-color:var(--ok)}
+.fb.try{color:#5a3300;background:#fff0d6;border-color:var(--warn)}
+.fb.show{color:#14123a;background:#e4e9ff;border-color:var(--navy)}
+.big-n{font-size:2.2rem;font-weight:900;color:var(--navy)}
+.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.6rem}
+.item{background:#fff;border:3px solid var(--line);border-radius:14px;padding:.5rem;text-align:center;display:flex;flex-direction:column;gap:.3rem}
+.item.sel{border-color:var(--navy)}
+.item canvas{background:#f4f0e2;border-radius:10px;margin:0 auto}
+#toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:.6rem 1.1rem;border-radius:14px;font-weight:800;z-index:60;display:none;max-width:90vw;text-align:center}
+.small{font-size:.85rem;opacity:.85}
+.sr{position:absolute;left:-9999px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.ban{width:100%;height:150px;object-fit:cover;border-radius:16px;margin:.4rem 0;display:block;border:3px solid var(--navy)}
+.react{width:64px;height:64px;object-fit:cover;object-position:top;border-radius:50%;float:left;margin-right:.7rem;background:#e4f1ff;border:3px solid var(--navy)}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.5rem}
+.gal img{width:100%;height:110px;object-fit:cover;border-radius:10px;border:3px solid var(--line);cursor:pointer;background:#e4f1ff}
+.gal.ch img{object-fit:contain;height:150px}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:80;padding:1rem}
+#lb.open{display:flex}#lb img{max-width:100%;max-height:100%;border-radius:12px}
+.look{width:100%;border-radius:16px;border:3px solid var(--navy);display:block;margin:.4rem 0;max-height:340px;object-fit:cover}
+#s-title{background:linear-gradient(160deg,rgba(29,43,100,.82),rgba(58,42,134,.7) 55%,rgba(232,69,44,.75)),url(img/ls_ts_cam_goldenhour.webp) center/cover}
+#s-mission{background:linear-gradient(rgba(233,243,255,.93),rgba(255,248,234,.97)),url(img/lua_classroom.webp) center/cover}
+.heroes{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:.4rem}
+.heroes button{border:3px solid var(--line);background:#fff3d9;border-radius:14px;padding:0;overflow:hidden;height:96px;position:relative}
+.heroes button[aria-pressed=true]{border-color:var(--navy);box-shadow:0 0 0 3px #9db4ff}
+.heroes img{width:100%;height:100%;object-fit:cover;object-position:top}
+
+button,.btn,.btn.sm,.sm,.chip,input,select{min-height:44px!important}
+.roomb{padding:0;border:3px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;display:flex;flex-direction:column;font-weight:800;color:var(--navy)}
+.roomb img{width:100%;height:84px;object-fit:cover;display:block}.roomb span{padding:.3rem .2rem;font-size:.85rem}
+.tbl{width:100%;border-collapse:collapse}.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:.4rem;text-align:left;vertical-align:top}
+.pre{white-space:pre-wrap;background:#fff;border:2px solid var(--line);border-radius:12px;padding:.7rem;font-family:inherit}
+.prizes{display:flex;flex-wrap:wrap;gap:.4rem}
+#evt{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateX(-50%) translateY(6px)}}
+.pz{position:fixed;inset:0;z-index:98;background:rgba(10,6,40,.85);display:flex;align-items:center;justify-content:center}
+.pzc{background:#241a5e;color:#fff;border:4px solid #ff5fd2;box-shadow:0 0 28px #7a5cff;border-radius:22px;padding:1rem 1.2rem;text-align:center;width:min(640px,94vw)}
+.pzs{display:flex;align-items:flex-end;justify-content:space-between;gap:0;position:relative;height:210px}
+.pzw,.pzh{width:150px;flex:none;position:relative}
+.pzw canvas{width:150px;height:150px;border-radius:18px;background:#e4ecff;display:block;animation:pzin .6s ease-out both,pznod .5s 1.3s 2 ease-in-out}
+.pzh img{height:190px;display:block;margin:0 auto;animation:pzhin .6s .2s ease-out both,pzcatch .5s 2.2s ease-out both}
+.pzcl{font-weight:800;font-size:.85rem;margin-top:.2rem;opacity:.9}
+.pzarm{position:absolute;left:130px;right:130px;bottom:88px;height:34px;pointer-events:none}
+.pzsl{position:absolute;left:0;top:0;height:34px;width:0;background:#e8452c;border-radius:17px;animation:pzext .7s .9s ease-out forwards,pzret .5s 2.3s ease-in forwards}
+.pzhand{position:absolute;left:0;top:-3px;width:40px;height:40px;border-radius:50%;background:#8d5a3b;border:3px solid #5f3a24;animation:pzhx .7s .9s ease-out forwards,pzhr .5s 2.3s ease-in forwards}
+.pzgift{position:absolute;left:0;top:-40px;font-size:3rem;opacity:0;animation:pzgx .7s .9s ease-out forwards,pzgf .6s 1.9s ease-in-out forwards,pzgp .5s 2.5s ease-out forwards}
+.pzb{background:#fff;color:#14123a;font-weight:800;font-size:1.1rem;border-radius:14px;padding:.5rem .9rem;margin:.7rem 0 .3rem;animation:pzfade .4s 1.2s both}
+.pzn{font-weight:900;font-size:1.25rem;margin:.3rem 0 .7rem;animation:pzg .5s 2.5s both}
+#pzok{animation:pzfade .3s 2.6s both}
+@keyframes pzin{from{transform:translateX(-80px);opacity:0}}
+@keyframes pzhin{from{transform:translateX(80px);opacity:0}}
+@keyframes pznod{50%{transform:translateY(8px) rotate(-3deg)}}
+@keyframes pzext{to{width:calc(100% - 20px)}}
+@keyframes pzret{to{width:0}}
+@keyframes pzhx{to{left:calc(100% - 40px)}}
+@keyframes pzhr{from{left:calc(100% - 40px)}to{left:0}}
+@keyframes pzgx{0%{opacity:1;left:0}100%{opacity:1;left:calc(100% - 52px)}}
+@keyframes pzgf{to{left:calc(100% - 52px)}}
+@keyframes pzgp{0%{opacity:1;left:calc(100% - 52px);top:-40px}100%{opacity:1;left:calc(100% + 40px);top:-120px;font-size:4rem}}
+@keyframes pzcatch{0%{transform:translateY(0)}40%{transform:translateY(-26px)}70%{transform:translateY(0)}85%{transform:translateY(-10px)}100%{transform:translateY(0)}}
+@keyframes pzfade{from{opacity:0;transform:translateY(8px)}}
+@keyframes pzg{from{transform:scale(0);opacity:0}}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:120;overflow:hidden}
+.confetti i{position:absolute;top:-30px;font-style:normal;font-size:1.6rem;animation:fall 2.2s ease-in forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+.screen{transition:opacity .25s}
+.chip{min-width:44px}
+@media print{body{overflow:visible;background:#fff}#app>*:not(#modal){display:none!important}#modal{position:static!important;background:#fff}.btn,.phead button{display:none!important}}
+@media (pointer:coarse),(max-width:700px){#mapwrap{flex:none;flex-direction:column;align-items:stretch}#actBtn{position:static;transform:none;margin:.45rem .7rem 0;font-size:1rem;padding:.6rem 1rem}.hint-bar{display:none}#acts{max-height:none}#s-map{overflow-y:auto}#s-map>*{flex-shrink:0}}
+/* full-screen 3D play mode: the street fills the whole screen (phones, Chromebooks, laptops) */
+body.play3d #mapwrap:not(.flat) #street3d{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;border-radius:0;z-index:12}
+body.play3d #hud{position:fixed;top:0;left:0;right:0;z-index:14;background:linear-gradient(rgba(20,25,70,.88),rgba(20,25,70,.55));min-height:0;padding:.3rem .5rem;pointer-events:none}
+body.play3d #hud>*{pointer-events:auto}
+body.play3d #hud .btn.sm{padding:.3rem .55rem;font-size:.85rem}
+body.play3d #mapToggle{position:fixed;top:auto;bottom:10px;right:10px;z-index:14}
+body.play3d #acts{position:fixed;left:0;right:0;bottom:0;z-index:16;max-height:60vh;transform:translateY(105%);transition:transform .25s;border-radius:18px 18px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.45)}
+body.play3d.drawer #acts{transform:none}
+body.play3d #evt{display:none}
+#menuBtn{display:none}body.play3d #menuBtn{display:inline-flex}
+@media (max-width:700px){body.play3d #hud{flex-wrap:nowrap;gap:.25rem;overflow:hidden}body.play3d #hud .pill{font-size:.78rem;padding:.15rem .45rem;white-space:nowrap}body.play3d #hud .lbl{display:none}body.play3d #hud #xpbar{width:34px}body.play3d #hud [data-act=goto],body.play3d #hud [data-act=today],body.play3d #hud [data-act=settings],body.play3d #hud [data-act=help]{display:none}body.play3d #mapToggle{display:none}}
+body.play3d.busy3d #mapToggle{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="s-title" class="screen active">
+    <div style="font-size:3rem" aria-hidden="true">🏙️</div>
+    <h1>Level<span>Up</span></h1>
+    <p>Help New York City get ready for the <b>LevelUp City Festival</b>! Build your hero, explore the city, solve multiplication and division missions, and earn City Coins.</p>
+    <div class="tline">
+      <button class="btn" data-act="newgame" id="btnNew">Start new adventure</button>
+      <button class="btn alt" data-act="cont" id="btnCont" hidden>Continue</button>
+      <button class="btn alt" data-act="gallery">🖼️ Gallery</button>
+      <button class="btn alt" data-act="settings">Settings</button>
+    </div>
+    <p class="small" style="margin-top:1.4rem">Playable slice · 5 missions · 40 practice items · Grade 4 multiplication and division<br>Progress is saved only on this device. No account, chat, or personal information needed.</p>
+  </section>
+
+  <section id="s-create" class="screen">
+    <div class="cprev"><canvas id="cPrev" width="300" height="480" style="touch-action:none;cursor:grab;max-width:100%" aria-label="Your character preview. Use the turn buttons or drag to see every side."></canvas><div class="small" id="cName">This is you!</div><div class="small" id="cPrevLab" aria-live="polite"></div>
+      <div class="chips" style="justify-content:center;margin-top:.35rem"><button class="chip" data-act="tl" data-c="cPrev" aria-label="Turn left">⟲</button><button class="chip" data-act="tspin" data-c="cPrev" aria-pressed="true">🔄 Spin</button><button class="chip" data-act="twalk" data-c="cPrev" aria-pressed="false">🚶 Walk</button><button class="chip" data-act="tr" data-c="cPrev" aria-label="Turn right">⟳</button></div></div>
+    <div class="copts">
+      <h2>Create your character</h2>
+      <div class="row"><label>Pick your look</label><div class="heroes" id="o-hero"></div></div>
+      <div class="row"><label>Backdrop color</label><div class="chips" id="o-bg"></div></div>
+      <div class="row"><label for="nm">Your display name</label>
+        <div class="chips"><input id="nm" type="text" maxlength="14" placeholder="Pick or type a nickname" autocomplete="off">
+        <button class="btn alt sm" data-act="randname">🎲 Surprise me</button></div>
+        <div class="small">Use a nickname, not your real name. Letters and numbers only.</div><div id="nmErr" class="small" style="color:#b3261e"></div></div>
+      <button class="btn" data-act="startcreate" style="margin-top:.4rem">This is me! Let's go →</button>
+    </div>
+  </section>
+
+  <section id="s-map" class="screen">
+    <div id="hud"></div>
+    <div id="mapwrap">
+      <iframe id="street3d" onload="setTimeout(sendMissions,300)" src="street3d.html?embed=1" title="3D city street. Use arrow keys or WASD to walk, drag to look around, E at a door to go in." allow="fullscreen; pointer-lock"></iframe><button class="chip" id="mapToggle" data-act="maptoggle" aria-pressed="false">🗺️ 2D map</button>
+      <canvas id="map" width="960" height="540" aria-label="Map of the city. Use arrow keys or WASD to walk, or tap where you want to go."></canvas>
+      <button class="btn" id="actBtn" data-act="interact" hidden></button>
+      <div class="hint-bar">Walk: arrow keys or WASD, or tap where to go · walk up into a door to go in · Talk / Enter: E</div>
+    </div>
+    <div id="acts" aria-label="Things to do"></div>
+  </section>
+
+  <section id="s-mission" class="screen" aria-live="off"></section>
+  <div id="modal" role="dialog" aria-modal="true"></div>
+  <div id="dlg" role="status"></div>
+  <div id="lb" onclick="this.classList.remove('open')"><img alt=""></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>/* perf: the 2D map's 3D sprites (~21 MB) load only when the 2D map is opened; the 3D street loads its own copies */
+let L2D=false;function load2D(){if(L2D)return;L2D=true;["three3d.js","marcia_data.js","theo_data.js","hero00_data.js"].reduce((p,src)=>p.then(()=>new Promise(r=>{const s=document.createElement("script");s.src=src;s.onload=s.onerror=r;document.head.appendChild(s)})),Promise.resolve())}</script>
+<script>
+"use strict";
+function sendMissions(){const f=document.getElementById("street3d");if(!f||!f.contentWindow||typeof MISSIONS==="undefined")return;try{f.contentWindow.postMessage({lv3d:"missions",list:MISSIONS.map(m=>({id:m.id,title:m.title,loc:m.loc,items:m.items.map(it=>({t:it.t,q:it.q,a:it.a,o:it.o,h:it.h,e:it.e}))})),prog:JSON.parse(JSON.stringify(S.missions||{}))},"*")}catch(e){console.error(e)}}
+addEventListener("message",e=>{const d=e.data;if(d&&d.lv3d==="mres"){try{
+  award(d.xp,d.coins||0,"mission"); /* 3D rounds are missions: never hit the daily cap */
+  if(!d.review){const sv=S.missions[d.id]||(S.missions[d.id]={}),def=MISSIONS[d.id-1];
+    if(!sv.done){const pr=sv.progress||{idx:0,res:[]};pr.res[d.idx]={tries:d.tries};pr.idx=Math.max(pr.idx,d.idx+1);sv.progress=pr;
+      if(pr.idx>=def.items.length){sv.done=true;sv.progress=null;sv.plays=(sv.plays||0)+1;award(40,20,"mission");try{checkBadges()}catch(_){}sfx("level");confetti();toast("🎉 Mission complete: "+def.title+"! +40 XP")}}}
+  save();hud();sendMissions()}catch(err){console.error(err)}return}if(d&&d.lv3d==="busy"){document.body.classList.toggle("busy3d",!!d.on);return}if(d&&d.lv3d==="boss"){try{S.bossWins=(S.bossWins||0)+1;const r=award(d.xp||0,d.coins||0,"boss");save();sfx("level");toast("🏆 Festival Champion! "+"⭐".repeat(d.stars||1)+" +"+r.xp+" XP · +"+r.coins+" coins · +"+(d.tix||0)+" tickets")}catch(err){console.error(err)}return}if(d&&d.lv3d==="prize"){try{S.prizes=S.prizes||[];for(let i=0;i<(d.qty||1);i++)S.prizes.push(d.id);save();sfx("level");toast(d.emoji+" You got "+(d.qty>1?d.qty+" × ":"")+d.name+" from the Prize Corner!")}catch(err){console.error(err)}return}
+  if(d&&d.lv3d==="door"&&typeof openLocation==="function"){try{sfx("tap")}catch(_){}setTimeout(()=>openLocation(d.id),700)}});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("#mapToggle");if(!b)return;const w=document.getElementById("mapwrap"),fl=w.classList.toggle("flat");b.setAttribute("aria-pressed",fl);b.textContent=fl?"🧊 3D street":"🗺️ 2D map";if(fl)load2D();document.body.classList.toggle("play3d",!fl);document.body.classList.remove("drawer");if(!fl)focus3d()});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-act=drawer]");if(b){document.body.classList.toggle("drawer");return}if(document.body.classList.contains("drawer")&&e.target.closest&&e.target.closest("#acts .act"))document.body.classList.remove("drawer")},true);
+/* ============================================================
+   LevelUp — Playable slice (5 locations, 5 missions, 40 items)
+   Content and economy values are DRAFT hypotheses from the spec.
+   All math items require Grade 4 educator review before classroom use.
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+let KEY=(()=>{try{return localStorage.getItem("lu_active")||"levelup_slice_v1"}catch(e){return"levelup_slice_v1"}})();
+const LV=[0,100,250,450,700,1000,1350,1750,2200,2700];
+const levelOf=xp=>{let l=1;for(let i=0;i<LV.length;i++)if(xp>=LV[i])l=i+1;return l};
+const SKINS=["#ffdbb4","#f1c27d","#d9a066","#b5763e","#8d5524","#5a3a1f"];
+const HAIRC=["#1b1b1b","#4a2c17","#8b5a2b","#d9a441","#c0392b","#6c3fa8"];
+const BGS=["#bfe6ff","#ffd9e6","#d8f5d0","#ffe9b0","#e3d6ff","#ffd2b8"];
+const HERO=n=>"hero"+String(n).padStart(2,"0");
+const HERO_NAMES=["Red Puffs","Green Curls","Purple Curls","Blonde Hoodie","Orange Cut","Lavender Hijab","Red Freckles","Teal Ponytail","Afro Phones","Long Braid","Round Glasses","Colorful Locs"];
+const EMO={hoodie:"🧥",jacket:"🧥",sneak:"👟",cap:"🧢",glasses:"👓",pack1:"🎒",pack2:"🎒"};
+const wearEmo=()=>Object.values(S.eq).map(i=>EMO[i]).filter(Boolean).join("");
+const NAMES=["Skyler","Jordan","River","Sage","Nova","Ace","Zuri","Kai","Milo","Luna","Rio","Indigo"];
+const BAD_IN=["fuck","shit","bitch","porn","nazi","fck","sht"],BAD_WORD=["ass","sex","kill","hate","damn","dick","gun","butt","poop","dumb","stupid"];
+function badName(n){const l=String(n).toLowerCase(),flat=l.replace(/[^a-z]/g,""),w=l.split(/[^a-z]+/).filter(Boolean);return BAD_IN.some(b=>flat.includes(b))||w.some(x=>BAD_WORD.includes(x)||BAD_WORD.includes(x.replace(/e?s$/,"")))}
+
+/* ---------- state ---------- */
+function defState(){return{v:1,created:false,name:"",avatar:{hero:0,bg:0},owned:[],eq:{},xp:0,coins:0,missions:{},intro:false,bonusDay:"",finale:false,settings:{read:false,big:false,hc:false,easy:false,nomo:false,sfx:true,music:false}}}
+let S=defState();
+let memSave=null;
+function save(){try{const j=JSON.stringify(S);memSave=j;localStorage.setItem(KEY,j)}catch(e){}}
+function load(){let j=null;try{j=localStorage.getItem(KEY)}catch(e){}
+  if(!j)j=memSave;
+  if(!j)return false;
+  try{const o=JSON.parse(j);S=Object.assign(defState(),o);S.avatar=Object.assign(defState().avatar,o.avatar||{});S.settings=Object.assign(defState().settings,o.settings||{});return true}catch(e){return false}}
+
+/* ---------- catalog (10 slice rewards) ---------- */
+const CAT=[
+ {id:"hoodie",name:"Classic NYC Hoodie",price:50,lvl:1,slot:"top",kind:"wear"},
+ {id:"jacket",name:"NYC Varsity Jacket",price:150,lvl:3,slot:"top",kind:"wear"},
+ {id:"sneak",name:"Red Sneakers",price:75,lvl:1,slot:"shoes",kind:"wear"},
+ {id:"cap",name:"Baseball Cap",price:60,lvl:2,slot:"hat",kind:"wear"},
+ {id:"glasses",name:"Star Glasses",price:75,lvl:2,slot:"glasses",kind:"wear"},
+ {id:"pack1",name:"School Backpack",price:50,lvl:1,slot:"pack",kind:"wear"},
+ {id:"pack2",name:"City Explorer Backpack",price:125,lvl:3,slot:"pack",kind:"wear"},
+ {id:"poster",name:"NYC Poster",price:50,lvl:1,slot:"poster",kind:"decor"},
+ {id:"lamp",name:"Arcade Lamp",price:100,lvl:2,slot:"lamp",kind:"decor"},
+ {id:"chair",name:"Gaming Chair",price:175,lvl:4,slot:"chair",kind:"decor"}
+];
+const cat=id=>CAT.find(c=>c.id===id);
+
+/* ---------- image assets ---------- */
+const IMGS=["lua_exterior", "lua_lobby","lua_classroom","lua_hallway","lua_cafeteria","lua_gym","lua_rooftop", "characters_arcade_worker_arcade_worker", "characters_customer_miss_marcia_angry", "characters_customer_miss_marcia_arms_crossed", "characters_customer_miss_marcia_confident", "characters_customer_miss_marcia_excited", "characters_customer_miss_marcia_hand_on_hip", "characters_customer_miss_marcia_hands_on_hips", "characters_customer_miss_marcia_laughing", "characters_customer_miss_marcia_peace_sign", "characters_customer_miss_marcia_pointing", "characters_customer_miss_marcia_sad", "characters_customer_miss_marcia_shy", "characters_customer_miss_marcia_sitting", "characters_customer_miss_marcia_surprised", "characters_customer_miss_marcia_thinking", "characters_customer_miss_marcia_walking", "characters_customer_miss_marcia_waving", "characters_customer_miss_marcia_worried", "characters_jalen_jalen_confident_hands_on_hips", "characters_jalen_jalen_jumping_cheer", "characters_jalen_jalen_laughing_lean", "characters_jalen_jalen_pointing", "characters_jalen_jalen_surprised_armsout", "characters_jalen_jalen_thinking", "characters_mr_sal_mrsal_closeup_transparent", "characters_mr_sal_mrsal_confused", "characters_mr_sal_mrsal_hands_on_hips_full", "characters_mr_sal_mrsal_laughing", "characters_mr_sal_mrsal_pointing_up_full", "characters_mr_sal_mrsal_sad", "characters_mr_sal_mrsal_smirking", "characters_mr_sal_mrsal_thinking_full", "characters_mr_sal_mrsal_waving_full", "characters_theo_cropped_theo_arms_folded", "characters_theo_cropped_theo_explaining", "characters_theo_cropped_theo_hands_at_side", "characters_theo_cropped_theo_i_have_an_idea", "characters_theo_cropped_theo_jumping", "characters_theo_cropped_theo_sitting", "characters_theo_cropped_theo_thinking", "characters_theo_emotions_theo_angry", "characters_theo_emotions_theo_excited", "characters_theo_emotions_theo_happy", "characters_theo_emotions_theo_proud", "characters_theo_emotions_theo_sad", "characters_theo_emotions_theo_scared", "characters_theo_emotions_theo_surprised", "characters_theo_emotions_theo_thinking_emotion", "characters_theo_emotions_theo_worried", "characters_theo_poses_theo_arms_folded", "characters_theo_poses_theo_confused", "characters_theo_poses_theo_explaining", "characters_theo_poses_theo_hands_at_side", "characters_theo_poses_theo_i_have_an_idea", "characters_theo_poses_theo_jumping", "characters_theo_poses_theo_peace_sign", "characters_theo_poses_theo_sitting", "characters_theo_poses_theo_thinking", "characters_theo_poses_theo_waving", "ls_ts_cam_goldenhour", "ls_ts_loc_clothing", "ls_ts_loc_theos_apartment", "ls_ts_panorama_wide", "settings_arcade_bg_arcade_wide_interior", "settings_characters_at_the_arcade_scene_ep1_p1_worker_counter", "settings_characters_at_the_arcade_scene_ep1_p2_celebrate_jump", "settings_characters_at_the_arcade_scene_ep1_p2_fistbump_tickets", "settings_characters_at_the_arcade_scene_ep1_p2_highfive", "settings_characters_at_the_arcade_scene_ep1_p2_shooting_closeup", "settings_characters_at_the_arcade_scene_ep1_p2_shooting_letsgo"];
+const IM=n=>"img/"+n+".webp";
+const _ic={};
+function loadImg(n,cb){let i=_ic[n];if(!i){i=_ic[n]=new Image();i.cbs=[];i.onload=()=>{i.ok=true;i.cbs.forEach(f=>f());i.cbs=[]};i.src=IM(n)}if(cb){if(i.ok)cb();else i.cbs.push(cb)}return i}
+Object.values?0:0;
+const PIC={mrsal:"characters_mr_sal_mrsal_waving_full",theo:"characters_theo_emotions_theo_proud",sal:"teacher_wave",marcia:"characters_customer_miss_marcia_waving",jalen:"characters_jalen_jalen_pointing",arcade:"characters_arcade_worker_arcade_worker"};
+const CHARS=["theo","sal","marcia","jalen","arcade"];
+const HAPPY=["characters_theo_emotions_theo_happy","characters_theo_emotions_theo_proud","characters_theo_emotions_theo_excited","characters_theo_poses_theo_peace_sign"];
+const HMM=["characters_theo_emotions_theo_thinking_emotion","characters_theo_poses_theo_thinking","characters_theo_emotions_theo_worried"];
+let BANNER=null;
+/* ---------- drawing helpers ---------- */
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function lookFor(av,eq){
+  const L={skin:SKINS[av.skin],hair:HAIRC[av.hc],hs:av.hs,body:av.body,eyes:av.eyes,top:"#5b8def",pants:"#2f3d5a",shoes:"#f2f2f2",hat:null,glasses:false,pack:null,topStyle:"tee"};
+  eq=eq||{};
+  if(eq.top==="hoodie"){L.top="#1d2b64";L.topStyle="hoodie"}
+  if(eq.top==="jacket"){L.top="#6a2fb0";L.topStyle="jacket"}
+  if(eq.shoes==="sneak")L.shoes="#e8452c";
+  if(eq.hat==="cap")L.hat="#e8452c";
+  if(eq.glasses==="glasses")L.glasses=true;
+  if(eq.pack==="pack1")L.pack="#1fb6a6";
+  if(eq.pack==="pack2")L.pack="#ff8a1f";
+  return L;
+}
+const THEO={skin:SKINS[4],hair:"#111",hs:4,body:1,eyes:1,top:"#f5c518",pants:"#2b3f6b",shoes:"#c59a5f",hat:"#111",glasses:false,pack:null,topStyle:"hoodie",capBack:true};
+const JALEN={skin:SKINS[3],hair:"#1b1b1b",hs:3,body:1,eyes:2,top:"#1fb6a6",pants:"#3a3a3a",shoes:"#fff",hat:null,glasses:false,pack:null,topStyle:"tee"};
+const SAL={skin:SKINS[1],hair:"#777",hs:0,body:2,eyes:0,top:"#8b5a2b",pants:"#2f3d5a",shoes:"#5a3a1f",hat:null,glasses:true,pack:null,topStyle:"jacket"};
+const MARCIA={skin:SKINS[2],hair:"#4a2c17",hs:2,body:1,eyes:2,top:"#e8452c",pants:"#2f3d5a",shoes:"#222",hat:null,glasses:false,pack:null,topStyle:"tee"};
+const ARC={skin:SKINS[0],hair:"#c0392b",hs:1,body:0,eyes:1,top:"#8a2be2",pants:"#222",shoes:"#00e5ff",hat:null,glasses:false,pack:null,topStyle:"hoodie"};
+
+function shade(hex,a){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const f=v=>Math.max(0,Math.min(255,Math.round(a<0?v*(1+a):v+(255-v)*a)));return "#"+[f(r),f(g),f(b)].map(v=>v.toString(16).padStart(2,"0")).join("")}
+function drawAvatar(c,x,y,s,L){
+  const OL="#3b2417",bw=[24,28,34][L.body]||28,sk=L.skin,skd=shade(sk,-.2),hy=-80,hr=23;
+  const st=w=>{c.lineWidth=w||2.4;c.strokeStyle=OL;c.lineJoin="round";c.stroke()};
+  const fl=(col,w)=>{c.fillStyle=col;c.fill();st(w)};
+  c.save();c.translate(x,y);c.scale(s,s);
+  c.fillStyle="rgba(60,40,30,.22)";c.beginPath();c.ellipse(0,1,bw*.95,7,0,0,7);c.fill();
+  // back hair
+  if(L.hs===1){c.beginPath();c.arc(0,hy-4,hr+8,0,7);fl(L.hair)}
+  if(L.hs===2){rr(c,-hr-5,hy-8,hr*2+10,44,16);fl(L.hair)}
+  if(L.hs===3){[-1,1].forEach(d=>{c.beginPath();c.arc(d*15,hy-hr-1,10,0,7);fl(L.hair)})}
+  // backpack
+  if(L.pack){rr(c,-bw/2-9,-62,bw+18,38,11);fl(L.pack);c.fillStyle="rgba(255,255,255,.25)";rr(c,-bw/2-5,-58,bw+10,8,4);c.fill()}
+  // legs + shoes
+  [[-bw/2+3],[1]].forEach(p=>{rr(c,p[0],-30,bw/2-4,29,6);fl(L.pants)});
+  c.fillStyle="rgba(0,0,0,.12)";c.fillRect(-1,-28,2,24);
+  [[-bw/2-2],[0]].forEach(p=>{rr(c,p[0],-10,bw/2+6,12,6);fl(L.shoes);c.fillStyle="rgba(0,0,0,.14)";rr(c,p[0]+1,-3,bw/2+4,4,2);c.fill()});
+  // torso
+  rr(c,-bw/2,-64,bw,40,12);fl(L.top);
+  c.save();rr(c,-bw/2,-64,bw,40,12);c.clip();c.fillStyle="rgba(0,0,0,.1)";c.fillRect(bw*.12,-64,bw,44);c.fillStyle="rgba(255,255,255,.18)";c.fillRect(-bw/2,-64,5,44);c.restore();
+  if(L.topStyle==="hoodie"){c.beginPath();c.ellipse(0,-63,13,8,0,0,Math.PI);fl(shade(L.top,.15),2);
+    c.strokeStyle="#2a3f8f";c.lineWidth=2.4;c.beginPath();c.moveTo(-4,-58);c.lineTo(-4,-46);c.moveTo(4,-58);c.lineTo(4,-46);c.stroke();
+    rr(c,-10,-42,20,11,5);c.fillStyle="rgba(0,0,0,.1)";c.fill();st(1.6)}
+  else if(L.topStyle==="jacket"){c.fillStyle="#fff";c.fillRect(-1.5,-64,3,40);c.fillRect(-bw/2+1,-52,bw-2,4);st(0.01);c.beginPath();c.moveTo(0,-64);c.lineTo(0,-24);c.strokeStyle=OL;c.lineWidth=1.6;c.stroke()}
+  else{c.beginPath();c.arc(0,-64,7,0,Math.PI);fl(shade(L.top,-.15),2)}
+  // arms
+  [-1,1].forEach(d=>{const ax=d<0?-bw/2-9:bw/2-1;rr(c,ax,-62,10,30,5);fl(L.top);c.fillStyle="rgba(255,255,255,.35)";c.fillRect(ax+1,-38,8,3);c.beginPath();c.arc(ax+5,-30,6,0,7);fl(sk,2)});
+  // neck, ears, head
+  c.fillStyle=skd;c.fillRect(-5,-71,10,9);
+  [-1,1].forEach(d=>{c.beginPath();c.arc(d*(hr+.5),hy+3,6,0,7);fl(sk,2);c.beginPath();c.arc(d*(hr+.5),hy+3,2.6,0,7);c.fillStyle=skd;c.fill()});
+  c.beginPath();c.ellipse(0,hy,hr+1,hr,0,0,7);fl(sk);
+  // front hair
+  c.fillStyle=L.hair;
+  if(L.hs===0||L.hs===2||L.hs===3){c.beginPath();c.moveTo(-hr-1,hy-1);c.bezierCurveTo(-hr-3,hy-hr-9,hr+3,hy-hr-9,hr+1,hy-1);c.quadraticCurveTo(hr-3,hy-9,6,hy-12);c.quadraticCurveTo(-4,hy-6,-hr-1,hy-1);c.closePath();fl(L.hair)}
+  if(L.hs===1){c.beginPath();c.moveTo(-hr+1,hy-8);c.bezierCurveTo(-hr,hy-hr-2,hr,hy-hr-2,hr-1,hy-8);c.quadraticCurveTo(0,hy-16,-hr+1,hy-8);c.closePath();c.fillStyle=L.hair;c.fill()}
+  if(L.hs===4&&!L.hat){c.beginPath();c.moveTo(-hr,hy-3);c.bezierCurveTo(-hr-1,hy-hr-3,hr+1,hy-hr-3,hr,hy-3);c.quadraticCurveTo(0,hy-12,-hr,hy-3);c.closePath();fl(L.hair,1.6);c.fillStyle="rgba(255,255,255,.2)";for(let i=0;i<10;i++){c.beginPath();c.arc(-14+i*3,hy-14-(i%3)*2,.8,0,7);c.fill()}}
+  if(L.hs<4&&!L.hat){c.strokeStyle="rgba(255,255,255,.35)";c.lineWidth=2;c.beginPath();c.arc(-6,hy-hr+2,9,Math.PI*1.1,Math.PI*1.45);c.stroke()}
+  // brows
+  c.strokeStyle=shade(L.hair,-.1);c.lineWidth=2.6;c.lineCap="round";[-1,1].forEach(d=>{c.beginPath();c.moveTo(d*4,hy-9);c.quadraticCurveTo(d*9,hy-12,d*14,hy-9);c.stroke()});c.lineCap="butt";
+  // eyes
+  [-1,1].forEach(d=>{const ex=d*9;
+    if(L.eyes===2){c.strokeStyle=OL;c.lineWidth=2.8;c.lineCap="round";c.beginPath();c.arc(ex,hy-1,5,Math.PI*1.1,Math.PI*1.9);c.stroke();c.lineCap="butt"}
+    else{const w=L.eyes===1?6.2:5,h=L.eyes===1?7.4:6;c.beginPath();c.ellipse(ex,hy-1,w,h,0,0,7);fl("#fff",1.8);
+      c.beginPath();c.arc(ex+d*.4,hy-.5,w*.62,0,7);c.fillStyle="#4a2c17";c.fill();c.beginPath();c.arc(ex+d*.4,hy-.5,w*.3,0,7);c.fillStyle="#150b05";c.fill();c.beginPath();c.arc(ex+d*.4+1.6,hy-2.4,1.5,0,7);c.fillStyle="#fff";c.fill()}});
+  // blush, nose, mouth
+  c.fillStyle="rgba(214,86,66,.38)";[-1,1].forEach(d=>{c.beginPath();c.ellipse(d*15,hy+7,5,3.4,0,0,7);c.fill()});
+  c.strokeStyle=skd;c.lineWidth=2.2;c.lineCap="round";c.beginPath();c.moveTo(-3,hy+6);c.quadraticCurveTo(0,hy+9,3,hy+6);c.stroke();c.lineCap="butt";
+  c.beginPath();c.moveTo(-8,hy+11);c.quadraticCurveTo(0,hy+22,8,hy+11);c.quadraticCurveTo(0,hy+13,-8,hy+11);c.closePath();fl("#8a2f2f",1.8);
+  c.beginPath();c.moveTo(-7,hy+11.5);c.quadraticCurveTo(0,hy+14.5,7,hy+11.5);c.quadraticCurveTo(0,hy+17,-7,hy+11.5);c.fillStyle="#fff";c.fill();
+  // glasses
+  if(L.glasses){[-1,1].forEach(d=>{c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?5:9;c.lineTo(d*9+Math.cos(a)*r,hy-1+Math.sin(a)*r)}c.closePath();c.fillStyle="rgba(255,201,60,.45)";c.fill();c.strokeStyle="#c98a00";c.lineWidth=2;c.stroke()});c.strokeStyle="#c98a00";c.beginPath();c.moveTo(-3,hy-1);c.lineTo(3,hy-1);c.stroke()}
+  // cap (worn backwards, like Theo)
+  if(L.hat){c.beginPath();c.moveTo(-hr-2,hy-3);c.bezierCurveTo(-hr-3,hy-hr-12,hr+3,hy-hr-12,hr+2,hy-3);c.closePath();fl(L.hat);
+    c.beginPath();c.arc(0,hy-hr-6,3.5,0,7);fl(shade(L.hat,-.2),1.6);
+    c.beginPath();c.moveTo(hr+1,hy-8);c.quadraticCurveTo(hr+16,hy-6,hr+14,hy+2);c.quadraticCurveTo(hr+6,hy-1,hr+1,hy-1);c.closePath();fl(shade(L.hat,-.15),2);
+    c.strokeStyle="rgba(255,255,255,.3)";c.lineWidth=2;c.beginPath();c.arc(-5,hy-hr-1,10,Math.PI*1.1,Math.PI*1.45);c.stroke()}
+  c.restore();
+}
+
+function portrait(cv,L,key){const c=cv.getContext("2d");const draw=()=>{c.clearRect(0,0,cv.width,cv.height);const k=key||L.pic;if(k){const im=loadImg(PIC[k]);if(im.ok){const s=cv.width/im.naturalWidth;c.drawImage(im,0,0,im.naturalWidth,Math.min(im.naturalHeight,cv.height/s),0,0,cv.width,Math.min(im.naturalHeight*s,cv.height));return}loadImg(PIC[k],draw)}drawAvatar(c,cv.width/2,cv.height+66,1.55,L)};draw()}
+
+function drawHero(c,x,y,hh,idx){const n=HERO(idx);const im=loadImg(n);if(im.ok){const w=im.naturalWidth*hh/im.naturalHeight;c.drawImage(im,x-w/2,y-hh,w,hh)}else{c.fillStyle="rgba(0,0,0,.2)";c.beginPath();c.ellipse(x,y-4,hh*.12,6,0,0,7);c.fill()}}
+/* ---------- math visuals ---------- */
+function vGroups(g,n){
+  const cols=Math.min(g,4),rows=Math.ceil(g/cols),gw=140,gh=100,W=cols*gw+10,H=rows*gh+10;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${g} groups of dots">`;
+  for(let i=0;i<g;i++){
+    const gx=5+(i%cols)*gw,gy=5+Math.floor(i/cols)*gh;
+    s+=`<rect x="${gx}" y="${gy}" width="${gw-10}" height="${gh-10}" rx="16" fill="#fff4d6" stroke="#f0b429" stroke-width="3"/>`;
+    const dc=n<=6?3:n<=12?4:5,dr=Math.ceil(n/dc),cell=Math.min(24,(gw-30)/dc,(gh-26)/dr);
+    const ox=gx+(gw-10-dc*cell)/2+cell/2,oy=gy+(gh-10-dr*cell)/2+cell/2;
+    for(let k=0;k<n;k++)s+=`<circle cx="${ox+(k%dc)*cell}" cy="${oy+Math.floor(k/dc)*cell}" r="${cell*.34}" fill="#e8452c"/>`;
+  }
+  return s+"</svg>";
+}
+function vArray(r,c){
+  const cell=Math.min(34,540/c,230/r),W=c*cell+16,H=r*cell+16;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="An array of dots with ${r} rows and ${c} columns"><rect x="2" y="2" width="${W-4}" height="${H-4}" rx="12" fill="#e9f7f5" stroke="#1fb6a6" stroke-width="3"/>`;
+  for(let i=0;i<r;i++)for(let j=0;j<c;j++)s+=`<circle cx="${8+cell/2+j*cell}" cy="${8+cell/2+i*cell}" r="${cell*.32}" fill="#1d2b64"/>`;
+  return s+"</svg>";
+}
+function vPile(n){
+  const dc=5,dr=Math.ceil(n/dc),cell=34,W=dc*cell+20,H=dr*cell+20;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${n} apples in one pile"><rect x="2" y="2" width="${W-4}" height="${H-4}" rx="14" fill="#fff4d6" stroke="#f0b429" stroke-width="3"/>`;
+  for(let k=0;k<n;k++)s+=`<circle cx="${10+cell/2+(k%dc)*cell}" cy="${10+cell/2+Math.floor(k/dc)*cell}" r="11" fill="#e8452c"/><rect x="${10+cell/2+(k%dc)*cell-1}" y="${10+cell/2+Math.floor(k/dc)*cell-16}" width="3" height="6" fill="#3a7d2c"/>`;
+  return s+"</svg>";
+}
+
+/* ---------- missions and items (40) ---------- */
+const N=(q,a,h,e,v)=>({t:"num",q,a,h,e,v});
+const C=(q,o,a,h,e,v)=>({t:"mc",q,o,a,h,e,v});
+const MISSIONS=[
+{id:1,title:"Equal Groups",loc:"school",npc:"sal",focus:"Equal groups and 'times as many'",std:"3.OA.A.1 review → 4.OA.A.1 (draft)",mins:4,
+ setup:"Let's practice equal groups. Each question is a small puzzle about groups that are the same size.",
+ items:[
+ N("There are 4 bags with 3 apples in each bag. How many apples are there in all?",4*3,["Each bag has the same number of apples. Try skip counting by 3, four times.","3, 6, 9, 12. That is 4 groups of 3."],"4 groups of 3 is 4 × 3 = "+4*3+" apples.",vGroups(4,3)),
+ C("Which equation matches 5 groups of 6?",["5 + 6","5 × 6","6 − 5","5 ÷ 6"],1,["Equal groups put together use multiplication.","There are 5 groups with 6 in each group: 5 × 6."],"5 groups of 6 is 5 × 6 = "+5*6+"."),
+ N("A snack table has 6 boxes. Each box holds 4 granola bars. How many granola bars are there?",6*4,["Picture 6 equal groups of 4.","4, 8, 12, 16, 20, 24."],"6 groups of 4 is 6 × 4 = "+6*4+"."),
+ N("Count the groups. How many dots are there in all?",3*5,["Count how many are in one group, then count the groups.","5, 10, 15."],"3 groups of 5 is 3 × 5 = "+3*5+".",vGroups(3,5)),
+ N("Each tray holds 9 muffins. The bakery has 3 trays. How many muffins is that?",9*3,["3 equal groups of 9 muffins.","9 + 9 + 9 is the same as 3 × 9."],"3 groups of 9 is 3 × 9 = "+27+" muffins."),
+ C("Which sentence matches 28 = 4 × 7?",["28 is 4 times as many as 7.","28 is 4 more than 7.","7 is 4 times as many as 28.","28 is 7 more than 4."],0,["\"Times as many\" is a way to read multiplication as a comparison.","4 × 7 = 28, so 28 is 4 groups of 7. That is 4 times as many as 7."],"28 = 4 × 7 means 28 is 4 times as many as 7. It is also 7 times as many as 4."),
+ N("Jalen puts 5 hot dogs on each of 8 plates. How many hot dogs are there?",5*8,["8 equal groups of 5.","Count by 5s eight times: 5, 10, 15 …"],"8 groups of 5 is 8 × 5 = "+40+"."),
+ N("A festival booth has 9 bags. Each bag has 6 pretzels. How many pretzels are there?",9*6,["9 equal groups of 6.","Try 10 × 6 = 60, then take away one group of 6."],"9 × 6 = "+54+". (10 × 6 is 60, and 60 − 6 is 54.)")
+]},
+{id:2,title:"Array Alley",loc:"school",npc:"sal",focus:"Connect rows and columns to multiplication",std:"3.OA.A.1 review → 4.NBT.B.5 (draft)",mins:4,
+ setup:"Arrays are dots in rows and columns. Count the rows, count how many are in each row, then think multiplication!",
+ items:[
+ N("This array has 3 rows with 7 dots in each row. How many dots are there?",3*7,["Each row has 7 dots. How many rows are there?","7, 14, 21."],"3 rows of 7 is 3 × 7 = "+21+".",vArray(3,7)),
+ N("Look at the array. How many dots are there in all?",5*4,["Count the rows and the dots in one row.","4 + 4 + 4 + 4 + 4."],"5 rows of 4 is 5 × 4 = "+20+".",vArray(5,4)),
+ C("A poster has 6 rows of 8 stickers. Which equation tells the total?",["6 + 8 = 14","6 × 8 = 48","8 − 6 = 2","48 ÷ 6 = 8"],1,["Rows of the same size mean multiplication.","6 rows, 8 in each row: 6 × 8."],"6 rows of 8 is 6 × 8 = "+48+"."),
+ N("A garden has 3 rows with 14 plants in each row. Break 14 into 10 + 4. How many plants are there?",3*14,["Split 14 into 10 and 4.","3 × 10 = 30 and 3 × 4 = 12. Add them."],"3 × 14 = 30 + 12 = "+42+" plants."),
+ N("This array is a square with 6 rows and 6 columns. How many dots are there?",6*6,["Rows and columns match, so it is 6 groups of 6.","6, 12, 18, 24, 30, 36."],"6 × 6 = "+36+".",vArray(6,6)),
+ C("Which array has the same number of dots as 4 × 6?",["6 rows of 4","3 rows of 7","5 rows of 5","8 rows of 2"],0,["You can turn an array on its side.","4 rows of 6 and 6 rows of 4 have the same total."],"4 × 6 = 24 and 6 × 4 = 24. The others have 21, 25, and 16 dots."),
+ N("A rug pattern has 4 rows with 23 squares in each row. Use 4 × 20 and 4 × 3. What is 4 × 23?",4*23,["Break 23 into 20 + 3.","4 × 20 = 80 and 4 × 3 = 12."],"4 × 23 = 80 + 12 = "+92+"."),
+ N("An area model splits 6 × 17 into 6 × 10 and 6 × 7. What is 6 × 17?",6*17,["Find each part: 6 × 10 and 6 × 7.","60 + 42."],"6 × 17 = 60 + 42 = "+102+"."),
+]},
+{id:3,title:"School Supply Store",loc:"square",npc:"marcia",focus:"Multiplication in real-life word problems",std:"4.OA.A.3 / 4.NBT.B.5 (draft)",mins:5,
+ setup:"The festival needs school supplies! Help me figure out how many of each thing we need.",
+ items:[
+ N("Ms. Okafor buys 3 packs of pencils. Each pack has 12 pencils. How many pencils is that?",3*12,["Break 12 into 10 + 2.","3 × 10 = 30 and 3 × 2 = 6. Add them."],"3 × 12 = 3 × 10 + 3 × 2 = 30 + 6 = "+36+"."),
+ N("Notebooks cost $4 each. How many dollars do 7 notebooks cost?",7*4,["7 equal groups of $4.","4, 8, 12, 16, 20, 24, 28."],"7 × 4 = "+28+" dollars."),
+ N("Each box has 24 crayons. The school buys 4 boxes. How many crayons is that?",4*24,["Break 24 into 20 + 4.","4 × 20 = 80 and 4 × 4 = 16. Add them."],"4 × 24 = 80 + 16 = "+96+"."),
+ N("Miss Marcia puts 6 markers at each of 15 tables. How many markers does she need?",6*15,["Break 15 into 10 + 5.","6 × 10 = 60 and 6 × 5 = 30. Add them."],"6 × 15 = 60 + 30 = "+90+"."),
+ N("A backpack costs $16. How many dollars do 5 backpacks cost?",5*16,["Break 16 into 10 + 6.","5 × 10 = 50 and 5 × 6 = 30. Add them."],"5 × 16 = 50 + 30 = "+80+" dollars."),
+ C("Which equation shows the total for 8 packs of 25 sticky notes?",["8 + 25 = 33","8 × 25 = 200","25 − 8 = 17","200 ÷ 8 = 25"],1,["Equal packs mean multiplication. Which choice multiplies 8 and 25?","Four quarters make a dollar, so 8 × 25 is like 8 quarters: 200."],"8 packs of 25 is 8 × 25 = "+200+"."),
+ N("The store has 9 shelves. Each shelf holds 14 books. How many books are on the shelves?",9*14,["Break 14 into 10 + 4.","9 × 10 = 90 and 9 × 4 = 36. Add them."],"9 × 14 = 90 + 36 = "+126+"."),
+ N("A school buys 30 boxes of erasers. Each box has 12 erasers. How many erasers is that?",30*12,["Try 3 × 12 first, then think about tens.","3 × 12 = 36, so 30 × 12 is 10 times as much."],"3 × 12 = 36, so 30 × 12 = "+360+".")
+]},
+{id:4,title:"Fair Share",loc:"school",npc:"sal",focus:"Division as fair sharing and grouping",std:"4.OA.A.3 / 4.NBT.B.6 (draft)",mins:4,
+ setup:"Sharing things fairly is division. Think about a multiplication fact that can help you!",
+ items:[
+ N("24 stickers are shared equally among 6 friends. How many stickers does each friend get?",24/6,["Think: 6 times what number equals 24?","6 × 4 = 24, so 24 ÷ 6 = 4."],"24 ÷ 6 = "+4+" because 6 × 4 = 24."),
+ N("30 pencils go into 5 cups, with the same number in each cup. How many pencils are in each cup?",30/5,["What number times 5 equals 30?","5 × 6 = 30."],"30 ÷ 5 = "+6+" because 5 × 6 = 30."),
+ C("What is 20 ÷ 4?",["4","5","6","16"],1,["What number times 4 equals 20?","4 × 5 = 20."],"20 ÷ 4 = "+5+" because 4 × 5 = 20."),
+ N("15 apples are shared equally into 3 baskets. How many apples go in each basket?",15/3,["Deal the apples out one at a time to each basket.","Or think: 3 times what number equals 15?"],"15 ÷ 3 = "+5+" because 3 × 5 = 15.",vPile(15)),
+ C("50 cookies are packed 6 to a box. How many full boxes can be filled, and how many cookies are left over?",["8 boxes, 2 left over","8 boxes, 0 left over","9 boxes, 4 left over","7 boxes, 8 left over"],0,["Think of the closest multiple of 6 without going over 50.","6 × 8 = 48, and 50 − 48 = 2."],"6 × 8 = 48, so there are 8 full boxes and 50 − 48 = 2 cookies left over."),
+ N("6 × 7 = 42. Use this fact to solve 42 ÷ 7 = ?",42/7,["Multiplication and division are related.","If 6 × 7 = 42, then 42 split into 7 groups gives 6 in each."],"42 ÷ 7 = "+6+" because 6 × 7 = 42."),
+ N("Use place value: 96 = 80 + 16. 80 ÷ 4 = 20 and 16 ÷ 4 = 4. What is 96 ÷ 4?",96/4,["Add the two partial answers.","20 + 4."],"96 ÷ 4 = 20 + 4 = "+24+"."),
+ C("29 students ride in vans that each hold 6 students. How many vans are needed so everyone has a seat?",["4 vans","5 vans","6 vans","29 vans"],1,["29 ÷ 6 = 4 with 5 left over. What should happen to the 5 students?","4 full vans is not enough. The 5 extra students need one more van."],"29 ÷ 6 = 4 remainder 5. The 5 left over still need a ride, so 5 vans are needed."),
+]},
+{id:5,title:"Operation Detective",loc:"square",npc:"marcia",focus:"Decide whether to multiply or divide",std:"4.OA.A.1 / 4.OA.A.2 / 4.OA.A.3 (draft)",mins:5,
+ setup:"Is it equal groups put together, or a total split up? Be an operation detective and then solve the case!",
+ items:[
+ N("A shelf has 6 rows of books with 9 books in each row. How many books are there?",6*9,["Equal groups are being put together. That means multiply.","6 × 9."],"Put equal groups together: 6 × 9 = "+54+"."),
+ N("56 stickers are shared equally among 7 kids. How many stickers does each kid get?",56/7,["A total is being split up. That means divide.","56 ÷ 7: what number times 7 equals 56?"],"Split a total: 56 ÷ 7 = "+8+" because 7 × 8 = 56."),
+ N("Jalen has 15 trading cards. Theo has 4 times as many cards as Jalen. How many cards does Theo have?",4*15,["\"4 times as many\" means 4 groups of 15.","15 × 4 = 10 × 4 + 5 × 4."],"4 times as many as 15 is 4 × 15 = 40 + 20 = "+60+" cards."),
+ N("72 players are split into teams of 8. How many teams are there?",72/8,["How many groups of 8 are in 72? That is division.","8 × 9 = 72."],"72 ÷ 8 = "+9+" teams because 8 × 9 = 72."),
+ C("Maria has 3 times as many stickers as Leo. Leo has 8 stickers. Which equation shows how many Maria has?",["3 + 8 = 11","3 × 8 = 24","8 ÷ 3 = ?","8 − 3 = 5"],1,["\"Times as many\" is a multiplication comparison.","Maria has 3 groups of Leo's 8."],"3 times as many as 8 is 3 × 8 = "+24+" stickers."),
+ C("45 pretzels are packed 5 to a bag. Which operation finds how many bags are needed?",["Multiply (45 × 5)","Divide (45 ÷ 5)","Add (45 + 5)","Subtract (45 − 5)"],1,["Are you splitting the total into equal groups?","How many groups of 5 are in 45?"],"Split 45 into groups of 5: 45 ÷ 5 = "+9+" bags."),
+ N("49 photos are put equally into 7 albums. How many photos are in each album?",49/7,["The total is shared out equally: divide.","7 × 7 = 49."],"49 ÷ 7 = "+7+" because 7 × 7 = 49."),
+ N("A jacket costs $18. A coat costs 3 times as much as the jacket. How many dollars does the coat cost?",3*18,["3 times as much means 3 groups of $18.","3 × 10 = 30 and 3 × 8 = 24."],"3 × 18 = 30 + 24 = "+54+" dollars."),
+]}
+];
+MISSIONS.forEach(m=>m.items.forEach(it=>{if(it.t==="num"&&!Number.isInteger(it.a))throw new Error("non-integer answer in mission "+m.id)}));
+THEO.pic='theo';JALEN.pic='jalen';SAL.pic='sal';MARCIA.pic='marcia';ARC.pic='arcade';
+const NPCS={sal:{name:"Ms. Okafor",look:SAL},marcia:{name:"Miss Marcia",look:MARCIA},theo:{name:"Theo",look:THEO},jalen:{name:"Jalen",look:JALEN},arcade:{name:"Arcade Worker",look:ARC},mrsal:{name:"Mr. Sal",look:Object.assign({},SAL,{pic:"mrsal"})}};
+const mdone=id=>!!(S.missions[id]&&S.missions[id].done);
+function mState(m){if(mdone(m.id))return"done";if(m.id>1&&!mdone(m.id-1))return"lock";return(S.missions[m.id]&&S.missions[m.id].progress)?"prog":"ready"}
+const nextMission=()=>MISSIONS.find(m=>!mdone(m.id))||null;
+const doneCount=()=>MISSIONS.filter(m=>mdone(m.id)).length;
+
+/* ---------- utils ---------- */
+function toast(t){const el=$("#toast");el.textContent=t;el.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>el.style.display="none",2600)}
+function speak(t){if(!("speechSynthesis" in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/×/g,"times").replace(/÷/g,"divided by").replace(/−/g,"minus").replace(/\+/g,"plus"));u.rate=.95;speechSynthesis.speak(u)}catch(e){}}
+function setScreen(n){if(n==="map"&&document.getElementById("mapwrap").classList.contains("flat"))load2D();$$(".screen").forEach(s=>s.classList.remove("active"));$("#s-"+n).classList.add("active");document.body.classList.toggle("play3d",n==="map"&&!$("#mapwrap").classList.contains("flat"));document.body.classList.remove("drawer");if(n==="map"){hud();loopStart();const f=document.getElementById("street3d");if(f&&!$("#mapwrap").classList.contains("flat"))setTimeout(()=>{try{f.focus();f.contentWindow.focus();f.contentWindow.postMessage({lv3d:"name",name:S.name,hero:(S.avatar&&S.avatar.hero)|0},"*");sendMissions()}catch(_){}},60)}}
+function modalOpen(){return $("#modal").classList.contains("open")}
+function openModal(html,after){const m=$("#modal");const bn=BANNER;BANNER=null;if(bn)html=html.replace(/(<\/div>)/,'$1<img class="ban" src="'+IM(bn)+'" alt="">');m.innerHTML=`<div class="panel">${html}</div>`;m.classList.add("open");m.scrollTop=0;after&&after(m);const f=m.querySelector("[autofocus],button");f&&f.focus&&f.focus()}
+function closeModal(){if(typeof quizStop==="function")quizStop();$("#modal").classList.remove("open","arc-mode");$("#modal").innerHTML="";focus3d()}
+/* give keyboard focus back to the 3D street after any 2D screen closes */
+function focus3d(){const f=document.getElementById("street3d");if(f&&$("#s-map").classList.contains("active")&&!$("#mapwrap").classList.contains("flat"))setTimeout(()=>{try{f.focus();f.contentWindow.focus()}catch(_){}},30)}
+var ENTER=null;const busy=()=>!!ENTER||modalOpen()||$("#dlg").classList.contains("open")||$("#s-mission").classList.contains("active");
+
+/* dialogue */
+let DQ=null;
+function say(who,lines,cb){
+  DQ={who,lines:lines.slice(),i:0,cb};renderDlg();
+}
+function renderDlg(){
+  const d=$("#dlg"),q=DQ,n=NPCS[q.who]||{name:q.who,look:THEO};
+  d.innerHTML=`<div class="dbox"><canvas width="96" height="96"></canvas><div class="t"><div class="who">${n.name}</div><div id="dtxt">${q.lines[q.i]}</div></div><div class="b"><button class="btn sm" data-act="dnext" autofocus>${q.i<q.lines.length-1?"Next":"OK"}</button><button class="btn alt sm" data-act="dread" aria-label="Read aloud">🔊</button></div></div>`;
+  d.classList.add("open");portrait($("canvas",d),n.look);
+  if(S.settings.read)speak(q.lines[q.i]);
+  $("button",d).focus();
+}
+function dnext(){if(!DQ)return;DQ.i++;if(DQ.i>=DQ.lines.length){const cb=DQ.cb;DQ=null;$("#dlg").classList.remove("open");$("#dlg").innerHTML="";cb&&cb()}else renderDlg()}
+
+/* ---------- title / creator ---------- */
+let CR=null;
+function buildCreator(){
+  const hs=$("#o-hero");hs.innerHTML="";
+  for(let i=0;i<12;i++){const b=document.createElement("button");b.setAttribute("aria-pressed",CR.hero===i);b.setAttribute("aria-label",HERO_NAMES[i]);b.innerHTML=`<img src="${IM(HERO(i))}" alt="">`;b.onclick=()=>{CR.hero=i;buildCreator()};hs.appendChild(b)}
+  const bs=$("#o-bg");bs.innerHTML="";BGS.forEach((col,i)=>{const b=document.createElement("button");b.className="sw";b.style.background=col;b.setAttribute("aria-label","Backdrop "+(i+1));b.setAttribute("aria-pressed",CR.bg===i);b.onclick=()=>{CR.bg=i;buildCreator()};bs.appendChild(b)});
+  turnView("cPrev",()=>HERO(CR.hero),c=>{const g=c.createRadialGradient(150,330,10,150,330,260);g.addColorStop(0,"#fff");g.addColorStop(1,BGS[CR.bg]);c.fillStyle=g;c.fillRect(0,0,300,480)});$("#cName").textContent=HERO_NAMES[CR.hero];
+}
+function cleanName(v){return v.replace(/[^A-Za-z0-9 ]/g,"").trim().slice(0,14)}
+function nameOk(n){if(n.length<2)return"Pick a nickname with at least 2 letters.";const l=n.toLowerCase().replace(/\s/g,"");if(badName(n))return"Let's pick a different nickname.";return""}
+
+/* ---------- HUD ---------- */
+function hud(){try{renderActs()}catch(e){}
+  v2init();if(!S.howto&&S.created&&!hud.t){hud.t=1;setTimeout(()=>{if(!S.howto&&!busy())ACT.help()},900)}
+  const l=levelOf(S.xp),lo=LV[l-1],hi=LV[l]??LV[LV.length-1]+500,pct=l>=LV.length?100:Math.round((S.xp-lo)/(hi-lo)*100);
+  $("#hud").innerHTML=`<span class="pill">⭐ Level ${l}<span id="xpbar" aria-label="${pct}% to next level"><i style="width:${pct}%"></i></span></span><span class="pill">🪙 ${S.coins}<span class="lbl"> City Coins</span></span><span class="pill">🎪<span class="lbl"> Festival</span> ${doneCount()}/5</span><span class="sp"></span><button class="btn alt sm" data-act="today">📅 Today${S.dailyDone!==today()?" ●":""}</button><button class="btn alt sm" data-act="missions" aria-label="Missions">📋<span class="lbl"> Missions</span></button><button class="btn alt sm" data-act="goto">🧭 Go to…</button><button class="btn alt sm" data-act="help" aria-label="How to play">❓</button><button class="btn alt sm" data-act="settings">⚙️</button><button class="btn sm" id="menuBtn" data-act="drawer" aria-label="Places and activities">☰<span class="lbl"> Menu</span></button>`;
+  {const a=document.getElementById("acts");if(a&&!a.querySelector("#drawerExtra")){const d=document.createElement("div");d.id="drawerExtra";d.style.cssText="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem";d.innerHTML=`<button class="btn alt sm act" data-act="settings">⚙️ Settings</button><button class="btn alt sm act" data-act="help">❓ How to play</button><button class="btn alt sm act" onclick="document.getElementById('mapToggle').click()">🗺️ 2D map</button>`;a.appendChild(d)}}
+}
+
+/* ---------- map (Times Square photo) ---------- */
+const cv=$("#map"),cx=cv.getContext("2d");
+const MW=1120,MH=480,FY0=Math.round(MH*.80),FY1=Math.round(MH*.97);
+const LOCS={
+ school:{name:"Level Up Academy",door:{x:162,y:FY0+6},r:62,x0:0,x1:.22},
+ arcade:{name:"Arcade",door:{x:382,y:FY0+6},r:62,x0:.22,x1:.40},
+ square:{name:"Times Square",door:{x:560,y:FY0+36},r:80,x0:.40,x1:.58,pill:null},
+ shop:{name:"Clothing Store",door:{x:858,y:FY0+6},r:62,x0:.58,x1:.82},
+ apt:{name:"Your Apartment",door:{x:1038,y:FY0+6},r:62,x0:.82,x1:1}
+};
+const P={x:500,y:FY0+60,tx:null,ty:null,auto:null,face:1,dk:"front",idle:99,o:0,g:null};
+const TH={x:470,y:FY0+64,o:0,g:null};
+const keys={};setTimeout(()=>{for(let i=0;i<12;i++)["_back","_side","_fq","_bq"].forEach(q=>loadImg(HERO(i)+q));["map_theo","map_marcia"].forEach(n=>["_back","_side","_fq","_bq"].forEach(q=>loadImg(n+q)))},0);
+let loopOn=false,last=0,nearId=null;
+const BGIMG=loadImg("ls_ts_panorama_wide");
+function loopStart(){if(!loopOn){loopOn=true;last=performance.now();requestAnimationFrame(frame)}}
+function clampP(){P.x=Math.max(30,Math.min(MW-30,P.x));P.y=Math.max(FY0,Math.min(FY1,P.y))}
+function frame(now){
+  if(!$("#s-map").classList.contains("active")){loopOn=false;return}
+  const dt=Math.min(40,now-last)/16.67;last=now;
+  const ox=P.x,oy=P.y;
+  if(!busy()){
+    let dx=(keys.right?1:0)-(keys.left?1:0),dy=(keys.down?1:0)-(keys.up?1:0);
+    const sp=2.8;
+    if(dx||dy){P.tx=null;P.auto=null;const m=Math.hypot(dx,dy);P.x+=dx/m*sp*dt;P.y+=dy/m*sp*.6*dt;P.idle=0}
+    else if(P.tx!=null){const ddx=P.tx-P.x,ddy=P.ty-P.y,dm=Math.hypot(ddx,ddy/.6);
+      if(dm<7){P.tx=null;if(P.auto){const a=P.auto;P.auto=null;enter(a)}}else{const st=Math.min(dm,sp*dt);P.x+=ddx/dm*st;P.y+=ddy/dm*st;P.idle=0}}
+    else P.idle+=dt;
+    clampP();starCheck();
+  }
+  if(!ENTER){const mx=P.x-ox;if(Math.abs(mx)>.05)P.face=Math.sign(mx);gaitStep(P,mx,P.y-oy,dt,1);P.dk=OCT[P.o][0]}
+  {const tx=P.x-48*P.face,ty=P.y+4,tox=TH.x,toy=TH.y;TH.x+=(tx-TH.x)*.08*dt;TH.y+=(ty-TH.y)*.08*dt;gaitStep(TH,TH.x-tox,TH.y-toy,dt,.95)}
+  nearId=null;let best=1e9;
+  for(const id in LOCS){const L=LOCS[id],d=Math.hypot(P.x-L.door.x,(P.y-L.door.y)*1.6);if(d<L.r&&d<best){best=d;nearId=id}}
+  if(ENTER&&now-ENTER.t0>=2350){const id=ENTER.id;ENTER=null;P.o=0;P.g=null;P.dk="front";P.idle=99;openLocation(id)}
+  else if(!busy()&&keys.up&&!keys.left&&!keys.right&&nearId&&DOORP[nearId]&&P.y<=FY0+9)startEnter(nearId);
+  const ab=$("#actBtn");
+  if(nearId&&!busy()){ab.hidden=false;ab.textContent=(nearId==="square"?"Talk to Miss Marcia":"Enter "+LOCS[nearId].name)+"  (E)"}else ab.hidden=true;
+  drawMap(now,dt);
+  requestAnimationFrame(frame);
+}
+function px(t,x,y,size,col,align,w){cx.font=`800 ${size}px "Trebuchet MS",sans-serif`;cx.textAlign=align||"center";cx.fillStyle=col;cx.fillText(t,x,y,w)}
+
+/* ---------- natural walk cycle (8 directions, legs driven by distance walked) ---------- */
+function rig(im){if(im.rg!==undefined)return im.rg;im.rg=null;
+ const W=im.naturalWidth,H=im.naturalHeight,k=document.createElement("canvas");k.width=W;k.height=H;const g=k.getContext("2d");g.drawImage(im,0,0);const d=g.getImageData(0,0,W,H).data;
+ const op=(x,y)=>d[(y*W+x)*4+3]>40,runs=y=>{const r=[];let st=-1;for(let x=0;x<W;x++){const a=op(x,y);if(a&&st<0)st=x;if((!a||x===W-1)&&st>=0){r.push([st,x]);st=-1}}return r.filter(q=>q[1]-q[0]>W*.025)};
+ let bot=H-1;while(bot>H*.5&&!runs(bot).length)bot--;
+ let A=null,B=null;
+ for(const f of [.05,.08,.11,.14,.17,.2]){const y=Math.round(bot-f*H),r=runs(y);if(r.length<2)continue;
+  const lo=r[0][0],hi=r[r.length-1][1],cxm=(lo+hi)/2;let best=null;
+  for(let i=0;i<r.length-1;i++){const gc=(r[i][1]+r[i+1][0])/2,gap=r[i+1][0]-r[i][1];if(gap<2)continue;const sc=Math.abs(gc-cxm);if(!best||sc<best.sc)best={sc,i}}
+  if(best&&best.sc<(hi-lo)*.3){A=[r[0][0],r[best.i][1]];B=[r[best.i+1][0],r[r.length-1][1]];var ys=y;break}}
+ if(!A)return null;
+ let cr=null,mid=(A[1]+B[0])/2;
+ for(let y=ys-1;y>H*.3;y--){const q=runs(y),a=q.filter(s=>s[1]>=A[0]-2&&s[0]<=A[1]+2),b=q.filter(s=>s[1]>=B[0]-2&&s[0]<=B[1]+2);
+  if(!a.length||!b.length){cr=y+1;break}
+  if(a.some(s=>b.includes(s))){cr=y+1;break}
+  A=[Math.min(...a.map(s=>s[0])),Math.max(...a.map(s=>s[1]))];B=[Math.min(...b.map(s=>s[0])),Math.max(...b.map(s=>s[1]))];mid=(A[1]+B[0])/2}
+ if(cr===null||cr<H*.38||cr>H*.82)return null;
+ // feet: centroid of bottom 12% each side, and lowest row per side
+ let sl=0,nl=0,sr=0,nr=0,bl=0,br=0;for(let y=Math.round(cr+(bot-cr)*.8);y<=bot;y++)for(let x=0;x<W;x++)if(op(x,y)){if(x<mid){sl+=x;nl++;bl=y}else{sr+=x;nr++;br=y}}
+ const Lh=bot-cr,fl=nl?sl/nl:mid,fr=nr?sr/nr:mid;
+ return im.rg={cr,mid,bot,Lh,fl,fr,bl,br,thL:Math.atan(Math.max(0,mid-fl)/Lh),thR:Math.atan(Math.max(0,fr-mid)/Lh)}}
+const HIPF={side:.66,fq:.64,bq:.62,back:.68,front:.63};
+function rig2(im,k){const key="r_"+k;if(im[key])return im[key];const R=rig(im),H=im.naturalHeight,W=im.naturalWidth;
+ let cr=k==="side"||k==="front"?(R&&R.cr>H*.55&&R.cr<H*.74?R.cr:H*HIPF[k]):H*HIPF[k];
+ const mid=R?R.mid:W/2,bot=R?R.bot:H-1;
+ const spread=R?Math.max(0,R.fr-R.fl):0;
+ let lx0=W,lx1=0;{const k2=document.createElement("canvas");k2.width=W;k2.height=H;const g2=k2.getContext("2d");g2.drawImage(im,0,0);const dd=g2.getImageData(0,0,W,H).data;
+  for(let yy=Math.round(cr+(bot-cr)*.4);yy<=bot;yy++)for(let xx=0;xx<W;xx++)if(dd[(yy*W+xx)*4+3]>40){if(xx<lx0)lx0=xx;if(xx>lx1)lx1=xx}}
+ if(lx1<=lx0){lx0=0;lx1=W}lx0=Math.max(0,lx0-3);lx1=Math.min(W,lx1+3);
+ return im[key]={cr:Math.round(cr),mid,bot,lx0,lx1,thL:R?R.thL:.3,thR:R?R.thR:.3,spread,lifted:R?(R.bl<R.br-4?0:R.br<R.bl-4?1:-1):-1}}
+/* g = distance walked in units of body height (null when standing still) */
+function walkSprite(n,k,x,y,hh,g,dir,c){c=c||cx;
+ const im=loadImg(k==="front"?n:n+"_"+k);if(!im.ok)return false;
+ const W=im.naturalWidth,H=im.naturalHeight,sc=hh/H,w=W*sc,flip=dir<0&&k!=="front"&&k!=="back";
+ c.fillStyle="rgba(0,0,0,.24)";c.beginPath();c.ellipse(x,y,w*(k==="side"?.3:.36),Math.max(4,hh*.018),0,0,7);c.fill();
+ c.save();c.translate(x,y);if(flip)c.scale(-1,1);
+ const rm=window.__rm&&__rm();if(rm&&g!=null)g=null;
+ const R=rig2(im,k),Lf=(H-R.cr)*sc,px0=-w/2+R.mid*sc,py0=-hh+R.cr*sc,ov=4;
+ const scis=k==="side"||k==="fq"||k==="bq";
+ // step length (body heights per step) and phase
+ const stepN=scis?Math.max(.2,Math.min(.34,R.spread/H)):.24;
+ let s=0,step=0,moving=g!=null;
+ if(moving){const q=g/stepN+(scis?.5:0);step=Math.floor(q);s=q-step}
+ let rise=0,lift=0,swing=-1,kL=0,kR=0,sx=0,mir=false;
+ if(scis){const a=moving?Math.abs(1-2*s):0, tL=Math.tan(Math.min(.6,R.thL)),tR=Math.tan(Math.min(.6,R.thR));
+  if(!moving){kL=tL;kR=-tR}else{kL=tL*(1-a);kR=-tR*(1-a)}
+  rise=Lf*(1-Math.cos((R.thL+R.thR)/2))*(moving?(1-a):1);
+  if(moving){lift=Lf*.12*Math.sin(Math.PI*s);swing=s<.5?0:1}}
+ else{ if(moving){mir=(step%2)===1;lift=Lf*(k==='front'?.17:.1)*Math.sin(Math.PI*s);rise=Lf*.03*Math.sin(Math.PI*s);
+   if(k==="front")swing=mir?1:0;else{swing=R.lifted<0?(mir?1:0):(mir?1-R.lifted:R.lifted)}
+   sx=(swing===0?1:-1)*hh*.008*Math.sin(Math.PI*s)}}
+ const leg=i=>{const x0=i?R.mid:R.lx0,sw=i?R.lx1-R.mid:R.mid-R.lx0,sy=1+(rise-(i===swing?lift:0))/Lf;
+  c.save();c.translate(px0,py0-rise);
+  if(mir){c.scale(-1,1)}
+  c.transform(1,0,i?kR:kL,sy,0,0);
+  c.drawImage(im,x0,R.cr-ov,sw,H-R.cr+ov,(x0-R.mid)*sc,-ov*sc,sw*sc,(H-R.cr+ov)*sc);c.restore()};
+ // draw swing leg first (behind), planted leg on top
+ const order=swing===1?[1,0]:[0,1];order.forEach(leg);
+ c.save();c.translate(sx,-rise);c.drawImage(im,0,0,W,R.cr+2,-w/2,-hh,w,(R.cr+2)*sc);
+ if(R.lx0>0)c.drawImage(im,0,R.cr+2,R.lx0,H-R.cr-2,-w/2,-hh+(R.cr+2)*sc,R.lx0*sc,(H-R.cr-2)*sc);
+ if(R.lx1<W)c.drawImage(im,R.lx1,R.cr+2,W-R.lx1,H-R.cr-2,-w/2+R.lx1*sc,-hh+(R.cr+2)*sc,(W-R.lx1)*sc,(H-R.cr-2)*sc);c.restore();
+ c.restore();return true}
+/* ---------- facing: 8 directions (full 360) with smooth turning ---------- */
+window.__rm=()=>!!(S.settings&&S.settings.nomo)||!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+const OCT=[["front",1],["fq",1],["side",1],["bq",1],["back",1],["bq",-1],["side",-1],["fq",-1]];
+const OCTN=["Front","Front-right","Right","Back-right","Back","Back-left","Left","Front-left"];
+const octOf=(dx,dy)=>((Math.round(Math.atan2(dx,dy/.6)/(Math.PI/4))%8)+8)%8;
+function turnTo(e,t,dt){if(e.o===undefined)e.o=t;if(e.o===t){e.tt=0;return}e.tt=(e.tt||0)+dt;
+ while(e.tt>=2.4&&e.o!==t){e.tt-=2.4;const d=(t-e.o+8)%8;const st=d===4?((e.o>0&&e.o<=4)?-1:1):(d<4?1:-1);e.o=(e.o+st+8)%8}}
+/* distance-driven gait: legs move exactly as far as the body travels, so feet never slide */
+function gaitStep(e,dx,dy,dt,hk,lockFront){const d=Math.hypot(dx,dy/.6)*ZW*scT(tOf(e.y));
+ if(d>.35*dt){e.g=(e.g==null?0:e.g)+d/(hhAt(e.y)*(hk||1));e.still=0;turnTo(e,octOf(dx,dy),dt)}
+ else{e.g=null;e.still=(e.still||0)+dt;turnTo(e,(e.still>30||lockFront)?0:(e.o||0),dt)}}
+function pill(t,x,y,col){cx.font='800 15px "Trebuchet MS",sans-serif';const w=cx.measureText(t).width+22;x=Math.max(w/2+6,Math.min(VW-w/2-6,x));cx.fillStyle=col||"rgba(29,43,100,.88)";rr(cx,x-w/2,y-14,w,26,13);cx.fill();px(t,x,y+5,15,"#fff")}
+/* ---------- directional sprites + door entry ---------- */
+const DOORP={school:{x:203,t:315,b:440,w:80},arcade:{x:478,t:372,b:452,w:86},shop:{x:1072,t:378,b:452,w:90},apt:{x:1298,t:345,b:432,w:44}};
+function doorScr(id){const d=DOORP[id],ky=498*SB-HZ;return{x:d.x*SB-CAM.bcam,t:d.t*SB-ky,b:d.b*SB-ky,w:d.w*SB}}
+function startEnter(id){if(ENTER||!DOORP[id])return false;Object.keys(keys).forEach(k=>keys[k]=false);P.tx=null;P.auto=null;P.o=4;P.dk="back";P.idle=0;ENTER={id,t0:performance.now(),x0:null};sfx("tap");return true}
+const eio=q=>q<=0?0:q>=1?1:.5-.5*Math.cos(Math.PI*q);
+function enterGeo(now,p,hh0){const T=now-ENTER.t0,g=doorScr(ENTER.id),e=eio(T/1500),sEnd=(g.b-g.t)/hh0*.9;
+ let x=p.x+(g.x-p.x)*e,y=p.y+(g.b+3-p.y)*e,s=1+(sEnd-1)*e,a=1;
+ if(T>1500){const q=Math.min(1,(T-1500)/400);y-=q*7;s*=1-.15*q;a=1-q}
+ return{x,y,s,a,mv:T<1500}}
+function drawDoorOpen(c,id,T){const o=eio((T-1000)/600);if(o<=0)return;const g=doorScr(id),x0=g.x-g.w/2,top=g.t,h=g.b-g.t;
+ c.save();c.beginPath();c.rect(x0,top,g.w,h);c.clip();
+ const gr=c.createLinearGradient(0,top,0,top+h);gr.addColorStop(0,"#2b1a12");gr.addColorStop(1,"#ffcf6e");c.globalAlpha=Math.min(1,o*5);c.fillStyle=gr;c.fillRect(x0,top,g.w,h);
+ const lw=g.w/2*(1-.82*o);c.fillStyle="#6b3d1e";c.strokeStyle="#2a160a";c.lineWidth=2;
+ [[x0,1],[x0+g.w,-1]].forEach(([hx,sg])=>{c.beginPath();c.moveTo(hx,top);c.lineTo(hx+sg*lw,top+o*g.w*.08);c.lineTo(hx+sg*lw,top+h-o*g.w*.08);c.lineTo(hx,top+h);c.closePath();c.fill();c.stroke()});
+ c.restore()}
+/* ---------- chase camera: over-the-shoulder street view (3rd-person style) ---------- */
+const VW=960,VH=540,VPX=VW/2,HZ=292,RN=388,SY0=420,SY1=524,SB=1.1,PAD=560,ZW=1.9,KB=SB*1400/MW;
+const scT=t=>.88+.26*t;                                   // perspective scale at ground depth t (0 far side of the sidewalk, 1 nearest the camera)
+const tOf=y=>(y-FY0)/(FY1-FY0);
+const hhAt=y=>{const t=Math.max(-.3,Math.min(1.3,tOf(y)));return VH*(.46+.16*t)};
+const CAM={px:P.x,py:P.y,o:VW*.36,lx:P.x,v:0,tilt:0,cw:P.x,bcam:0},HIT=[];
+let EXT=null;
+function extBg(){if(EXT)return EXT;if(!BGIMG.ok)return null;const W=BGIMG.naturalWidth,H=BGIMG.naturalHeight,e=document.createElement("canvas");e.width=W+PAD*2;e.height=H;const g=e.getContext("2d");
+ g.drawImage(BGIMG,PAD,0);
+ const edge=(sx,dx)=>{g.save();g.beginPath();g.rect(dx,0,PAD,H);g.clip();try{g.filter="blur(18px)"}catch(_){}g.drawImage(BGIMG,sx,0,3,H,dx-30,-20,PAD+60,H+40);g.restore();g.fillStyle="rgba(15,12,40,.45)";g.fillRect(dx,0,PAD,H)};
+ edge(0,0);edge(W-3,PAD+W);
+ return EXT=e}
+const D3={};function d3(c,n,url,x,y,hh,o,mv){if(!url||!window.Actor3D)return false;const a=D3[n]||(D3[n]=Actor3D(url)),t=performance.now(),dt=Math.min(60,t-(a.last||t));a.last=t;const yaw=(o<=4?o:o-8)*Math.PI/4;return a.draw(c,x,y,hh*1.03,yaw,!!mv,dt)}
+function camUpdate(dt){
+ const rm=window.__rm&&__rm();
+ CAM.o+=((P.face>=0?.36:.64)*VW-CAM.o)*.05*dt;
+ CAM.px+=(P.x-CAM.px)*.12*dt;CAM.py+=(P.y-CAM.py)*.1*dt;
+ const vx=(P.x-CAM.lx)/Math.max(.4,dt);CAM.lx=P.x;CAM.v+=(vx-CAM.v)*.12*dt;
+ const tt=rm?0:-.042*Math.max(-1,Math.min(1,CAM.v/2.2));CAM.tilt+=(tt-CAM.tilt)*.06*dt;
+ CAM.cw=CAM.px+(VPX-CAM.o)/(ZW*scT(tOf(CAM.py)));
+ CAM.bcam=CAM.px*KB-CAM.o}
+function proj(wx,wy){const t=tOf(wy),sx=VPX+(wx-CAM.cw)*ZW*scT(t);return{x:sx,y:SY0+(SY1-SY0)*t+(sx-VPX)*CAM.tilt,t}}
+function toWorld(sx,sy){const t=(sy-(sx-VPX)*CAM.tilt-SY0)/(SY1-SY0);return{x:CAM.cw+(sx-VPX)/(ZW*scT(t)),y:FY0+t*(FY1-FY0)}}
+function taxi(c,x,y,s,d){c.save();c.translate(x,y);c.scale(s*d,s);
+ c.fillStyle="rgba(0,0,0,.28)";c.beginPath();c.ellipse(0,1,80,7,0,0,7);c.fill();
+ c.fillStyle="#ffc93c";c.strokeStyle="#7a5a00";c.lineWidth=3;rr(c,-76,-36,152,30,9);c.fill();c.stroke();rr(c,-42,-60,84,28,11);c.fill();c.stroke();
+ c.fillStyle="#bfe6ff";rr(c,-36,-55,34,19,5);c.fill();rr(c,2,-55,34,19,5);c.fill();
+ c.fillStyle="#1d2b64";[-46,46].forEach(w=>{c.beginPath();c.arc(w,-5,13,0,7);c.fill()});c.fillStyle="#d8d8d8";[-46,46].forEach(w=>{c.beginPath();c.arc(w,-5,5,0,7);c.fill()});
+ c.fillStyle="#fff";c.strokeStyle="#7a5a00";c.lineWidth=2;rr(c,-14,-70,28,10,3);c.fill();c.stroke();c.restore()}
+function ground(c,now){
+ const tl=CAM.tilt,Y=(y,x)=>y+(x-VPX)*tl,G=(wx,row)=>VPX+(wx-CAM.cw)*ZW*scT((row-SY0)/(SY1-SY0));
+ const band=(r0,r1,x0,x1)=>{c.beginPath();c.moveTo(x0,Y(r0,x0));c.lineTo(x1,Y(r0,x1));c.lineTo(x1,Y(r1,x1));c.lineTo(x0,Y(r1,x0));c.closePath();c.fill()};
+ // road
+ let g=c.createLinearGradient(0,HZ,0,RN);g.addColorStop(0,"#5a5b66");g.addColorStop(1,"#3b3c47");c.fillStyle=g;
+ c.beginPath();c.moveTo(0,HZ-3);c.lineTo(VW,HZ-3);c.lineTo(VW,Y(RN,VW));c.lineTo(0,Y(RN,0));c.closePath();c.fill();
+ const r1=HZ+(RN-HZ)*.5;c.fillStyle="#ffcb2e";band(r1,r1+4,0,VW);band(r1+8,r1+12,0,VW);
+ c.fillStyle="rgba(255,255,255,.85)";
+ for(const r of [HZ+(RN-HZ)*.2,HZ+(RN-HZ)*.78]){for(let k=Math.floor((CAM.cw-700)/170);k<=Math.ceil((CAM.cw+700)/170);k++){const xa=G(k*170,r),xb=G(k*170+84,r);if(xb<-20||xa>VW+20)continue;
+   c.beginPath();c.moveTo(xa,Y(r,xa));c.lineTo(xb,Y(r,xb));c.lineTo(xb,Y(r,xb)+3.5);c.lineTo(xa,Y(r,xa)+3.5);c.closePath();c.fill()}}
+ // traffic (two lanes)
+ [[.32,1,.085,0],[.8,-1,.07,1300]].forEach(([f,d,v,o])=>{const r=HZ+(RN-HZ)*f,wx=((now*v+o)%3000)-900,x=G(d>0?wx:2100-wx,r),s=scT((r-SY0)/(SY1-SY0))*1.4;if(x>-130&&x<VW+130)taxi(c,x,Y(r,x),s,d)});
+ // kerb + sidewalk
+ c.fillStyle="#a7a49b";band(RN-1,RN+11,0,VW);
+ g=c.createLinearGradient(0,RN+10,0,VH);g.addColorStop(0,"#dedad0");g.addColorStop(1,"#c9c5b9");c.fillStyle=g;
+ c.beginPath();c.moveTo(0,Y(RN+10,0));c.lineTo(VW,Y(RN+10,VW));c.lineTo(VW,VH+60);c.lineTo(0,VH+60);c.closePath();c.fill();
+ c.fillStyle="rgba(95,185,235,.75)";band(RN+16,RN+30,0,VW);
+ c.strokeStyle="rgba(112,106,92,.42)";c.lineWidth=2;
+ for(let k=Math.floor((CAM.cw-700)/84);k<=Math.ceil((CAM.cw+700)/84);k++){const a=G(k*84,RN+32),b=G(k*84,VH+60);c.beginPath();c.moveTo(a,Y(RN+32,a));c.lineTo(b,Y(VH+60,b));c.stroke()}
+ for(const r of [RN+44,RN+66,RN+96,RN+134]){c.beginPath();c.moveTo(0,Y(r,0));c.lineTo(VW,Y(r,VW));c.stroke()}
+ // street lamps on the far edge of the sidewalk
+ for(const lx of [250,700,1050]){const p=proj(lx,FY0-18);if(p.x<-60||p.x>VW+60)continue;const s=scT(p.t);
+  c.fillStyle="rgba(0,0,0,.2)";c.beginPath();c.ellipse(p.x,p.y,18*s,5*s,0,0,7);c.fill();
+  c.strokeStyle="#2f4a3f";c.lineWidth=7*s;c.lineCap="round";c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p.x,p.y-250*s);c.lineTo(p.x+28*s,p.y-262*s);c.stroke();
+  c.fillStyle="#fff2a8";c.beginPath();c.arc(p.x+34*s,p.y-258*s,11*s,0,7);c.fill()}}
+function edgeHint(c,txt,left,now){const y=40+Math.sin(now/260)*3,x=left?140:VW-140;pill((left?"◀ ":"")+txt+(left?"":" ▶"),x,y,"rgba(255,201,60,.96)")}
+function drawMap(now,dt){
+  const c=cx;camUpdate(dt||1);HIT.length=0;
+  const e=extBg();
+  if(e)c.drawImage(e,CAM.bcam/SB+PAD,498-HZ/SB,VW/SB,HZ/SB,0,0,VW,HZ);else{c.fillStyle="#8fd0f5";c.fillRect(0,0,VW,HZ)}
+  ground(c,now);
+  if(ENTER)drawDoorOpen(c,ENTER.id,now-ENTER.t0);
+  const sd=today();if(S.stars.d!==sd){S.stars={d:sd,got:[],total:S.stars.total||0}}
+  if(!STARPOS||STARPOS.d!==sd){const rg=seeded('stars'+sd);STARPOS={d:sd,p:[0,1,2].map(i=>({x:90+rg()*(MW-180),y:FY0+14+rg()*(FY1-FY0-28)}))}}
+  // door pads
+  for(const id in LOCS){if(id==="square")continue;const L=LOCS[id],p=proj(L.door.x,L.door.y);if(p.x<-90||p.x>VW+90)continue;const s=scT(p.t),on=nearId===id;
+    c.save();c.lineWidth=on?6:3;c.strokeStyle=on?"rgba(255,201,60,.98)":"rgba(255,255,255,.7)";c.fillStyle=on?"rgba(255,201,60,.25)":"rgba(255,255,255,.14)";c.beginPath();c.ellipse(p.x,p.y,72*s,19*s,0,0,7);c.fill();c.stroke();c.restore();
+    const fs=Math.round(15*s);c.font=`800 ${fs}px "Trebuchet MS",sans-serif`;c.textAlign="center";c.lineWidth=4;c.strokeStyle="rgba(0,0,0,.6)";c.strokeText(L.name,p.x,p.y+30*s);px(L.name,p.x,p.y+30*s,fs,"#fff")}
+  const mY=FY0+30;marciaStep(now,dt||1);const mmx=MAR.x;
+  const act=[{y:mY,f:()=>{const hh=hhAt(mY),p=proj(mmx,mY),v=OCT[MAR.o||0];if(!d3(c,"marcia",window.MARCIA3D_URL,p.x,p.y,hh,MAR.o||0,MAR.g!=null))walkSprite("map_marcia",v[0],p.x,p.y,hh,MAR.g,v[1]);HIT.push({id:"marcia",x:p.x,y:p.y-hh,w:hh*.55,h:hh})}},
+   {y:TH.y,f:()=>{const hh=hhAt(TH.y)*.95,p=proj(TH.x,TH.y),v=OCT[TH.o||0];if(!d3(c,"theo",window.THEO3D_URL,p.x,p.y,hh,ENTER?0:(TH.o||0),!ENTER&&TH.g!=null))walkSprite("map_theo",ENTER?"front":v[0],p.x,p.y,hh,ENTER?null:TH.g,ENTER?1:v[1]);c.lineWidth=4;c.strokeStyle="rgba(0,0,0,.65)";c.font='800 15px "Trebuchet MS",sans-serif';c.textAlign="center";c.strokeText("Theo",p.x,p.y-hh-8);px("Theo",p.x,p.y-hh-8,15,"#fff");HIT.push({id:"theo",x:p.x,y:p.y-hh,w:hh*.55,h:hh})}},
+   {y:P.y,f:()=>{let hh=hhAt(P.y),p=proj(P.x,P.y),x=p.x,y=p.y,al=1,v=OCT[P.o||0],k=v[0],dr=v[1],gg=P.g;if(ENTER){const g=enterGeo(now,p,hh);x=g.x;y=g.y;hh*=g.s;al=g.a;k="back";dr=1;gg=g.mv?(now-ENTER.t0)/1000*.9:null}else if(gg==null&&!__rm())hh*=1+Math.sin(now/650)*.007;c.save();c.globalAlpha=al;if(!((S.avatar.hero===0&&d3(c,"hero0",window.HERO03D_URL,x,y,hh,ENTER?4:(P.o||0),gg!=null))||walkSprite(HERO(S.avatar.hero),k,x,y,hh,gg,dr)))drawHero(c,x,y,hh,S.avatar.hero);const t=S.name+" "+wearEmo();c.lineWidth=4;c.strokeStyle="rgba(0,0,0,.65)";c.font='800 16px "Trebuchet MS",sans-serif';c.textAlign="center";c.strokeText(t,x,y-hh-8);px(t,x,y-hh-8,16,"#fff");c.restore()}}];
+  WALK.forEach(w=>act.push({y:w.y,f:()=>{const x=((w.x0+now*w.v*.06*w.d)%(MW+160)+MW+160)%(MW+160)-80,hh=hhAt(w.y)*.68,p=proj(x,w.y);if(p.x<-120||p.x>VW+120)return;const gw=__rm()?null:(w.x0+now*w.v*.06)*ZW*scT(p.t)/hh;if(!walkSprite(HERO(w.h),"side",p.x,p.y,hh,gw,w.d))drawHero(c,p.x,p.y,hh,w.h)}}));
+  STARPOS.p.forEach((s,i)=>{if(S.stars.got.includes(i))return;act.push({y:s.y,f:()=>{const p=proj(s.x,s.y);if(p.x<-40||p.x>VW+40)return;const a=.55+.45*Math.sin(now/300+i*2);c.save();c.globalAlpha=a;c.font=Math.round(34*scT(p.t))+"px serif";c.textAlign="center";c.fillText("✨",p.x,p.y);c.restore()}})});
+  act.sort((a,b)=>a.y-b.y);act.forEach(a=>a.f());
+  // next-mission waypoint
+  const nm=nextMission();
+  if(nm){const L=LOCS[nm.loc],p0=proj(L.door.x,L.door.y),dd=DOORP[nm.loc]?doorScr(nm.loc):null,p=dd?{x:dd.x,y:0,t:0}:p0,bob=Math.sin(now/260)*6;
+    if(p.x<80||p.x>VW-80)edgeHint(c,"Next mission: "+L.name,p.x<80,now);
+    else{const ax=p.x,ay=dd?dd.t-46:p.y-235*scT(p.t);c.fillStyle="#ffc93c";c.strokeStyle="#1d2b64";c.lineWidth=3;c.beginPath();c.moveTo(ax,ay+bob+18);c.lineTo(ax-16,ay+bob-6);c.lineTo(ax+16,ay+bob-6);c.closePath();c.fill();c.stroke();c.fillStyle="#ffc93c";rr(c,ax-58,ay+bob-38,116,28,10);c.fill();c.stroke();px("Next mission",ax,ay+bob-18,15,"#1d2b64")}}
+  if(ENTER){const T=now-ENTER.t0;if(T>1900){c.fillStyle="rgba(0,0,0,"+Math.min(1,(T-1900)/380)+")";c.fillRect(0,0,VW,VH)}}
+}
+let STARPOS=null;
+const MAR={x:LOCS.square.door.x-30,y:FY0+30,o:0,g:null};
+function marciaStep(now,dt){const A=LOCS.square.door.x-110,B=LOCS.square.door.x+50,P_=12000,T=(now%P_)/P_*12;let x,dir=0;
+ if(T<3){x=A+(B-A)*T/3;dir=1}else if(T<6)x=B;else if(T<9){x=B-(B-A)*(T-6)/3;dir=-1}else x=A;
+ if(__rm()){x=LOCS.square.door.x-30;dir=0}
+ const dx=x-MAR.x;MAR.x=x;
+ if(dir){const tr=dir>0?(x-A):(B-A)+(B-x);MAR.g=tr*ZW*scT(tOf(MAR.y))/hhAt(MAR.y);MAR.still=0;turnTo(MAR,dir>0?2:6,dt)}
+ else{MAR.g=null;MAR.still=(MAR.still||0)+dt;turnTo(MAR,MAR.still>20?0:(MAR.o||0),dt)}}
+function starCheck(){if(!STARPOS||S.stars.d!==STARPOS.d)return;STARPOS.p.forEach((s,i)=>{if(!S.stars.got.includes(i)&&Math.hypot(P.x-s.x,(P.y-s.y)*1.4)<34){S.stars.got.push(i);S.stars.total++;const a=award(2,3,"room");sfx("coin");toast("✨ You found a city star! +"+a.coins+" 🪙 ("+S.stars.got.length+"/3 today)");checkBadges();save()}})}
+const TALK={marcia:["Pro tip: if a number is too big, break it apart. Like a cookie!","I counted 36 pigeons in 4 rows. The pigeons did not cooperate.","Fun fact: 9 × 6 and 6 × 9 are the same. Math is lazy in the best way!"],theo:["Try a mission, then the arcade. I'll cheer from right here.","I once tried to share a pizza fairly with 7 friends. We invented fractions by accident.","Psst! Sparkles on the ground are city stars. Walk over them!"]};
+function npcTap(x,y){const h=HIT.find(h=>Math.abs(x-h.x)<h.w/2&&y>h.y&&y<h.y+h.h+8);if(!h)return false;say(h.id,[pick(TALK[h.id])]);return true}
+const WALK=[{x0:200,y:FY0+34,v:.9,d:1,h:2},{x0:760,y:FY0+38,v:.7,d:-1,h:8},{x0:420,y:FY0+42,v:.6,d:1,h:5},{x0:980,y:FY0+36,v:.8,d:-1,h:10}];
+function enter(id){
+  P.tx=null;P.auto=null;
+  Object.keys(keys).forEach(k=>keys[k]=false);
+  if(DOORP[id]&&!(window.__rm&&__rm())&&startEnter(id))return;
+  openLocation(id);
+}
+cv.addEventListener("pointerdown",e=>{
+  if(busy())return;
+  const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*VW/r.width,y=(e.clientY-r.top)*VH/r.height;
+  if(npcTap(x,y))return;
+  if(y<RN+6){const f=(x+CAM.bcam)/SB/1400,id=Object.keys(LOCS).find(k=>f>=LOCS[k].x0&&f<LOCS[k].x1);if(id){P.tx=LOCS[id].door.x;P.ty=LOCS[id].door.y+4;P.auto=id}return}
+  const w=toWorld(x,y);P.tx=Math.max(30,Math.min(MW-30,w.x));P.ty=Math.max(FY0,Math.min(FY1,w.y));P.auto=null;
+});
+const KM={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",w:"up",s:"down",a:"left",d:"right",W:"up",S:"down",A:"left",D:"right"};
+addEventListener("keydown",e=>{
+  if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;
+  if(KM[e.key]&&$("#s-map").classList.contains("active")&&!busy()){keys[KM[e.key]]=true;e.preventDefault()}
+  if((e.key==="e"||e.key==="E")&&$("#s-map").classList.contains("active")&&!busy()&&nearId){enter(nearId)}
+  if(e.key==="Escape"&&modalOpen())closeModal();
+});
+addEventListener("keyup",e=>{if(KM[e.key])keys[KM[e.key]]=false});
+
+/* ---------- locations ---------- */
+function npcBlock(who,text){return `<div class="npc"><canvas width="96" height="96" data-npc="${who}"></canvas><div><div class="who">${NPCS[who].name}</div><div>${text}</div><button class="btn alt sm" style="margin-top:.3rem" data-act="speak" data-t="${text.replace(/"/g,"&quot;")}" aria-label="Read aloud">🔊 Read aloud</button></div></div>`}
+function paintNpcs(m){$$("canvas[data-npc]",m).forEach(c=>portrait(c,NPCS[c.dataset.npc].look))}
+function missionCards(list){
+  return `<div class="cards">`+list.map(id=>{const m=MISSIONS[id-1],st=mState(m);
+    const tag=st==="done"?`<span class="tag ok">✓ Completed</span>`:st==="lock"?`<span class="tag lock">🔒 Finish Mission ${m.id-1} first</span>`:st==="prog"?`<span class="tag gold">In progress</span>`:`<span class="tag">Ready</span>`;
+    return `<div class="card ${st==="done"?"done":""} ${st==="lock"?"lock":""}"><b>Mission ${m.id}: ${m.title}</b><span class="small">${m.focus}</span><span class="small">8 questions · about ${m.mins} min</span>${tag}<button class="btn sm" data-act="startm" data-id="${m.id}" ${st==="lock"?"disabled":""}>${st==="done"?"Play again (half rewards)":st==="prog"?"Resume mission":"Start mission"}</button></div>`}).join("")+`</div>`;
+}
+function openLocation(id){
+  const back=`<button class="btn alt sm" data-act="closem">✕ Back to the city</button>`;
+  if(id==="school"){BANNER="lua_exterior";
+    const first=!S.seenSal;S.seenSal=true;save();
+    openModal(`<div class="phead"><h2>🏫 Level Up Academy</h2>${back}</div>
+    ${npcBlock("sal",first?"Welcome to Level Up Academy! There's more than one way to solve a problem. Let's find a strategy that works for you.":"Good to see you! Pick a mission, or look at the Strategy Corner for ideas.")}
+    <h3>Explore the school</h3><div class="gal ch">${ROOMS.map(r=>`<button class="roomb" data-act="room" data-id="${r.id}" aria-label="Explore ${r.n}"><img src="${IM(r.img)}" alt=""><span>${S.cards[r.id]?"📮 ":""}${r.n}</span></button>`).join("")}</div><h3>Missions here</h3>${missionCards([1,2,4])}
+    <h3>Strategy Corner</h3>
+    <div class="cards">
+      <div class="card"><b>Equal groups</b><div class="vis">${vGroups(3,4)}</div><span class="small">3 groups of 4 → 3 × 4 = 12</span></div>
+      <div class="card"><b>Arrays</b><div class="vis">${vArray(3,4)}</div><span class="small">3 rows of 4 → 3 × 4 = 12</span></div>
+      <div class="card"><b>Fact family</b><div style="font-size:1.3rem;font-weight:800;line-height:1.8">3 × 4 = 12<br>4 × 3 = 12<br>12 ÷ 3 = 4<br>12 ÷ 4 = 3</div><span class="small">Multiplication and division are connected.</span></div>
+      <div class="card"><b>Break it apart</b><div style="font-size:1.1rem;font-weight:800;line-height:1.7">4 × 13 = 4 × 10 + 4 × 3<br>= 40 + 12 = 52</div><span class="small">Split a big number into easier parts.</span></div>
+    </div>`,paintNpcs);
+  }else if(id==="square"){BANNER="ls_ts_panorama_wide";
+    openModal(`<div class="phead"><h2>🗽 Times Square</h2>${back}</div>
+    ${npcBlock("marcia",doneCount()>=3?"The whole neighborhood is buzzing about the festival! Thanks for all your help.":"I've got supplies to organize before the festival. Can you help me figure out how many boxes we need?")}
+    <h3>Missions here</h3>${missionCards([3,5])}
+    <h3>👀 Look around Times Square</h3><img id="lookimg" class="look" src="${IM("ls_ts_panorama_wide")}" alt="Times Square view"><div class="chips">${[["Plaza","ls_ts_panorama_wide"],["Sunset","ls_ts_cam_goldenhour"],["School","lua_exterior"],["Arcade","settings_arcade_bg_arcade_wide_interior"],["Shop","ls_ts_loc_clothing"],["Home","ls_ts_loc_theos_apartment"]].map(a=>`<button class="chip" data-act="look" data-i="${a[1]}">${a[0]}</button>`).join("")}</div>`,paintNpcs);
+  }else if(id==="arcade"){openArcade()
+  }else if(id==="shop"){openShop(null)}
+  else if(id==="apt"){openApt()}
+}
+/* shop */
+let PV=null,CONF=null;
+function iconDraw(cvs,it){
+  const c=cvs.getContext("2d");c.clearRect(0,0,cvs.width,cvs.height);
+  if(it.kind==="wear"){c.font="64px serif";c.textAlign="center";c.textBaseline="middle";c.fillText(EMO[it.id],cvs.width/2,cvs.height/2);c.textBaseline="alphabetic"}
+  else{c.save();c.translate(cvs.width/2,cvs.height/2);drawDecor(c,it.id,0.55);c.restore()}
+}
+function drawDecor(c,id,s){
+  c.scale(s,s);
+  if(id==="poster"){c.fillStyle="#1d2b64";rr(c,-50,-70,100,130,6);c.fill();c.fillStyle="#ffc93c";c.font="900 22px sans-serif";c.textAlign="center";c.fillText("NYC",0,-20);c.fillStyle="#e8452c";c.fillRect(-30,0,60,6);c.fillStyle="#fff";c.fillRect(-30,16,60,4);c.fillRect(-30,28,40,4)}
+  if(id==="lamp"){c.fillStyle="#444";c.fillRect(-4,-10,8,70);c.fillRect(-26,58,52,8);c.fillStyle="#ff3df2";c.shadowColor="#ff3df2";c.shadowBlur=18;c.beginPath();c.moveTo(-36,-10);c.lineTo(36,-10);c.lineTo(20,-60);c.lineTo(-20,-60);c.closePath();c.fill();c.shadowBlur=0}
+  if(id==="chair"){c.fillStyle="#222";rr(c,-34,-70,68,70,14);c.fill();c.fillStyle="#e8452c";rr(c,-26,-62,52,54,10);c.fill();c.fillStyle="#222";rr(c,-40,-10,80,24,8);c.fill();c.fillRect(-4,14,8,36);c.fillRect(-34,48,68,8)}
+}
+function openShop(sel){BANNER="ls_ts_loc_clothing";
+  const L=levelOf(S.xp);
+  const list=CAT.map(it=>{
+    const own=S.owned.includes(it.id),lock=L<it.lvl,eqd=S.eq[it.slot]===it.id;
+    const st=own?(eqd?"Equipped":"Owned"):lock?`🔒 Level ${it.lvl}`:S.coins>=it.price?"Ready to buy":"Need more coins";
+    return `<div class="item ${sel===it.id?"sel":""}"><canvas width="110" height="120" data-icon="${it.id}"></canvas><b>${it.name}</b><span class="small">${own?"":`🪙 ${it.price} · `}${st}</span><button class="btn alt sm" data-act="preview" data-id="${it.id}">👀 Preview</button></div>`}).join("");
+  const it=sel?cat(sel):null;
+  let side=`<div class="small">Tap Preview on any item to try it on.</div>`;
+  if(it){
+    const own=S.owned.includes(it.id),lock=L<it.lvl,eqd=S.eq[it.slot]===it.id;
+    let btns="";
+    if(CONF===it.id)btns=`<div class="fb try">Spend 🪙 ${it.price} on <b>${it.name}</b>?</div><div class="ans"><button class="btn good" data-act="buyyes" data-id="${it.id}">Yes, buy it</button><button class="btn alt" data-act="buyno" data-id="${it.id}">Not now</button></div>`;
+    else if(own)btns=`<button class="btn" data-act="equip" data-id="${it.id}">${eqd?"Take off":(it.kind==="wear"?"Wear it":"Put in my room")}</button>`;
+    else if(lock)btns=`<div class="fb show">🔒 Reach Level ${it.lvl} to unlock. You're Level ${L}.</div>`;
+    else if(S.coins<it.price)btns=`<div class="fb show">You need ${it.price-S.coins} more City Coins. Missions earn coins!</div>`;
+    else btns=`<button class="btn good" data-act="buy" data-id="${it.id}">Buy for 🪙 ${it.price}</button>`;
+    side=`<b>${it.name}</b><div class="small">${it.kind==="decor"?"Room decoration":"Avatar item"} · Level ${it.lvl}</div>${btns}`;
+  }
+  openModal(`<div class="phead"><h2>🛍️ Mr. Sal's Clothing Store</h2><button class="btn alt sm" data-act="closem">✕ Back to the city</button></div>
+  ${npcBlock("mrsal",S.seenMrSal?"Back for a new look? Everything here is priced in City Coins.":"Hey! I'm Mr. Sal. I used to teach at Level Up Academy, and now I run this store. Ms. Okafor teaches your class now. Pick anything and try it on!")}
+  <div class="small" aria-live="polite">You have 🪙 ${S.coins} City Coins · Level ${L}</div>
+  <div class="tcols"><div style="flex:0 0 260px"><div class="cprev"><canvas id="pvc" width="240" height="300" aria-label="Preview of your avatar"></canvas></div><div style="margin-top:.5rem">${side}</div></div>
+  <div style="flex:2 1 360px"><div class="shopgrid">${list}</div></div></div>`,m=>{
+    $$("canvas[data-icon]",m).forEach(c=>iconDraw(c,cat(c.dataset.icon)));paintNpcs(m);if(!S.seenMrSal){S.seenMrSal=true;save()}
+    const pc=$("#pvc").getContext("2d");const eq=Object.assign({},S.eq);if(it&&it.kind==="wear")eq[it.slot]=it.id;
+    const g=pc.createRadialGradient(120,230,10,120,230,150);g.addColorStop(0,"#fff");g.addColorStop(1,"#bfe6ff");pc.fillStyle=g;pc.fillRect(0,0,240,300);
+    drawHero(pc,120,296,290,S.avatar.hero);pc.font="34px serif";pc.textAlign="left";pc.fillText(Object.values(eq).map(i=>EMO[i]).filter(Boolean).join(""),8,40);
+    if(it&&it.kind==="decor"){pc.save();pc.translate(190,220);drawDecor(pc,it.id,.5);pc.restore()}
+  });
+}
+function equipItem(id){const it=cat(id);if(S.eq[it.slot]===id)delete S.eq[it.slot];else S.eq[it.slot]=id;save()}
+/* apartment */
+function drawRoom(c,w,h){
+  const bg=loadImg("ls_ts_loc_theos_apartment");if(!bg.ok&&!bg.rq){bg.rq=1;bg.cbs.push(()=>{const e=document.getElementById("room");if(e)drawRoom(e.getContext("2d"),w,h)})}
+  if(bg.ok){const k=Math.max(w/bg.naturalWidth,h/bg.naturalHeight),iw=bg.naturalWidth*k,ih=bg.naturalHeight*k;c.drawImage(bg,(w-iw)/2,(h-ih)/2,iw,ih)}else{c.fillStyle="#e9d2ac";c.fillRect(0,0,w,h)}
+  if(S.eq.poster){c.save();c.translate(w*.35,80);drawDecor(c,"poster",.7);c.restore()}
+  if(S.eq.lamp){c.save();c.translate(w*.52,h*.52);drawDecor(c,"lamp",.8);c.restore()}
+  if(S.eq.chair){c.save();c.translate(w*.78,h*.78);drawDecor(c,"chair",.9);c.restore()}
+  drawHero(c,w*.66,h*.93,h*.56,S.avatar.hero);
+  
+}
+function openApt(){BANNER=null;
+  const first=!S.aptSeen;S.aptSeen=true;save();
+  const l=levelOf(S.xp),lo=LV[l-1],hi=LV[l]??LV[LV.length-1]+500,pct=l>=LV.length?100:Math.round((S.xp-lo)/(hi-lo)*100);
+  const wear=S.owned.map(cat).filter(Boolean);
+  const wl=wear.length?wear.map(it=>`<button class="chip" aria-pressed="${S.eq[it.slot]===it.id}" data-act="equip2" data-id="${it.id}">${it.name}</button>`).join(""):`<span class="small">Nothing yet. Earn City Coins and visit the Clothing Store!</span>`;
+  const nm=nextMission();
+  openModal(`<div class="phead"><h2>🏠 Your Apartment</h2><button class="btn alt sm" data-act="closem">✕ Back to the city</button></div>
+  ${npcBlock("jalen",first?"Yo! That's your place? Nice. There's a new mission to check out. Ms. Okafor is waiting at school!":"Yo! Who should we help today?")}
+  <div class="tcols"><div><canvas id="room" width="480" height="290" style="width:100%;border-radius:16px;border:3px solid var(--navy)" aria-label="Your room"></canvas></div>
+  <div><div class="card"><b>${S.name} · Level ${l}</b><div class="bar" aria-label="${pct}% to next level"><i style="width:${pct}%"></i></div><span class="small">${S.xp} XP · 🪙 ${S.coins} City Coins</span>
+  <b style="margin-top:.4rem">LevelUp City Festival</b><div class="bar"><i style="width:${doneCount()*20}%"></i></div><span class="small">${doneCount()} of 5 missions complete${nm?` · Next: ${nm.title}`:" · The festival is ready!"}</span></div>
+  <h3>My stuff</h3><div class="chips">${wl}</div></div></div>`,m=>{paintNpcs(m);drawRoom($("#room").getContext("2d"),480,290)});
+}
+
+/* ---------- missions ---------- */
+let M=null;
+function startMission(id){
+  const def=MISSIONS[id-1],sv=S.missions[id]||{},pr=sv.progress;
+  M={id,def,idx:pr?pr.idx:0,res:pr?pr.res.slice():[],tries:0,hintN:0,ans:false,fin:false};
+  closeModal();setScreen("mission");renderItem(true);
+}
+function dotsHtml(){return `<div class="dots" aria-label="Question ${M.idx+1} of 8">`+M.def.items.map((_,i)=>{const r=M.res[i];return `<i class="${r?(r.help?"help":"ok"):""} ${i===M.idx?"cur":""}"></i>`}).join("")+`</div>`}
+function renderItem(intro){
+  const d=M.def,it=d.items[M.idx],el=$("#s-mission"),n=NPCS[d.npc];
+  M.tries=0;M.hintN=0;M.ans=false;M.pick=null;
+  const showSetup=M.idx===0||intro;
+  el.innerHTML=`<div class="mwrap"><div class="mhead"><b>Mission ${d.id}: ${d.title}</b>${dotsHtml()}<button class="btn alt sm" data-act="leave">Pause & leave</button></div>
+  ${showSetup&&M.idx===0&&!M.res.length?`<div class="npc"><canvas width="96" height="96" data-npc="${d.npc}"></canvas><div><div class="who">${n.name}</div>${d.setup}</div></div>`:""}
+  <div class="qcard"><div class="small">Question ${M.idx+1} of 8</div><div class="qtext" id="qt">${it.q}</div><button class="btn alt sm" data-act="speak" data-t="${it.q.replace(/"/g,"&quot;")}" aria-label="Read question aloud">🔊 Read aloud</button>
+  ${it.v?`<div class="vis">${it.v}</div>`:""}
+  <div class="ans" id="ans">${it.t==="num"?`<label class="sr" for="inp">Your answer</label><input id="inp" type="number" inputmode="numeric" autocomplete="off" placeholder="?"><button class="btn" data-act="check">Check</button>`:`<div class="mc" role="group" aria-label="Choices">${it.o.map((o,i)=>`<button data-act="pick" data-i="${i}" aria-pressed="false">${o}</button>`).join("")}</div><button class="btn" data-act="check">Check</button>`}
+  <button class="btn alt" data-act="hint" id="hintBtn">💡 Hint</button></div>
+  <div id="fb" aria-live="polite"></div></div></div>`;
+  paintNpcs(el);
+  if(S.settings.read)speak(it.q);
+  const inp=$("#inp");if(inp){inp.focus();inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();M.ans?nextItem():checkAns()}})}
+}
+function setFb(cls,html){$("#fb").innerHTML=`<div class="fb ${cls}">${html}</div>`}
+function hintFb(){const it=M.def.items[M.idx];const h=it.h[Math.min(M.hintN,it.h.length-1)];M.hintN++;return h}
+function checkAns(){
+  if(M.ans)return;
+  const it=M.def.items[M.idx];let val;
+  if(it.t==="num"){const v=$("#inp").value.trim();if(v===""){setFb("try","Type your answer first, then press Check.");return}val=Number(v);}
+  else{if(M.pick==null){setFb("try","Pick one of the choices first.");return}val=M.pick}
+  M.tries++;
+  const ok=val===it.a;logA({src:"m",m:M.id,i:M.idx,s:it.s,ok,n:M.tries,v:val});
+  const PR=["Nice work!","That's it!","You figured it out!","Great thinking!"];
+  if(ok){
+    M.ans=true;sfx("ok");streakUp(M.tries===1);M.res[M.idx]={tries:M.tries,help:M.tries>1};
+    if(it.t==="mc")$$("#ans .mc button")[it.a].classList.add("right");
+    setFb("ok",`<img class="react" src="${IM(HAPPY[(M.idx+M.tries)%HAPPY.length])}" alt="Theo cheering">✅ ${PR[(M.idx+M.tries)%PR.length]} ${it.e}<div class="ans"><button class="btn" data-act="next" autofocus>${M.idx===7?"Finish mission":"Next question →"}</button></div>`);
+    $("#fb .btn").focus();
+    persist();
+  }else if(M.tries<(it.t==="mc"?2:3)){
+    sfx("oops");S.stats.cur=0;if(it.t==="mc"){const wb=$$("#ans .mc button")[val];if(wb){wb.disabled=true;wb.setAttribute("aria-pressed","false");wb.classList.add("nope")}M.pick=null}
+    setFb("try",`<img class="react" src="${IM(HMM[M.tries%HMM.length])}" alt="Theo thinking">Not quite. Let's take another look. 💭 <b>Hint:</b> ${hintFb()}<br><span class="small">Try again, you can do it!</span>`);
+    if(it.t==="num"){$("#inp").select()}
+  }else{
+    M.ans=true;sfx("oops");S.stats.cur=0;M.res[M.idx]={tries:M.tries,help:true,revealed:true};
+    if(it.t==="mc")$$("#ans .mc button")[it.a].classList.add("right");
+    setFb("show",`Let's look at it together. The answer is <b>${it.t==="mc"?it.o[it.a]:it.a}</b>. ${it.e}<div class="ans"><button class="btn alt" data-act="mtwin">✨ Try a new one just like it</button><button class="btn" data-act="next" autofocus>${M.idx===7?"Finish mission":"Next question →"}</button></div>`);
+    $("#fb .btn").focus();
+    persist();
+  }
+  if(S.settings.read)speak($("#fb").textContent);
+}
+function persist(){const sv=S.missions[M.id]||(S.missions[M.id]={});sv.progress={idx:M.idx+(M.ans?1:0),res:M.res.slice()};save()}
+function nextItem(){
+  if(M.idx===7){showReflect();return}
+  M.idx++;persist();renderItem(false);
+}
+function itemXp(r){return !r?0:r.revealed?1:r.tries===1?5:3}
+function finishMission(){
+  if(M.fin)return;M.fin=true;
+  const id=M.id,sv=S.missions[id]||(S.missions[id]={}),first=!sv.done;
+  const lvBefore=levelOf(S.xp);
+  let xp=M.res.reduce((a,r)=>a+itemXp(r),0)+40;
+  let coins=first?20:10;
+  if(!first)xp=Math.round(xp/2);
+  const today=new Date().toDateString();let bonus=0;
+  if(S.bonusDay!==today){bonus=15;S.bonusDay=today}
+  S.xp+=xp;S.coins+=coins+bonus;
+  sv.done=true;sv.progress=null;sv.plays=(sv.plays||0)+1;
+  const firstTry=M.res.filter(r=>r&&r.tries===1).length;
+  const lvAfter=levelOf(S.xp);
+  const allNow=doneCount()===5&&!S.finale;
+  save();const nb=checkBadges();if(lvAfter>lvBefore){sfx("level");confetti()}else sfx("coin");
+  const d=M.def,npc=NPCS[d.npc];
+  const msg=lvAfter>lvBefore?`🎉 Level up! You're now Level ${lvAfter}. New items may be waiting at the Clothing Store.`:"";
+  $("#s-mission").innerHTML=`<div class="mwrap"><div class="qcard" style="text-align:center"><img class="look" style="max-height:240px;object-fit:contain;background:#e4f1ff" src="${IM('characters_theo_poses_theo_jumping')}" alt="Theo jumping"><h2 style="color:var(--navy)">Mission complete!</h2>
+  <div class="npc" style="text-align:left"><canvas width="96" height="96" data-npc="${d.npc}"></canvas><div><div class="who">${npc.name}</div>${d.id===3||d.id===5?"Thanks for helping! The neighborhood is one step closer to festival day.":"Great job! You helped get the city ready for the festival."}</div></div>
+  <div class="tcols" style="justify-content:center"><div class="card"><span class="big-n">${firstTry}/8</span><span>solved on the first try</span><span class="small">Every try helps you learn!</span></div>
+  <div class="card"><span class="big-n">+${xp} XP</span><span class="big-n">+${coins+bonus} 🪙</span>${bonus?`<span class="small">Includes +${bonus} first-mission-of-the-day bonus</span>`:""}${first?"":`<span class="small">Replay: half rewards</span>`}</div></div>
+  ${msg?`<div class="fb ok">${msg}</div>`:""}${nb.length?`<div class="fb ok">🏅 New badge: ${nb.map(b=>b.e+" "+b.n).join(", ")}</div>`:""}${recoHtml(firstTry)}
+  <div class="small" style="margin:.6rem 0">LevelUp City Festival: ${doneCount()} of 5 missions complete</div><div class="bar"><i style="width:${doneCount()*20}%"></i></div>
+  <div class="ans" style="justify-content:center;margin-top:.8rem"><button class="btn" data-act="backcity" data-fin="${allNow?1:0}" autofocus>Back to the city</button></div></div></div>`;
+  paintNpcs($("#s-mission"));
+  $("#s-mission .btn").focus();
+}
+function leaveMission(){
+  if(M&&!M.fin){const sv=S.missions[M.id]||(S.missions[M.id]={});sv.progress={idx:M.idx+(M.ans?1:0),res:M.res.slice()};if(sv.progress.idx>=8){sv.progress={idx:7,res:M.res.slice(0,7)}}save()}
+  M=null;setScreen("map");
+}
+
+/* ---------- settings ---------- */
+function openSettings(){
+  openModal(`<div class="phead"><h2>⚙️ Settings</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div>
+  <div class="row"><div class="chips"><button class="chip" aria-pressed="${S.settings.read}" data-act="setread">🔊 Read dialogue and questions aloud automatically</button><button class="chip" aria-pressed="${S.settings.big}" data-act="setbig">🔠 Larger text</button><button class="chip" aria-pressed="${!!S.settings.easy}" data-act="seteasy">📖 Easier-to-read font</button><button class="chip" aria-pressed="${!!S.settings.hc}" data-act="sethc">◐ High contrast</button><button class="chip" aria-pressed="${!!S.settings.nomo}" data-act="setnomo">⏸ Reduce motion</button><button class="chip" aria-pressed="${!!S.settings.sfx}" data-act="setsfx">🔔 Sound effects</button><button class="chip" aria-pressed="${!!S.settings.music}" data-act="setmusic">🎵 Music</button></div></div>
+  <div class="card"><b>About this build</b><span class="small">Playable slice: 5 locations, 5 NPCs, 5 missions, 40 items, 10 rewards. Math items, standards tags, and coin/XP values are <b>draft</b> and need Grade 4 educator review before classroom use. Progress is saved only in this browser. No data is sent anywhere.</span></div>
+  <div class="card" style="margin-top:.6rem"><b>For grown-ups</b><div class="ans"><button class="btn alt sm" data-act="teacher">👩‍🏫 Teacher & parent view</button><button class="btn alt sm" data-act="reset">Reset all progress</button></div></div>`);
+}
+
+/* ---------- actions ---------- */
+const ACT={
+ newgame(){
+  if(S.created){openModal(`<h2>Start over?</h2><p>Starting a new adventure replaces your saved progress.</p><div class="ans"><button class="btn good" data-act="newyes">Yes, start new</button><button class="btn alt" data-act="closem">Keep my game</button></div>`);return}
+  ACT.newyes();
+ },
+ newyes(){closeModal();S=defState();save();CR=Object.assign({},S.avatar);
+  setScreen("title");
+  say("theo",["Hey! Welcome to NYC! I'm Theo. I'll be your guide around the city.","This is your adventure. First, let's create your character!"],()=>{CR=Object.assign({},S.avatar);$("#nm").value="";$("#nmErr").textContent="";buildCreator();setScreen("create")});
+ },
+ cont(){if(load()&&S.created){setScreen("map")}else ACT.newgame()},
+ randname(){$("#nm").value=NAMES[Math.floor(Math.random()*NAMES.length)];$("#nmErr").textContent=""},
+ startcreate(){
+  const n=cleanName($("#nm").value),er=nameOk(n);if(er){$("#nmErr").textContent=er;$("#nm").focus();return}
+  S.avatar=Object.assign({},CR);S.name=n;S.created=true;save();
+  setScreen("map");
+  say("theo",["Your character looks awesome! Let's check out your apartment."],()=>openLocation("apt"));
+ },
+ interact(){if(nearId)enter(nearId)},
+ closem(){closeModal();CONF=null;PV=null;hud()},
+ speak(d){speak(d.t)},
+ dread(){speak($("#dtxt").textContent)},
+ dnext(){dnext()},
+ missions(){
+  openModal(`<div class="phead"><h2>📋 Mission Board</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div><p class="small">Missions begin at different places in the city. Tap "Take me there" and the arrow will lead the way.</p><div class="cards">${MISSIONS.map(m=>{const st=mState(m);const place=m.loc==="school"?"Level Up Academy":"Times Square (Miss Marcia)";return `<div class="card ${st==="done"?"done":""} ${st==="lock"?"lock":""}"><b>Mission ${m.id}: ${m.title}</b><span class="small">${m.focus}</span><span class="small">📍 ${place} · 8 questions · ~${m.mins} min</span>${st==="done"?'<span class="tag ok">✓ Completed</span>':st==="lock"?'<span class="tag lock">🔒 Locked</span>':st==="prog"?'<span class="tag gold">In progress</span>':'<span class="tag">Ready</span>'}<button class="btn sm" data-act="goto2" data-id="${m.loc}" ${st==="lock"?"disabled":""}>Take me there</button></div>`}).join("")}</div>`);
+ },
+ goto(){
+  openModal(`<div class="phead"><h2>🧭 Go to…</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div><div class="cards">${Object.keys(LOCS).map(k=>`<button class="btn alt" data-act="goto2" data-id="${k}">${{school:"🏫",arcade:"🕹️",apt:"🏠",shop:"🛍️",square:"🗽"}[k]} ${LOCS[k].name}</button>`).join("")}</div>`);
+ },
+ goto2(d){closeModal();const L=LOCS[d.id];P.x=L.door.x;P.y=Math.min(L.door.y+30,FY1);P.tx=null;P.auto=null;TH.x=P.x-48;TH.y=P.y+4;hud()},
+ settings(){openSettings()},
+ look(d){$("#lookimg").src=IM(d.i)},
+ zoom(d){const lb=$("#lb");$("img",lb).src=IM(d.i);lb.classList.add("open")},
+ gallery(){
+  const sec=(t,f,cl)=>{const l=IMGS.filter(f);return `<h3>${t} (${l.length})</h3><div class="gal ${cl||""}">${l.map(n=>`<img loading="lazy" src="${IM(n)}" alt="${n.replace(/_/g," ")}" data-act="zoom" data-i="${n}">`).join("")}</div>`};
+  openModal(`<div class="phead"><h2>🖼️ Level Up Universe Gallery</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div><p class="small">${IMGS.length} images from the Level Up Universe and Video Engine asset folders. Tap any image to enlarge.</p><h3>🔄 360° characters (${HERO_NAMES.length+2})</h3><p class="small">Tap a character to spin them all the way around and watch them walk.</p><div class="heroes">${HERO_NAMES.map((nm,i)=>`<button data-act="turn360" data-n="${HERO(i)}" data-l="${nm}" aria-label="${nm}: 360 view"><img src="${IM(HERO(i))}" alt=""></button>`).join("")}<button data-act="turn360" data-n="map_theo" data-l="Theo" aria-label="Theo: 360 view"><img src="${IM("map_theo")}" alt=""></button><button data-act="turn360" data-n="map_marcia" data-l="Miss Marcia" aria-label="Miss Marcia: 360 view"><img src="${IM("map_marcia")}" alt=""></button></div>`+
+   sec("Theo",n=>n.startsWith("characters_theo"),"ch")+sec("Ms. Okafor",n=>n.startsWith("characters_mr_sal"),"ch")+sec("Miss Marcia",n=>n.startsWith("characters_customer"),"ch")+sec("Jalen",n=>n.startsWith("characters_jalen"),"ch")+sec("Arcade Worker",n=>n.startsWith("characters_arcade"),"ch")+
+   sec("Level Up Academy",n=>n.startsWith("lua_"))+sec("Times Square: Locations",n=>n.startsWith("ls_ts_loc")||n.startsWith("ls_ts_pano"))+sec("Times Square: Sunset",n=>n.startsWith("ls_ts_cam"))+sec("Arcade",n=>n.startsWith("settings_")));
+ },
+ setread(){S.settings.read=!S.settings.read;save();openSettings()},
+ seteasy(){S.settings.easy=!S.settings.easy;document.body.classList.toggle("easy",S.settings.easy);save();openSettings()},
+ sethc(){S.settings.hc=!S.settings.hc;document.body.classList.toggle("hc",S.settings.hc);save();openSettings()},
+ setnomo(){S.settings.nomo=!S.settings.nomo;document.body.classList.toggle("nomo",S.settings.nomo);save();openSettings()},
+ setbig(){S.settings.big=!S.settings.big;document.body.classList.toggle("big",S.settings.big);save();openSettings()},
+ dbgcoins(){S.coins+=100;save();toast("+100 coins (playtest)");hud()},
+ dbgxp(){S.xp+=100;save();toast("+100 XP (playtest)");hud()},
+ reset(){openModal(`<h2>Reset everything?</h2><p>This erases your avatar, rewards, and mission progress on this device.</p><div class="ans"><button class="btn good" data-act="resetyes">Yes, reset</button><button class="btn alt" data-act="closem">Cancel</button></div>`)},
+ resetyes(){S=defState();save();closeModal();document.body.classList.remove("big","easy","hc","nomo");setScreen("title");$("#btnCont").hidden=true},
+ startm(d){startMission(+d.id)},
+ pick(d,b){M.pick=+d.i;$$("#ans .mc button").forEach(x=>x.setAttribute("aria-pressed",x===b))},
+ check(){checkAns()},
+ hint(){if(M.ans)return;const it=M.def.items[M.idx];setFb("show",`💡 <b>Hint:</b> ${hintFb()}`)},
+ next(){nextItem()},
+ leave(){leaveMission()},
+ backcity(d){M=null;setScreen("map");if(d.fin==="1"){S.finale=true;save();say("theo",["You did it! You helped the whole city get ready for the LevelUp City Festival!","The festival is ready, and it's all thanks to you. You can replay any mission whenever you like to earn more coins."],()=>{})}},
+ preview(d){PV=d.id;CONF=null;openShop(PV)},
+ buy(d){CONF=d.id;openShop(d.id)},
+ buyno(d){CONF=null;openShop(d.id)},
+ buyyes(d){const it=cat(d.id);if(S.coins<it.price||levelOf(S.xp)<it.lvl||S.owned.includes(it.id)){CONF=null;openShop(d.id);return}
+  S.coins-=it.price;S.owned.push(it.id);S.eq[it.slot]=it.id;save();CONF=null;toast(`You bought ${it.name}! 🎉`);openShop(d.id)},
+ equip(d){equipItem(d.id);openShop(d.id)},
+ equip2(d){equipItem(d.id);openApt()}
+};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||b.disabled)return;const f=ACT[b.dataset.act];f&&f(b.dataset,b)});
+
+/* ---------- boot ---------- */
+/* ================= v2: rubric-driven additions ================= */
+const today=()=>new Date().toISOString().slice(0,10);
+let RNG=Math.random;
+function seeded(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}let a=h>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=(a,b)=>a+Math.floor(RNG()*(b-a+1));
+const pick=a=>a[Math.floor(RNG()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(RNG()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+const STDS={"3.OA.A.1":"Review from Grade 3: products as equal groups and arrays","4.OA.A.1":"Interpret a multiplication equation as a comparison","4.OA.A.2":"Solve word problems with multiplicative comparison","4.OA.A.3":"Solve multistep word problems; interpret remainders","4.NBT.B.5":"Multiply up to 4-digit by 1-digit using strategies","4.NBT.B.6":"Divide up to 4-digit by 1-digit using strategies"};
+const RETEACH={"3.OA.A.1":"Quick review: draw equal groups or an array, then write the multiplication equation that matches.","4.OA.A.1":"Practice comparison sentences: '35 is 5 times as many as 7.' Have students write the equation for a sentence, and the sentence for an equation.","4.OA.A.2":"Use tape diagrams: draw the small amount once, then the 'times as many' amount as repeated boxes. Ask 'multiply or divide?'","4.OA.A.3":"Practice interpreting remainders with context: full boxes vs. boxes needed. Ask 'what happens to the leftovers?'","4.NBT.B.5":"Use area models: split one factor into tens and ones, find partial products, add. Check with an estimate.","4.NBT.B.6":"Use related facts and partial quotients (split the dividend into friendly multiples of the divisor)."};
+const STDMAP={1:["3.OA.A.1","3.OA.A.1","3.OA.A.1","3.OA.A.1","3.OA.A.1","4.OA.A.1","3.OA.A.1","3.OA.A.1"],2:["3.OA.A.1","3.OA.A.1","3.OA.A.1","4.NBT.B.5","3.OA.A.1","3.OA.A.1","4.NBT.B.5","4.NBT.B.5"],3:["4.NBT.B.5","4.OA.A.3","4.NBT.B.5","4.NBT.B.5","4.NBT.B.5","4.OA.A.3","4.NBT.B.5","4.NBT.B.5"],4:["4.NBT.B.6","4.NBT.B.6","4.NBT.B.6","4.NBT.B.6","4.OA.A.3","4.NBT.B.6","4.NBT.B.6","4.OA.A.3"],5:["4.OA.A.3","4.OA.A.3","4.OA.A.2","4.OA.A.3","4.OA.A.1","4.OA.A.3","4.OA.A.3","4.OA.A.2"]};
+const stdOf=(m,i)=>(STDMAP[m]||[])[i]||"4.OA.A.3";
+MISSIONS.forEach(m=>m.items.forEach((it,i)=>it.s=stdOf(m.id,i)));
+
+/* ---- generators (varied numbers) ---- */
+const PEOPLE=["Theo","Jalen","Miss Marcia","Ms. Okafor","Ava","Leo","Maya","Sam","Zoe","Kai"];
+const pl=u=>u==="shelf"?"shelves":/(x|s|sh|ch)$/.test(u)?u+"es":u+"s";
+const THINGS=[["bag","apples"],["box","markers"],["tray","muffins"],["pack","stickers"],["shelf","books"],["jar","marbles"],["crate","oranges"],["row","seats"]];
+const gGroups=lv=>{const a=lv==1?R(2,5):R(6,9),b=lv==1?R(2,9):lv==2?R(6,9):R(12,19),[u,th]=pick(THINGS),p=pick(PEOPLE),t=a*b;
+ return{t:"num",q:`${p} has ${a} ${pl(u)} with ${b} ${th} in each ${u}. How many ${th} are there in all?`,a:t,h:[`${a} equal groups of ${b}.`,lv==3?`Break ${b} into 10 + ${b-10}.`:`Skip count by ${b}, or use a fact you know.`],e:lv==3?`${a} × ${b} = ${a} × 10 + ${a} × ${b-10} = ${a*10} + ${a*(b-10)} = ${t}.`:`${a} × ${b} = ${t}.`,k:"groups",lv,s:lv==3?"4.NBT.B.5":"3.OA.A.1"}};
+const gArea=lv=>{const a=lv==1?R(2,5):R(3,9),b=lv==1?R(11,19):lv==2?(x=>x%10?x:x+1)(R(21,49)):R(101,399),t=a*b;let e,h;
+ if(lv<3){const tens=Math.floor(b/10)*10,o=b-tens;h=[`Break ${b} into ${tens} + ${o}.`,`${a} × ${tens} = ${a*tens} and ${a} × ${o} = ${a*o}.`];e=`${a} × ${b} = ${a*tens} + ${a*o} = ${t}.`}
+ else{const hd=Math.floor(b/100)*100,r=b-hd,tn=Math.floor(r/10)*10,o=r-tn,pp=[hd,tn,o].filter(x=>x>0);h=[`Break ${b} into ${pp.join(" + ")}.`,pp.map(x=>`${a} × ${x} = ${a*x}`).join(", ")+"."];e=`${a} × ${b} = ${pp.map(x=>a*x).join(" + ")} = ${t}.`}
+ return{t:"num",q:`An area model shows ${a} rows with ${b} squares in each row. What is ${a} × ${b}?`,a:t,h,e,k:"area",lv,s:"4.NBT.B.5"}};
+const gDiv=lv=>{const k=lv==1?R(2,9):R(2,5),qq=lv==1?R(2,9):lv==2?R(11,24):R(31,99),t=k*qq,[u,th]=pick(THINGS),p=pick(PEOPLE);
+ let h,e;if(lv==1){h=[`What number times ${k} equals ${t}?`,`${k} × ${qq} = ${t}.`];e=`${t} ÷ ${k} = ${qq} because ${k} × ${qq} = ${t}.`}
+ else{const f=k*10,rest=t-f;h=[`Split ${t} into ${f} + ${rest}. Divide each part by ${k}.`,`${f} ÷ ${k} = 10, then ${rest} ÷ ${k}.`];e=`${t} = ${f} + ${rest}. ${f} ÷ ${k} = 10 and ${rest} ÷ ${k} = ${rest/k}. So ${t} ÷ ${k} = ${qq}.`}
+ return{t:"num",q:`${p} shares ${t} ${th} equally among ${k} ${pl(u)}. How many ${th} go in each ${u}?`,a:qq,h,e,k:"div",lv,s:"4.NBT.B.6"}};
+const mcShuf=it=>{const ok=it.o[it.a];it.o=shuffle(it.o);it.a=it.o.indexOf(ok);return it};
+const gRem=lv=>{const k=R(3,9),q=lv==1?R(3,9):lv==2?R(6,15):R(12,30),r=R(1,k-1),N=k*q+r,need=RNG()<.5,[u,th]=pick(THINGS);
+ if(need){const u=pick(["van","boat","minibus","rowboat"]);const o=[`${q+1}`,`${q}`,`${q+2}`,`${N}`].map(x=>x+" "+pl(u));const idx=0;
+  return mcShuf({t:"mc",q:`${N} students ride in ${pl(u)} that each hold ${k} students. How many ${pl(u)} are needed so everyone has a seat?`,o:o,a:idx,h:[`${N} ÷ ${k} = ${q} with ${r} left over. What happens to the ${r} left over?`,`${q} full ${pl(u)} is not enough. The extra students need one more.`],e:`${N} ÷ ${k} = ${q} remainder ${r}. The ${r} extra students still need a seat, so ${q+1} ${pl(u)} are needed.`,k:"rem",lv,s:"4.OA.A.3"})}
+ const o=[`${q} ${pl(u)}, ${r} left over`,`${q} ${pl(u)}, ${r+1>k-1?r-1||1:r+1} left over`,`${q+1} ${pl(u)}, 0 left over`,`${q-1} ${pl(u)}, ${r+k} left over`];
+ return mcShuf({t:"mc",q:`${N} ${th} are packed ${k} to a ${u}. How many full ${pl(u)} can be filled, and how many ${th} are left over?`,o,a:0,h:[`Find the closest multiple of ${k} without going over ${N}.`,`${k} × ${q} = ${k*q}, and ${N} − ${k*q} = ${r}.`],e:`${k} × ${q} = ${k*q}, so there are ${q} full ${pl(u)} and ${N} − ${k*q} = ${r} left over.`,k:"rem",lv,s:"4.OA.A.3"})};
+const gCompare=lv=>{const m=lv==1?R(2,5):R(3,9),n=lv==1?R(2,9):R(11,29),t=m*n,A=pick(PEOPLE),B=pick(PEOPLE.filter(x=>x!==A)),th=pick(["cards","stickers","marbles","tickets"]);
+ if(lv==3)return{t:"num",q:`${A} has ${t} ${th}. That is ${m} times as many as ${B} has. How many ${th} does ${B} have?`,a:n,h:[`${t} is ${m} groups of what number?`,`Divide: ${t} ÷ ${m}.`],e:`"${m} times as many" means ${t} = ${m} × ${n}. So ${t} ÷ ${m} = ${n}.`,k:"compare",lv,s:"4.OA.A.2"};
+ return{t:"num",q:`${B} has ${n} ${th}. ${A} has ${m} times as many ${th} as ${B}. How many ${th} does ${A} have?`,a:t,h:[`"${m} times as many" means ${m} groups of ${n}.`,lv==1?`Skip count by ${n}.`:`Break ${n} into tens and ones.`],e:`${m} times as many as ${n} is ${m} × ${n} = ${t}.`,k:"compare",lv,s:"4.OA.A.2"}};
+const gMoney=lv=>{if(lv<3){const p=lv==1?R(3,9):R(12,49),k=lv==1?R(3,9):R(3,6),t=p*k;return{t:"num",q:`An item costs $${p}. How many dollars do ${k} of them cost?`,a:t,h:[`${k} equal groups of $${p}.`,lv==1?"Skip count.":`Break ${p} into tens and ones.`],e:`${k} × ${p} = ${t} dollars.`,k:"money",lv,s:"4.NBT.B.5"}}
+ const a=R(2,5),b=R(2,5),p=R(4,19),q=R(4,19),t=a*p+b*q;return{t:"num",q:`At the shop, ${a} shirts cost $${p} each and ${b} caps cost $${q} each. What is the total cost in dollars?`,a:t,h:[`Find the shirts first: ${a} × ${p}.`,`Then ${b} × ${q}. Add the two totals.`],e:`${a} × ${p} = ${a*p} and ${b} × ${q} = ${b*q}. ${a*p} + ${b*q} = ${t}.`,k:"money",lv,s:"4.OA.A.3"}};
+const gTickets=lv=>{if(lv<3){const a=lv==1?R(2,6):R(3,9),b=lv==1?pick([5,10,15,20,25]):R(12,38),t=a*b;return{t:"num",q:`Each prize bundle has ${b} tickets. You win ${a} bundles. How many tickets is that?`,a:t,h:[`${a} equal groups of ${b}.`,"Break the bigger number into tens and ones."],e:`${a} × ${b} = ${t} tickets.`,k:"tickets",lv,s:"4.NBT.B.5"}}
+ const a=R(3,9),b=R(12,29),t=a*b,s=R(10,Math.min(60,t-5));return{t:"num",q:`You win ${a} bundles of ${b} tickets, then spend ${s} tickets on a prize. How many tickets are left?`,a:t-s,h:[`First find ${a} × ${b}.`,`Then subtract ${s}.`],e:`${a} × ${b} = ${t}. ${t} − ${s} = ${t-s} tickets left.`,k:"tickets",lv,s:"4.OA.A.3"}};
+const gTransfer=lv=>{const a=R(3,9),n=lv==1?R(6,12):R(12,29),e=R(3,Math.min(20,a*n-5));
+ if(RNG()<.5)return{t:"num",q:`A food truck sells ${a} trays with ${n} tacos on each tray. At lunch, ${e} tacos are eaten. How many tacos are left?`,a:a*n-e,h:[`First find all the tacos: ${a} × ${n}.`,`Then take away ${e}.`],e:`${a} × ${n} = ${a*n}. ${a*n} − ${e} = ${a*n-e} tacos left.`,k:"transfer",lv,s:"4.OA.A.3"};
+ const k=R(3,6),q=R(4,12),m=R(2,6);return{t:"num",q:`A bakery shares ${k*q} muffins equally among ${k} tables. Then each table gets ${m} extra muffins. How many muffins does each table have now?`,a:q+m,h:[`First share equally: ${k*q} ÷ ${k}.`,`Then add the ${m} extra.`],e:`${k*q} ÷ ${k} = ${q}. ${q} + ${m} = ${q+m} muffins at each table.`,k:"transfer",lv,s:"4.OA.A.3"}};
+const GEN={transfer:gTransfer,groups:gGroups,area:gArea,div:gDiv,rem:gRem,compare:gCompare,money:gMoney,tickets:gTickets};
+const KIND_STD={transfer:"4.OA.A.3",groups:"3.OA.A.1",area:"4.NBT.B.5",div:"4.NBT.B.6",rem:"4.OA.A.3",compare:"4.OA.A.2",money:"4.OA.A.3",tickets:"4.NBT.B.5"};
+const STD_KINDS={"3.OA.A.1":["groups"],"4.OA.A.1":["compare"],"4.OA.A.2":["compare"],"4.OA.A.3":["rem","money","transfer"],"4.NBT.B.5":["area","money"],"4.NBT.B.6":["div","rem"]};
+function asMC(it){if(it.t==="mc")return it;const a=it.a,s=new Set([a]);const tries=[a+10,a-10,a+R(1,3),a-R(1,3),a*2,a+R(4,9)];for(const x of tries){if(x>0&&!s.has(x)&&s.size<4)s.add(x)}let n=1;while(s.size<4){s.add(a+n);n++}
+ const arr=shuffle([...s]);return Object.assign({},it,{t:"mc",o:arr.map(String),a:arr.indexOf(a)})}
+function twinKind(m,i){if(m==99)return["transfer",1];if(m==1)return i==5?["compare",1]:["groups",1];if(m==2)return(i<3||i==4)?["groups",1]:["area",1];if(m==3)return i==1?["money",1]:["area",2];if(m==4)return(i==4||i==7)?["rem",1]:i==6?["div",2]:["div",1];return(i==2||i==4||i==7)?["compare",1]:(i==0||i==3)?["groups",2]:["div",1]}
+
+/* ---- state / log ---- */
+function v2init(){S.log=S.log||[];S.badges=S.badges||{};S.cards=S.cards||{};S.arc=S.arc||{tickets:0,best:0,plays:0,lv:1};S.prizes=S.prizes||[];S.lab=S.lab||{lv:{},runs:0};S.cap=S.cap||{d:"",xp:0,coins:0};S.stats=S.stats||{whyOk:0,best:0,cur:0,days:[]};S.strat=S.strat||{};S.tset=S.tset||{floor:1,ceil:3};S.stars=S.stars||{d:'',got:[],total:0};S.season=S.season||{};
+ if(S.settings.sfx===undefined)S.settings.sfx=true;if(S.settings.music===undefined)S.settings.music=true;
+ const d=today();if(!S.stats.days.includes(d)){S.stats.days.push(d);S.stats.days=S.stats.days.slice(-60)}}
+function logA(o){S.log.push(Object.assign({d:today(),t:Date.now()},o));if(S.log.length>600)S.log.splice(0,S.log.length-600)}
+function award(xp,coins,src){const d=today();if(S.cap.d!==d)S.cap={d,xp:0,coins:0};
+ const capped=src!=="mission";let gx=xp,gc=coins;if(capped){gx=Math.max(0,Math.min(xp,90-S.cap.xp));gc=Math.max(0,Math.min(coins,30-S.cap.coins));S.cap.xp+=gx;S.cap.coins+=gc}
+ const lb=levelOf(S.xp);S.xp+=gx;S.coins+=gc;const la=levelOf(S.xp);save();if(la>lb){sfx("level");toast(`🎉 Level up! You're now Level ${la}.`)}
+ if($("#s-map").classList.contains("active"))hud();return{xp:gx,coins:gc,lvUp:la>lb}}
+
+/* ---- skills / mastery ---- */
+function resolved(){return S.log.filter(e=>e.s&&e.src!=="why"&&e.ok!==undefined&&(e.ok||e.n>=3))}
+function skill(std){const r=resolved().filter(e=>e.s===std);const good=r.filter(e=>e.ok&&e.n<=2);const days=new Set(good.map(e=>e.d));const rate=r.length?good.length/r.length:0;
+ const st=!r.length?"Not started":(r.length>=6&&rate>=.8&&days.size>=2)?"Secure":"Practicing";return{std,n:r.length,good:good.length,rate,days:days.size,state:st}}
+function weakStds(){return Object.keys(STDS).map(skill).sort((a,b)=>(a.n?a.rate:-1)-(b.n?b.rate:-1))}
+
+/* ---- sound ---- */
+let AC=null,musicT=null;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==="suspended")AC.resume();return AC}
+function tone(f,t,d,type,g){const a=ac();if(!a)return;const o=a.createOscillator(),v=a.createGain();o.type=type||"sine";o.frequency.value=f;const s=a.currentTime+t;v.gain.setValueAtTime(0,s);v.gain.linearRampToValueAtTime(g||.08,s+.02);v.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(v);v.connect(a.destination);o.start(s);o.stop(s+d+.05)}
+function sfx(n){if(!S.settings.sfx)return;try{({tap:()=>tone(520,0,.06,"triangle",.04),ok:()=>{tone(660,0,.12,"triangle");tone(880,.1,.18,"triangle")},oops:()=>{tone(330,0,.18,"sine",.05);tone(294,.14,.22,"sine",.04)},coin:()=>{tone(988,0,.08,"square",.04);tone(1319,.08,.2,"square",.04)},level:()=>[523,659,784,1047].forEach((f,i)=>tone(f,i*.11,.25,"triangle",.07)),badge:()=>[784,988,1175,1568].forEach((f,i)=>tone(f,i*.09,.3,"triangle",.07))})[n]()}catch(e){}}
+const PENT=[261.6,293.7,329.6,392,440,523.3,587.3,659.3];
+function mood(){if($("#s-mission").classList.contains("active"))return{gap:3200,g:.018,notes:[0,2,4,2],oct:1};if(Q&&Q.arcade)return{gap:900,g:.022,notes:[0,3,5,3,6,4],oct:1};if($("#s-map").classList.contains("active"))return{gap:1700,g:.02,notes:[0,2,4,5,4,2],oct:1};return{gap:2600,g:.016,notes:[0,4,2],oct:1}}
+let mi=0;function musicTick(){if(!S.settings.music||document.hidden)return;const m=mood();const f=PENT[m.notes[mi++%m.notes.length]]*m.oct;tone(f,0,1.6,"sine",m.g);if(mi%4===0)tone(f/2,0,2.4,"sine",m.g*.8);clearTimeout(musicT);musicT=setTimeout(musicTick,m.gap)}
+function musicStart(){clearTimeout(musicT);if(S.settings.music&&ac())musicT=setTimeout(musicTick,300)}
+document.addEventListener("pointerdown",()=>{if(!AC){ac();musicStart()}},{once:true});
+document.addEventListener("click",e=>{if(e.target.closest("button"))sfx("tap")});
+
+/* ---- confetti / celebration ---- */
+function prizeScene(p){const o=document.createElement("div");o.className="pz";const hs=IM(HERO(S.avatar.hero));o.innerHTML=`<div class="pzc"><div class="pzs"><div class="pzw"><canvas width="96" height="96" data-npc="arcade"></canvas><div class="pzcl">Arcade Worker</div></div><div class="pzarm"><i class="pzsl"></i><i class="pzhand"></i><span class="pzgift">${p.e}</span></div><div class="pzh"><img src="${hs}" alt="You"><div class="pzcl">You</div></div></div><div class="pzb">Here you go! Enjoy your <b>${p.n}</b>!</div><div class="pzn">🎉 You got the ${p.n}! 🎉</div><button class="btn" id="pzok">Awesome!</button></div>`;document.body.appendChild(o);paintNpcs(o);setTimeout(confetti,2600);setTimeout(confetti,3300);setTimeout(()=>{try{sfx("level")}catch(e){}},2500);const done=()=>{o.remove();openArcade()};o.querySelector("#pzok").onclick=done;o.querySelector("#pzok").focus()}
+function confetti(){if(S.settings.nomo)return;const w=document.createElement("div");w.className="confetti";w.setAttribute("aria-hidden","true");for(let i=0;i<26;i++){const s=document.createElement("i");s.textContent=pick(["⭐","🎉","✨","🪙","🎈"]);s.style.left=Math.random()*100+"%";s.style.animationDelay=Math.random()*.5+"s";w.appendChild(s)}document.body.appendChild(w);setTimeout(()=>w.remove(),2600)}
+
+/* ---- badges ---- */
+const BADGES=[
+ {id:"first",e:"🚀",n:"First Mission",d:"Finish a mission",t:()=>doneCount()>=1},
+ {id:"festival",e:"🎪",n:"Festival Ready",d:"Finish all 5 missions",t:()=>doneCount()>=5},
+ {id:"sharp",e:"🎯",n:"Sharp Thinker",d:"5 first-try answers in a row",t:()=>S.stats.best>=5},
+ {id:"explainer",e:"💬",n:"Explainer",d:"Explain why 3 times",t:()=>S.stats.whyOk>=3},
+ {id:"explorer",e:"🗺️",n:"School Explorer",d:"Collect all 6 school postcards",t:()=>Object.keys(S.cards).length>=6},
+ {id:"stylist",e:"👟",n:"Stylist",d:"Buy your first item",t:()=>S.owned.length>=1},
+ {id:"lab",e:"🧪",n:"Practice Pro",d:"Finish 3 Practice Lab rounds",t:()=>S.lab.runs>=3},
+ {id:"arcade",e:"🕹️",n:"Ticket Champ",d:"Score 80 tickets in one Ticket Rush",t:()=>S.arc.best>=80},
+ {id:"level4",e:"⭐",n:"Rising Star",d:"Reach Level 4",t:()=>levelOf(S.xp)>=4},
+ {id:"star",e:"✨",n:"Star Spotter",d:"Find 10 city stars on the map",t:()=>S.stars.total>=10},
+ {id:"season",e:"🍂",n:"Seasonal Marcher",d:"Finish a Daily Challenge during a seasonal event",t:()=>Object.keys(S.season).length>=1},
+ {id:"friend",e:"🤝",n:"Team Player",d:"Try a Friend Challenge",t:()=>(S.friendDone||0)>=1},
+ {id:"back",e:"👋",n:"Welcome Back",d:"Play on 2 different days",t:()=>S.stats.days.length>=2}];
+function checkBadges(){const got=[];BADGES.forEach(b=>{if(!S.badges[b.id]&&b.t()){S.badges[b.id]=today();got.push(b)}});if(got.length){save();sfx("badge");confetti();toast("🏅 Badge: "+got.map(b=>b.n).join(", "))}return got}
+
+/* ---- quiz engine (practice lab, arcade, daily, warm-up, rooms, events, twin) ---- */
+let Q=null,qTimer=null;
+function quizStop(){clearInterval(qTimer);qTimer=null;Q=null}
+function runQuiz(o){clearInterval(qTimer);Q=Object.assign({i:0,main:0,n:5,lv:1,res:[],queue:[],kinds:Object.keys(GEN),mc:false,streak:0,cur:null,src:"lab",twins:0},o);qNext()}
+function qItem(){if(Q.queue.length)return Q.queue.shift();if(Q.items)return Q.items[Q.main];const k=typeof Q.kinds==="function"?Q.kinds(Q.main):Q.kinds[Q.main%Q.kinds.length];const L=Math.min(S.tset.ceil,Math.max(S.tset.floor,Math.min(3,Math.max(1,Q.lv))));const it=GEN[k](L);return Q.mc?asMC(it):it}
+function qNext(){if(Q.main>=Q.n){qEnd();return}Q.cur=qItem();Q.tries=0;Q.hn=0;Q.done=false;Q.pick=null;Q.bonus=true;qRender()}
+function qRender(){const it=Q.cur,tw=it.twin;
+ const head=`<div class="phead"><h2>${Q.title}</h2><button class="btn alt sm" data-act="qclose">✕ Leave</button></div>`;
+ const stat=`<div class="small">${tw?"✨ Try a new one just like it":`Question ${Math.min(Q.main+1,Q.n)} of ${Q.n}`}${Q.adaptive?` · Level ${Math.min(3,Math.max(1,Q.lv))}`:""}${Q.arcade?` · 🎟️ ${Q.tix} tickets · 🔥 ${Q.streak}`:""}<span id="qtm"></span></div>`;
+ openModal(`${head}<div class="qcard">${stat}<div class="qtext">${it.q}</div><button class="btn alt sm" data-act="speak" data-t="${it.q.replace(/"/g,"&quot;")}" aria-label="Read question aloud">🔊 Read aloud</button>
+ <div class="ans" id="qans">${it.t==="num"?`<label class="sr" for="qinp">Your answer</label><input id="qinp" type="number" inputmode="numeric" autocomplete="off" placeholder="?"><button class="btn" data-act="qcheck">Check</button>`:`<div class="mc" role="group" aria-label="Choices">${it.o.map((o,i)=>`<button data-act="qpick" data-i="${i}" aria-pressed="false">${o}</button>`).join("")}</div><button class="btn" data-act="qcheck">Check</button>`}<button class="btn alt" data-act="qhint">💡 Hint</button></div><div id="qfb" aria-live="polite"></div></div>`);
+ const inp=$("#qinp");if(inp){inp.focus();inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();Q.done?qAfter():qCheck()}})}
+ clearInterval(qTimer);if(Q.rush&&!tw){Q.left=14;const t=$("#qtm");qTimer=setInterval(()=>{if(!Q||Q.done){return}Q.left--;const e=$("#qtm");if(e)e.textContent=" · ⏱ "+Math.max(0,Q.left)+"s for bonus";if(Q.left<=0){Q.bonus=false;if(e)e.textContent=" · no bonus this time, keep going!"}},1000)}
+ if(S.settings.read)speak(it.q)}
+function qFb(c,h){const e=$("#qfb");if(e)e.innerHTML=`<div class="fb ${c}">${h}</div>`}
+function qCheck(){if(!Q||Q.done)return;const it=Q.cur;let v;
+ if(it.t==="num"){const s=$("#qinp").value.trim();if(s===""){qFb("try","Type your answer first, then press Check.");return}v=Number(s)}else{if(Q.pick==null){qFb("try","Pick one of the choices first.");return}v=Q.pick}
+ Q.tries++;const ok=v===it.a;logA({src:Q.src,s:it.s,k:it.k,lv:it.lv,ok,n:Q.tries,v});
+ if(ok){Q.done=true;sfx("ok");const first=Q.tries===1;qRes(first?"ok1":"ok2");if(it.t==="mc")$$("#qans .mc button")[it.a].classList.add("right");
+  let pts=0;if(Q.arcade&&!it.twin){const base=first?10:5;const sb=Math.min(Q.streak*2,10);pts=base+(first?sb:0)+(Q.bonus&&Q.rush&&first?5:0);Q.tix+=pts}
+  streakUp(first);Q.streak=first?Q.streak+1:0;if(Q.adaptive&&first&&Q.streak>=2){Q.lv=Math.min(3,Q.lv+1);Q.streak=0}
+  qFb("ok",`✅ ${pick(["Nice work!","That's it!","You figured it out!","Great thinking!"])} ${it.e}${pts?`<br><b>+${pts} tickets</b>`:""}<div class="ans"><button class="btn" data-act="qnext" autofocus>${Q.main+(it.twin?0:1)>=Q.n?"See results":"Next →"}</button></div>`);$("#qfb .btn").focus()}
+ else if(Q.tries<(it.t==="mc"?2:3)){sfx("oops");S.stats.cur=0;if(it.t==="mc"){const wb=$$("#qans .mc button")[v];if(wb){wb.disabled=true;wb.setAttribute("aria-pressed","false");wb.classList.add("nope")}Q.pick=null}qFb("try",`Not quite. Let's take another look. 💭 <b>Hint:</b> ${it.h[Math.min(Q.hn++,it.h.length-1)]}<br><span class="small">Try again, you can do it!</span>`);if(it.t==="num")$("#qinp").select()}
+ else{Q.done=true;sfx("oops");Q.streak=0;S.stats.cur=0;qRes("miss");if(it.t==="mc")$$("#qans .mc button")[it.a].classList.add("right");
+  if(Q.adaptive)Q.lv=Math.max(1,Q.lv-1);
+  if(!it.twin&&it.k){const tw=GEN[it.k](Math.max(1,(it.lv||1)-(it.k==="rem"?0:1)));tw.twin=true;Q.queue.push(Q.mc?asMC(tw):tw)}
+  qFb("show",`Let's look at it together. The answer is <b>${it.t==="mc"?it.o[it.a]:it.a}</b>. ${it.e}<br><span class="small">Next you'll get a new one just like it, with different numbers.</span><div class="ans"><button class="btn" data-act="qnext" autofocus>Next →</button></div>`);$("#qfb .btn").focus()}
+ if(S.settings.read)speak($("#qfb").textContent)}
+function qRes(r){if(!Q.cur.twin){Q.res.push(r);Q.main++}else Q.twins++}
+function streakUp(first){S.stats.cur=first?(S.stats.cur||0)+1:0;if(S.stats.cur>S.stats.best)S.stats.best=S.stats.cur}
+function qAfter(){Q.done=false;qNext()}
+function qEnd(){clearInterval(qTimer);const r=Q.res,ok1=r.filter(x=>x==="ok1").length,okAll=r.filter(x=>x!=="miss").length;let xp=ok1*3+(r.length-ok1-r.filter(x=>x==="miss").length)*2,coins=ok1;let tix=0,newBest=false;
+ if(Q.arcade){tix=Q.tix;S.arc.tickets+=tix;S.arc.plays++;if(tix>S.arc.best){S.arc.best=tix;newBest=true}S.arc.lv=Q.lv;xp=Math.round(tix/4);coins=Math.round(tix/10)}
+ if(Q.src==="lab")S.lab.runs++;
+ let extra="";if(Q.daily&&S.dailyDone!==today()){S.dailyDone=today();S.season[season().k]=1;coins+=10;extra="<div class='fb ok'>📅 Daily Challenge bonus: +10 🪙</div>"}
+ const a=award(xp,coins,"quiz");const badges=checkBadges();
+ const first=Q.res.length&&Q.res.every(x=>x==="ok1");
+ openModal(`<div class="phead"><h2>${Q.title}: done!</h2><button class="btn alt sm" data-act="qclose">✕ Close</button></div><div class="qcard" style="text-align:center"><img class="look" style="max-height:200px;object-fit:contain;background:#e4f1ff" src="${IM(first?"characters_theo_poses_theo_jumping":"characters_theo_emotions_theo_proud")}" alt="Theo celebrating">
+ <div class="tcols" style="justify-content:center"><div class="card"><span class="big-n">${ok1}/${r.length}</span><span>first-try answers</span><span class="small">${okAll}/${r.length} solved${Q.twins?` · ${Q.twins} new-number retry`:""}</span></div><div class="card"><span class="big-n">+${a.xp} XP</span><span class="big-n">+${a.coins} 🪙</span>${Q.arcade?`<span class="big-n">🎟️ +${tix}</span>${newBest?"<span class='small'>New personal best!</span>":`<span class='small'>Personal best: ${S.arc.best}</span>`}`:""}${a.xp<xp?`<span class="small">Daily practice reward limit reached. Keep playing for fun!</span>`:""}</div></div>${extra}${badges.length?`<div class="fb ok">🏅 New badge: ${badges.map(b=>b.e+" "+b.n).join(", ")}</div>`:""}
+ <div class="ans" style="justify-content:center"><button class="btn" data-act="${Q.back||"closem"}" autofocus>${Q.backLabel||"Back to the city"}</button>${Q.again?`<button class="btn alt" data-act="${Q.again}">Play again</button>`:""}</div></div>`);
+ if(a.lvUp||newBest||badges.length||first)confetti();Q.after&&Q.after({ok1,r,lv:Q.lv});Q=null}
+Object.assign(ACT,{qclose(){const b=Q&&Q.back;quizStop();closeModal();if(b&&ACT[b])ACT[b]({})},qpick(d){if(!Q||Q.done)return;Q.pick=+d.i;$$("#qans .mc button").forEach((b,i)=>b.setAttribute("aria-pressed",i===+d.i))},qcheck(){qCheck()},qnext(){qAfter()},qhint(){if(!Q||Q.done)return;const it=Q.cur;qFb("try",`💡 <b>Hint:</b> ${it.h[Math.min(Q.hn++,it.h.length-1)]}`)}});
+
+/* ---- practice lab (adaptive), warm-up, daily ---- */
+function labKinds(){const w=weakStds().slice(0,2).flatMap(s=>STD_KINDS[s.std]);const all=["groups","area","div","rem","compare","money","transfer"];return[...w,...all.filter(k=>!w.includes(k))].slice(0,6)}
+function startLab(){const ks=labKinds();const lv=Math.max(1,Math.min(3,Math.round(Object.values(S.lab.lv).reduce((a,b)=>a+b,0)/(Object.keys(S.lab.lv).length||1))||1));
+ RNG=Math.random;runQuiz({title:"🧪 Practice Lab",n:6,lv,adaptive:true,src:"lab",kinds:i=>ks[i%ks.length],back:"today",backLabel:"Back to Today",again:"lab",after:x=>{ks.forEach(k=>S.lab.lv[k]=x.lv);save()}})}
+function startWarm(){const done=MISSIONS.filter(m=>mdone(m.id));if(!done.length){toast("Finish a mission first, then warm-ups appear here.");return}
+ const items=[];done.forEach(m=>{const [k,lv]=twinKind(m.id,m.id===4?4:2);items.push([k,lv])});const sel=shuffle(items).slice(0,3);RNG=Math.random;
+ runQuiz({title:"🔁 Warm-Up",n:sel.length,src:"warm",items:sel.map(([k,lv])=>GEN[k](lv)),back:"today",backLabel:"Back to Today",after:()=>{S.warmDay=today();save()}})}
+function startDaily(){RNG=seeded("daily"+today());const kinds=["groups","area","div","compare","transfer"].slice((new Date().getDay())%2,(new Date().getDay())%2+4);const items=kinds.map((k,i)=>GEN[k](Math.min(3,1+Math.floor(levelOf(S.xp)/3)+(i>1?0:0))));const mk=items.slice();RNG=Math.random;
+ runQuiz({title:"📅 Daily Challenge",n:4,src:"daily",daily:true,items:mk,back:"today",backLabel:"Back to Today"})}
+
+/* ---- arcade ---- */
+const PRIZES=[{id:"p1",n:"Mini Taxi",e:"🚕",c:30},{id:"p2",n:"Gold Star Pin",e:"🌟",c:50},{id:"p3",n:"Pixel Pizza",e:"🍕",c:80},{id:"p4",n:"Rocket Sticker",e:"🚀",c:120},{id:"p5",n:"Champion Trophy",e:"🏆",c:200},{id:"p6",n:"Theo Plush",e:"🧸",c:300}];
+function openArcade(){setTimeout(()=>$("#modal").classList.add("arc-mode"),0);BANNER="settings_arcade_bg_arcade_wide_interior";const target=Math.max(60,S.arc.best+10);
+ openModal(`<div class="phead"><h2>🕹️ Arcade</h2><button class="btn alt sm" data-act="closem">✕ Back to the city</button></div>${npcBlock("arcade",`Welcome to Ticket Rush! Solve ticket problems, earn tickets, and trade them at the Prize Counter. My high score is ${target}. Think you can beat it? (It's just you against the score. No leaderboards here.)`)}
+ <div class="tcols"><div class="card"><b>🎟️ ${S.arc.tickets} tickets</b><span>Personal best: ${S.arc.best} · Rounds played: ${S.arc.plays}</span><div class="chips"><button class="chip" aria-pressed="${!!S.arc.rush}" data-act="rushtoggle">⏱ Rush mode (optional timer bonus)</button></div><div class="ans"><button class="btn" data-act="arcplay" autofocus>▶ Play Ticket Rush</button></div><span class="small">Untimed by default. The timer only adds bonus tickets.</span></div>
+ <div class="card"><b>🏆 Prize Counter</b><div class="prizes">${PRIZES.map(p=>{const own=S.prizes.includes(p.id);return `<button class="chip" ${own?"aria-pressed=true":""} data-act="prize" data-id="${p.id}" ${own||S.arc.tickets<p.c?"disabled":""}>${p.e} ${p.n} · ${own?"owned":p.c+" 🎟️"}</button>`}).join("")}</div></div></div>`,paintNpcs)}
+Object.assign(ACT,{arcade(){openArcade()},rushtoggle(){S.arc.rush=!S.arc.rush;save();openArcade()},
+ arcplay(){RNG=Math.random;const lv=Math.max(1,Math.min(3,S.arc.lv||1));runQuiz({title:"🎟️ Ticket Rush",n:8,lv,adaptive:true,arcade:true,mc:true,tix:0,rush:!!S.arc.rush,src:"arcade",kinds:i=>["tickets","tickets","compare","tickets"][i%4],back:"arcade",backLabel:"Back to the Arcade",again:"arcplay"})},
+ prize(d){const p=PRIZES.find(x=>x.id===d.id);if(!p||S.prizes.includes(p.id)||S.arc.tickets<p.c)return;S.arc.tickets-=p.c;S.prizes.push(p.id);save();sfx("coin");prizeScene(p)}});
+
+/* ---------- 360° turnaround viewer (creator + gallery) ---------- */
+const TURNS={};
+const turnCtl=id=>`<div class="chips" style="justify-content:center;margin-top:.35rem"><button class="chip" data-act="tl" data-c="${id}" aria-label="Turn left">⟲</button><button class="chip" data-act="tspin" data-c="${id}" aria-pressed="${!__rm()}">🔄 Spin</button><button class="chip" data-act="twalk" data-c="${id}" aria-pressed="false">🚶 Walk</button><button class="chip" data-act="tr" data-c="${id}" aria-label="Turn right">⟳</button></div>`;
+function turnSync(id){const T=TURNS[id];if(!T)return;$$(`[data-c="${id}"][data-act="tspin"]`).forEach(b=>b.setAttribute("aria-pressed",!!T.spin));$$(`[data-c="${id}"][data-act="twalk"]`).forEach(b=>b.setAttribute("aria-pressed",!!T.walk));const l=document.getElementById(id+"Lab");if(l)l.textContent="Facing: "+OCTN[T.o]+" ("+(T.o+1)+" of 8 sides)"}
+function turnView(id,name,bg){const T=TURNS[id]||(TURNS[id]={o:0,spin:!__rm(),walk:false,g:0,acc:0});T.name=name;T.bg=bg;
+ const cv=document.getElementById(id);if(!cv)return;
+ if(!cv.dataset.tw){cv.dataset.tw="1";let x0=null;
+  cv.addEventListener("pointerdown",e=>{x0=e.clientX;T.spin=false;turnSync(id);try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+  cv.addEventListener("pointermove",e=>{if(x0==null)return;const d=e.clientX-x0;if(Math.abs(d)>32){T.o=(T.o+(d>0?1:7))%8;x0=e.clientX;turnSync(id)}});
+  ["pointerup","pointercancel","pointerleave"].forEach(n=>cv.addEventListener(n,()=>{x0=null}))}
+ const n=name();OCT.forEach(v=>loadImg(v[0]==="front"?n:n+"_"+v[0]));turnSync(id);
+ if(T.on)return;T.on=true;T.last=performance.now();
+ requestAnimationFrame(function f(now){const cv=document.getElementById(id);if(!cv||!cv.isConnected||cv.offsetParent===null){T.on=false;return}
+  const dt=Math.min(100,now-T.last);T.last=now;
+  if(T.spin){T.acc+=dt;if(T.acc>700){T.acc=0;T.o=(T.o+1)%8;turnSync(id)}}
+  if(T.walk&&!__rm())T.g+=dt/1000*.8;
+  const c=cv.getContext("2d");c.clearRect(0,0,cv.width,cv.height);if(T.bg)T.bg(c,cv);
+  const v=OCT[T.o],nm=T.name();if(!walkSprite(nm,v[0],cv.width/2,cv.height-14,cv.height*.86,T.walk?T.g:null,v[1],c)&&v[0]!=="front")walkSprite(nm,"front",cv.width/2,cv.height-14,cv.height*.86,null,1,c);
+  requestAnimationFrame(f)})}
+Object.assign(ACT,{tl(d){const T=TURNS[d.c];if(!T)return;T.spin=false;T.o=(T.o+7)%8;turnSync(d.c)},tr(d){const T=TURNS[d.c];if(!T)return;T.spin=false;T.o=(T.o+1)%8;turnSync(d.c)},
+ tspin(d){const T=TURNS[d.c];if(!T)return;T.spin=!T.spin;T.acc=0;turnSync(d.c)},twalk(d){const T=TURNS[d.c];if(!T)return;T.walk=!T.walk;turnSync(d.c)},
+ turn360(d){openModal(`<div class="phead"><h2>🔄 ${esc(d.l)}</h2><button class="btn alt sm" data-act="gallery">← Gallery</button></div><canvas id="tv" width="340" height="440" style="display:block;margin:0 auto;max-width:100%;touch-action:none;cursor:grab;background:radial-gradient(circle at 50% 72%,#fff,#dfe9ff);border-radius:18px" aria-label="${esc(d.l)}, turnaround view. Use the turn buttons or drag to spin."></canvas><div class="small" id="tvLab" style="text-align:center" aria-live="polite"></div>${turnCtl("tv")}<p class="small" style="text-align:center">Drag left or right to spin. Every character can face 8 directions, all the way around.</p>`);
+  if(TURNS.tv){TURNS.tv.o=0;TURNS.tv.walk=false;TURNS.tv.spin=!__rm()}turnView("tv",()=>d.n,null)}});
+
+/* ---- school rooms (explore + postcards) ---- */
+const ROOMS=[
+ {id:"lobby",n:"Front Lobby",img:"lua_lobby",line:"The giant shield on the floor? Please don't slide on it. (Everybody does.)",find:"Behind the front desk, you spot a postcard: 'Welcome to Level Up Academy!'",kinds:["groups","groups","compare"]},
+ {id:"classroom",n:"Classroom",img:"lua_classroom",line:"The whiteboard says 'You can LEVEL UP every day!' Someone drew a tiny dragon in the corner.",find:"Tucked in the bookshelf is a postcard of the world's smallest globe.",kinds:["area","area","area"]},
+ {id:"hallway",n:"Hallway",img:"lua_hallway",line:"Locker 36 is rumored to hold 4 × 9 mystery sandwiches. Nobody has dared open it.",find:"A postcard is taped to the clock: 'Be on time, be kind, be curious.'",kinds:["groups","div","div"]},
+ {id:"cafeteria",n:"Cafeteria",img:"lua_cafeteria",line:"Today's menu: 6 trays with 8 muffins each. Miss Marcia calls it 'math-based lunch'.",find:"Under a lunch tray you find a postcard with a very serious-looking muffin.",kinds:["div","rem","rem"]},
+ {id:"gym",n:"Gym",img:"lua_gym",line:"The scoreboard has said HOME 0, GUEST 0 since the Great Pencil Tournament.",find:"A postcard of the Level Up Academy champions is stuck in the bleachers.",kinds:["compare","compare","money"]},
+ {id:"rooftop",n:"Rooftop Playground",img:"lua_rooftop",line:"From up here Times Square looks like a toy city. Is that a taxi? It's 12 taxis, in 3 rows of 4.",find:"A postcard of the New York skyline is wedged in the climbing wall.",kinds:["groups","area","compare"]}];
+function openRoom(id){const r=ROOMS.find(x=>x.id===id),have=!!S.cards[id];
+ openModal(`<div class="phead"><h2>🏫 ${r.n}</h2><button class="btn alt sm" data-act="school2">← Back to school</button></div><img class="look" src="${IM(r.img)}" alt="${r.n}"><p>${r.line}</p>
+ <div class="ans"><button class="btn" data-act="rlook" data-id="${id}" autofocus>🔍 Look closer</button><button class="btn alt" data-act="roomq" data-id="${id}">🎯 Room challenge</button></div><div id="rinfo" class="fb ${have?"ok":""}" aria-live="polite">${have?"📮 Postcard collected: "+r.find:""}</div><p class="small">📮 Postcards: ${Object.keys(S.cards).length} of 6 · Fresh numbers every time you play the room challenge.</p>`)}
+Object.assign(ACT,{room(d){openRoom(d.id)},school2(){openLocation("school")},rlook(d){const r=ROOMS.find(x=>x.id===d.id);const el=$("#rinfo");if(S.cards[d.id]){el.className="fb ok";el.textContent="📮 You already have this postcard. "+r.find;return}
+  S.cards[d.id]=today();const a=award(5,2,"room");sfx("coin");el.className="fb ok";el.innerHTML=`📮 <b>New postcard!</b> ${r.find} <b>+${a.xp} XP, +${a.coins} 🪙</b>`;const b=checkBadges();if(Object.keys(S.cards).length===6){confetti();award(0,25,"mission")}save()},
+ roomq(d){const r=ROOMS.find(x=>x.id===d.id);RNG=Math.random;runQuiz({title:"🎯 "+r.n+" Challenge",n:3,lv:1,adaptive:true,src:"room",kinds:i=>r.kinds[i%3],back:"school2",backLabel:"Back to school"})}});
+
+/* ---- today / badges / hero card ---- */
+const SEASONS={10:{n:'Spooky Math Week',e:'🎃'},11:{n:'Harvest Parade Week',e:'🍂'},12:{n:'Winter Lights Week',e:'❄️'},1:{n:'New Year Kickoff',e:'🎆'},2:{n:'Heart of the City Week',e:'💙'},3:{n:'Spring Fling Week',e:'🌸'},4:{n:'Earth Day Week',e:'🌎'},5:{n:'Field Day Week',e:'🏅'},6:{n:'Summer Stoop Week',e:'☀️'},7:{n:'Summer Stoop Week',e:'☀️'},8:{n:'Back to School Week',e:'🎒'},9:{n:'Back to School Week',e:'🎒'}};
+const season=()=>{const d=new Date();return Object.assign({k:d.getFullYear()+'-'+(d.getMonth()+1)},SEASONS[d.getMonth()+1])};
+function startChallenge(code){code=(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6)||Math.random().toString(36).slice(2,6).toUpperCase();RNG=seeded('ch'+code);const ks=['groups','area','div','compare','transfer'];const items=ks.map((k,i)=>GEN[k](1+(i>2?1:0)));RNG=Math.random;
+ runQuiz({title:'🤝 Friend Challenge '+code,n:5,items,src:'friend',back:'today',backLabel:'Back to Today',after:x=>{S.friendDone=(S.friendDone||0)+1;save();toast('Challenge '+code+': '+x.r.filter(v=>v==='ok1').length+'/5 first try. Tell a friend your score!')}})}
+function openToday(){const done=S.dailyDone===today(),w=weakStds()[0],nm=nextMission();
+ openModal(`<div class="phead"><h2>📅 Today</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div>
+ ${npcBlock("theo",nm?`Ready for more? Your next mission is <b>${nm.title}</b>. Or try today's extras. They change every day.`:"The festival is ready! Try the daily challenge or beat your arcade score.")}
+ ${(()=>{const cp=classProgress(),pk=getPack();return (cp?`<div class="card"><b>🏫 ${esc(cp.name)}</b><span>${cp.tot} / ${cp.goal} problems solved by our class</span></div>`:"")+(pk?`<div class="ans"><button class="btn" data-act="pkplay">📝 ${esc(pk.title)}</button></div>`:"")})()}
+ <div class="cards">
+  <div class="card"><b>📅 Daily Challenge</b><span class="small">4 fresh problems, the same for everyone today.${done?" ✅ Done today!":" +10 🪙 bonus."}</span><button class="btn" data-act="daily">${done?"Play again":"Start"}</button></div>
+  <div class="card"><b>🧪 Practice Lab</b><span class="small">Adaptive practice. It gets harder when you're doing well and gives a new-number retry when you need help.</span><button class="btn" data-act="lab">Start</button></div>
+  <div class="card"><b>🔁 Warm-Up</b><span class="small">3 quick problems from missions you finished.${S.warmDay===today()?" ✅ Done today":""}</span><button class="btn alt" data-act="warm">Start</button></div>
+  <div class="card"><b>🎟️ Ticket Rush</b><span class="small">${mdone(3)?`${S.arc.tickets} tickets · best ${S.arc.best}`:"Unlocks after Mission 3."}</span><button class="btn alt" data-act="arcade" ${mdone(3)?"":"disabled"}>Go to Arcade</button></div></div>
+ <div class="card" style="margin-top:.6rem"><b>🤝 Friend Challenge</b><span class="small">Safe and optional: type the same 4-letter code as a friend to get the same 5 problems, then compare scores out loud. No names, chat, or rankings.</span><div class="chips"><input id="ccode" maxlength="6" placeholder="Code, e.g. ZOOM" aria-label="Challenge code" style="width:9rem"><button class="btn alt sm" data-act="chal">Start</button><button class="btn alt sm" data-act="chalnew">🎲 New code</button></div></div>
+ <div class="card" style="margin-top:.6rem"><b>${season().e||'🎪'} ${season().n||'City Event'}</b><span class="small">Seasonal event: finish the Daily Challenge this month to earn the ${season().n||'event'} badge. No pressure and nothing to miss: it's just for fun.</span></div>
+ <h3>Long-term goals</h3><div class="small">Postcards ${Object.keys(S.cards).length}/6</div><div class="bar"><i style="width:${Object.keys(S.cards).length/6*100}%"></i></div><div class="small">Prizes ${S.prizes.length}/6</div><div class="bar"><i style="width:${S.prizes.length/6*100}%"></i></div><div class="small">Badges ${Object.keys(S.badges).length}/${BADGES.length}</div><div class="bar"><i style="width:${Object.keys(S.badges).length/BADGES.length*100}%"></i></div><div class="small">City stars found: ${S.stars.total}</div>
+ <h3>📮 Postcards ${Object.keys(S.cards).length}/6 · 🏅 Badges ${Object.keys(S.badges).length}/${BADGES.length}</h3>
+ <div class="chips">${BADGES.map(b=>`<span class="chip" aria-pressed="${!!S.badges[b.id]}" title="${b.d}">${S.badges[b.id]?b.e:"🔒"} ${b.n}<small style="display:block;font-weight:600">${b.d}</small></span>`).join("")}</div>
+ ${S.prizes.length?`<h3>Prizes</h3><div class="chips">${S.prizes.map(id=>{const p=PRIZES.find(x=>x.id===id);return `<span class="chip">${p.e} ${p.n}</span>`}).join("")}</div>`:""}
+ <div class="ans"><button class="btn alt" data-act="herocard">📸 My hero card</button><button class="btn alt" data-act="teacher">👩‍🏫 Teacher & parent view</button></div>`,paintNpcs)}
+function heroCard(){const c=document.createElement("canvas");c.width=420;c.height=560;const g=c.getContext("2d");const gr=g.createLinearGradient(0,0,420,560);gr.addColorStop(0,"#1d2b64");gr.addColorStop(1,"#6a3fa8");g.fillStyle=gr;g.fillRect(0,0,420,560);g.fillStyle=BGS[S.avatar.bg||0];rr(g,30,70,360,330,24);g.fill();
+ g.fillStyle="#ffc93c";g.font="900 30px 'Trebuchet MS',sans-serif";g.textAlign="center";g.fillText("LevelUp · NYC Math Adventure",210,48,380);drawHero(g,210,395,330,S.avatar.hero);
+ g.fillStyle="#fff";g.font="900 34px 'Trebuchet MS',sans-serif";g.fillText(S.name,210,448);g.font="700 20px 'Trebuchet MS',sans-serif";g.fillText(`Level ${levelOf(S.xp)} · Festival ${doneCount()}/5`,210,480);g.fillText(`🏅 ${Object.keys(S.badges).length} badges · 📮 ${Object.keys(S.cards).length}/6 postcards`,210,510);g.font="600 14px sans-serif";g.fillStyle="#cfd8ff";g.fillText("Nickname only. No personal info on this card.",210,538);return c}
+Object.assign(ACT,{mtwin(){const [k,lv]=twinKind(M.id,M.idx);const tw=GEN[k](lv);tw.twin=true;RNG=Math.random;runQuiz({title:"✨ New numbers",n:1,items:[tw],src:"mtwin",back:"closem",backLabel:"Back to the mission"})},today(){openToday()},lab(){startLab()},warm(){startWarm()},daily(){startDaily()},
+ herocard(){const c=heroCard();openModal(`<div class="phead"><h2>📸 My hero card</h2><button class="btn alt sm" data-act="today">← Back</button></div><div style="text-align:center"><img id="hc" alt="Your hero card" style="max-width:100%;border-radius:18px;border:3px solid var(--navy)"><div class="ans" style="justify-content:center"><button class="btn" data-act="hcsave">💾 How to save</button><button class="btn alt" data-act="hcshare">Share</button></div><p class="small">Share it with family or your class. It only shows your nickname and your progress.</p></div>`);$("#hc").src=c.toDataURL("image/png");HC=c},
+ hcsave(){toast("Press and hold (or right-click) the card, then choose Save image.")},
+ hcshare(){if(!HC)return;HC.toBlob(async b=>{try{const f=new File([b],"levelup-hero-card.png",{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:"My LevelUp hero"})}else{toast("Sharing isn't available here. Use Save image instead.")}}catch(e){}})}});
+let HC=null;
+
+/* ---- teacher & parent view ---- */
+function reportData(){const r=resolved(),ok=r.filter(e=>e.ok&&e.n<=2),att=S.log.filter(e=>e.ok!==undefined&&e.src!=="why");const last10=r.slice(-10),prev=r.slice(-20,-10);const acc=a=>a.length?Math.round(a.filter(e=>e.ok&&e.n<=2).length/a.length*100):null;
+ const wrong={};S.log.filter(e=>e.src==="m"&&e.ok===false).forEach(e=>{const k="M"+e.m+" Q"+(e.i+1);wrong[k]=(wrong[k]||0)+1});const wk={};S.log.filter(e=>e.k&&e.ok===false).forEach(e=>wk[e.k]=(wk[e.k]||0)+1);
+ return{att:att.length,res:r.length,acc:acc(r),trend:[acc(prev),acc(last10)],sessions:S.stats.days.length,wrong:Object.entries(wrong).sort((a,b)=>b[1]-a[1]).slice(0,4),wk:Object.entries(wk).sort((a,b)=>b[1]-a[1]).slice(0,3),sk:Object.keys(STDS).map(skill)}}
+const KIND_NAME={transfer:"new-situation problems",groups:"equal groups",area:"area models",div:"division",rem:"remainders",compare:"multiplicative comparison",money:"money problems",tickets:"ticket bundles"};
+function parentText(){const d=reportData();const sec=d.sk.filter(s=>s.state==="Secure").map(s=>s.std),prac=d.sk.filter(s=>s.state==="Practicing").map(s=>s.std);
+ return `${S.name}'s LevelUp progress\n- Level ${levelOf(S.xp)}, ${doneCount()} of 5 missions complete, ${d.sessions} day(s) played.\n- Accuracy (answers right within two tries): ${d.acc==null?"not enough data yet":d.acc+"%"}.\n- Strengths: ${sec.length?sec.join(", "):"still building. Check back after a few more days."}.\n- Still practicing: ${prac.length?prac.join(", "):"nothing yet"}.\n- Home idea: ask ${S.name} to explain how they solved one problem using groups, an array, or breaking numbers apart.\nNote: XP and levels show effort. They are not a grade.`}
+function csv(){const rows=[["date","source","mission","item","standard","skill","correct","attempt"]];S.log.filter(e=>e.ok!==undefined).forEach(e=>rows.push([e.d,e.src,e.m||"",e.i!==undefined?e.i+1:"",e.s||"",e.k||"",e.ok?1:0,e.n]));return rows.map(r=>r.join(",")).join("\n")}
+/* ---- class roster, class goal, teacher content packs ---- */
+function roster(){try{return JSON.parse(localStorage.getItem("lu_roster")||"null")||[{k:"levelup_slice_v1",n:"Student 1"}]}catch(e){return[{k:"levelup_slice_v1",n:"Student 1"}]}}
+function setRoster(r){try{localStorage.setItem("lu_roster",JSON.stringify(r))}catch(e){}}
+function profData(k){try{return JSON.parse(localStorage.getItem(k)||"null")}catch(e){return null}}
+function profStats(k){const o=k===KEY?S:profData(k);if(!o||!o.log)return{n:0,ok:0,days:0,xp:o?o.xp||0:0};const r=o.log.filter(e=>e.s&&e.src!=="why"&&e.ok!==undefined&&(e.ok||e.n>=3));return{n:r.length,ok:r.filter(e=>e.ok&&e.n<=2).length,days:(o.stats&&o.stats.days||[]).length,xp:o.xp||0}}
+function classGoal(){try{return JSON.parse(localStorage.getItem("lu_goal")||"null")}catch(e){return null}}
+function classProgress(){const g=classGoal();if(!g)return null;let tot=0;roster().forEach(p=>{const o=p.k===KEY?S:profData(p.k);if(o&&o.log)tot+=o.log.filter(e=>(e.s||e.src==="pack")&&e.ok&&e.n<=2&&e.src!=="why"&&(e.t||0)>=g.since).length});return{tot,goal:g.target,name:g.name}}
+function getPack(){try{return JSON.parse(localStorage.getItem("lu_pack")||"null")}catch(e){return null}}
+function openRoster(){const r=roster(),cp=classProgress(),pk=getPack();
+ openModal(`<div class="phead"><h2>🏫 Class roster</h2><button class="btn alt sm" data-act="teacher">← Back</button></div><p class="small">Use one shared device or browser for a class. Each student has their own saved progress. Data stays in this browser. Use first names or nicknames only.</p>
+ <table class="tbl"><thead><tr><th>Student</th><th>Answers</th><th>Right ≤2 tries</th><th>Days</th><th></th></tr></thead><tbody>${r.map((p,i)=>{const st=profStats(p.k);return `<tr><td><b>${esc(p.n)}</b>${p.k===KEY?" (now playing)":""}</td><td>${st.n}</td><td>${st.n?Math.round(st.ok/st.n*100)+"%":"–"}</td><td>${st.days}</td><td>${p.k===KEY?"":`<button class="btn alt sm" data-act="rswitch" data-i="${i}">Switch</button>`}</td></tr>`}).join("")}</tbody></table>
+ <div class="ans"><input id="rname" style="min-width:11rem" maxlength="16" placeholder="Student nickname" aria-label="Student nickname"><button class="btn sm" data-act="radd">+ Add student</button></div>
+ <h3>Class goal</h3>${cp?`<div class="card"><b>${esc(cp.name)}</b><div class="bar"><i style="width:${Math.min(100,Math.round(cp.tot/cp.goal*100))}%"></i></div><span>${cp.tot} / ${cp.goal} problems solved together</span></div>`:"<p class='small'>No class goal yet.</p>"}
+ <div class="ans"><input id="gname" style="min-width:12rem" maxlength="30" placeholder="Goal name (e.g. Times Tables Week)" aria-label="Goal name"><input id="gnum" style="min-width:9rem" type="number" min="10" max="5000" placeholder="Target problems" aria-label="Target problems"><button class="btn sm" data-act="gset">Set goal</button></div>
+ <h3>Teacher practice set</h3><p class="small">${pk?`Loaded: <b>${esc(pk.title)}</b> (${pk.items.length} problems). Students find it in Today.`:"Paste one problem per line as  question | answer  (whole-number answers). Up to 20."}</p>
+ <textarea id="pk" rows="4" style="width:100%" aria-label="Practice set problems" placeholder="A box has 6 rows of 8 stickers. How many stickers? | 48"></textarea><div class="ans"><input id="pkt" style="min-width:10rem" maxlength="30" placeholder="Set title" aria-label="Set title"><button class="btn sm" data-act="pkset">Save set</button>${pk?`<button class="btn alt sm" data-act="pkclear">Remove set</button>`:""}</div>`)}
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+Object.assign(ACT,{roster(){openRoster()},
+ radd(){const n=($("#rname").value||"").trim().slice(0,16);if(!n||badName(n))return;const r=roster();if(r.length>=40)return;r.push({k:"lu_p_"+Date.now().toString(36),n});setRoster(r);openRoster()},
+ rswitch(d){const r=roster(),p=r[+d.i];if(!p)return;save();try{localStorage.setItem("lu_active",p.k)}catch(e){}KEY=p.k;memSave=null;S=defState();load();v2init();closeModal();setScreen(S.created?"map":"title")},
+ gset(){const n=+$("#gnum").value,nm=($("#gname").value||"Class goal").trim().slice(0,30);if(!(n>=10))return;try{localStorage.setItem("lu_goal",JSON.stringify({name:nm,target:Math.min(5000,n),since:Date.now()}))}catch(e){}openRoster()},
+ pkset(){const items=($("#pk").value||"").split("\n").map(l=>l.split("|")).filter(a=>a.length===2&&a[0].trim()&&/^-?\d+$/.test(a[1].trim())).slice(0,20).map(a=>({q:a[0].trim().slice(0,240),a:+a[1].trim()}));if(!items.length)return;try{localStorage.setItem("lu_pack",JSON.stringify({title:($("#pkt").value||"Teacher set").trim().slice(0,30),items}))}catch(e){}openRoster()},
+ pkclear(){try{localStorage.removeItem("lu_pack")}catch(e){}openRoster()},
+ pkplay(){const pk=getPack();if(!pk)return;runQuiz({title:"📝 "+pk.title,n:Math.min(8,pk.items.length),items:pk.items.slice(0,8).map(it=>N(it.q,it.a,["Read the problem again. What are the equal groups?","Draw it or use an array to check."],"The answer is "+it.a+".")),src:"pack",back:"closem",backLabel:"Back"})}});
+
+function renderActs(){const el=document.getElementById("acts");if(!el)return;const t=today(),stars=(S.stars&&S.stars.got?S.stars.got.length:0),pk=getPack(),nm=nextMission();
+ const B=(c,ic,t1,t2,d)=>`<button class="act ${c||""}" data-act="${d.a}"${d.id?` data-id="${d.id}"`:""}><span style="font-size:1.5rem">${ic}</span><span>${t1}${t2?`<small>${t2}</small>`:""}</span></button>`;
+ el.innerHTML=`<h3>📍 Go somewhere</h3><div class="row">
+ ${B("go","🏫","Level Up Academy","Missions & school rooms",{a:"goenter",id:"school"})}
+ ${B("go","🕹️","Arcade","Ticket Rush & prizes",{a:"goenter",id:"arcade"})}
+ ${B("go","🛍️","Clothing Store","Spend City Coins",{a:"goenter",id:"shop"})}
+ ${B("go","🏠","Your Apartment","Outfit & progress",{a:"goenter",id:"apt"})}
+ ${B("go","🗽","Miss Marcia","Chat in the square",{a:"goenter",id:"square"})}</div>
+ <h3>🎯 Play & practice</h3><div class="row">
+ ${B("","📋","Missions",nm?"Next: "+nm.title:"All done!",{a:"missions"})}
+ ${B("","📅","Daily Challenge",S.dailyDone===t?"✅ Done today":"+10 🪙 bonus",{a:"daily"})}
+ ${B("","🧪","Practice Lab","Adaptive practice",{a:"lab"})}
+ ${B("","🔁","Warm-Up",S.warmDay===t?"✅ Done today":"3 quick problems",{a:"warm"})}
+ ${pk?B("","📝",esc(pk.title),"Teacher practice set",{a:"pkplay"}):""}</div>
+ <h3>🧭 Explore & more</h3><div class="row">
+ ${B("","🗺️","Go to…","Jump to any place",{a:"goto"})}
+ ${B("","📅","Today","Daily extras",{a:"today"})}
+ ${B("","❓","How to play","Quick tour with Theo",{a:"help"})}
+ ${B("","🖼️","Gallery","All the art",{a:"gallery"})}
+ ${B("","🧑‍🏫","Teacher view","Progress & class tools",{a:"teacher"})}
+ ${B("","⚙️","Settings","Sound, text size, access",{a:"settings"})}</div>`}
+Object.assign(ACT,{goenter(d){const L=LOCS[d.id];if(!L)return;P.x=L.door.x;P.y=Math.min(L.door.y+30,FY1);P.tx=null;P.auto=null;TH.x=P.x-48;TH.y=P.y+4;CAM.px=P.x;CAM.py=P.y;hud();enter(d.id)}});
+
+function openTeacher(){const d=reportData();const stCls={Secure:"ok","Practicing":"warn","Not started":""};
+ openModal(`<div class="phead"><h2>👩‍🏫 Teacher & parent view</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div><p class="small">Evidence, not just scores. XP is effort, not mastery. Data stays in this browser.</p>
+ <div class="tcols"><div class="card"><span class="big-n">${d.acc==null?"–":d.acc+"%"}</span><span>answers right within 2 tries</span><span class="small">${d.trend[0]==null?"Trend needs 20+ answers":`Trend: ${d.trend[0]}% → ${d.trend[1]}%`}</span></div><div class="card"><span class="big-n">${d.sessions}</span><span>day(s) played</span><span class="small">${d.att} answers logged</span></div></div>
+ <div class="ans"><button class="btn alt sm" data-act="roster">🏫 Class roster, goal & practice set</button></div><h3>Standards mastery</h3><table class="tbl"><thead><tr><th>Standard</th><th>State</th><th>Evidence</th></tr></thead><tbody>${d.sk.map(s=>`<tr><td><b>${s.std}</b><br><span class="small">${STDS[s.std]}</span></td><td><span class="fb ${stCls[s.state]}" style="padding:.15rem .5rem;display:inline-block">${s.state}</span></td><td class="small">${s.n?`${s.good}/${s.n} solved within 2 tries · ${s.days} day(s)`:"No attempts yet"}</td></tr>`).join("")}</tbody></table>
+ <p class="small">Secure = correct work (≤2 tries) on at least 6 problems, 80%+, across 2+ days. Teachers can override.</p>
+ <h3>What to reteach</h3>${d.sk.filter(s=>s.n&&s.state!=="Secure"&&s.rate<.8).map(s=>`<div class="card"><b>${s.std}</b><span class="small">${RETEACH[s.std]}</span></div>`).join("")||"<p class='small'>No flagged skills yet. Reteach suggestions appear when accuracy is below 80%.</p>"}
+ <h3>Repeating mistakes</h3><p class="small">${d.wrong.length?d.wrong.map(([k,n])=>`${k} (${n} misses)`).join(" · "):"None yet."}${d.wk.length?`<br>Most-missed skills: ${d.wk.map(([k,n])=>KIND_NAME[k]+" ("+n+")").join(", ")}`:""}</p>
+ <h3>Strategies students chose</h3><p class="small">${Object.keys(S.strat).length?Object.entries(S.strat).map(([k,v])=>"Mission "+k+": "+v).join(" · "):"No reflections yet."}</p>
+ <h3>Differentiation (practice difficulty)</h3><div class="chips">Floor: ${[1,2,3].map(v=>`<button class="chip" aria-pressed="${S.tset.floor===v}" data-act="tset" data-k="floor" data-v="${v}">${v}</button>`).join("")} Ceiling: ${[1,2,3].map(v=>`<button class="chip" aria-pressed="${S.tset.ceil===v}" data-act="tset" data-k="ceil" data-v="${v}">${v}</button>`).join("")}</div><p class="small">Limits the level of Practice Lab, Arcade, and Daily problems for this student.</p><h3>Parent summary</h3><pre class="pre" id="ptxt">${parentText()}</pre>
+ <div class="ans"><button class="btn" data-act="pcopy">Copy summary</button><button class="btn alt" data-act="csvdl">Download CSV</button><button class="btn alt" data-act="prt">Print</button></div>
+ <details style="margin-top:.8rem"><summary class="small">Playtest tools (for testing only)</summary><div class="ans"><button class="btn alt sm" data-act="dbgcoins">+100 coins</button><button class="btn alt sm" data-act="dbgxp">+100 XP</button><button class="btn alt sm" data-act="dbgday">Shift log 1 day</button></div></details>`)}
+Object.assign(ACT,{help(){S.howto=true;save();say('theo',["Welcome to LevelUp City! Walk with the arrow keys or WASD, or just tap where you want to go.","Walk to a glowing door and press E (or tap the button) to go inside. The yellow arrow shows your next mission.","Missions give XP and City Coins. Spend coins at the Clothing Store. Open 📅 Today for the arcade, Practice Lab, and daily challenges.","Stuck? Press 💡 Hint. Want it read out loud? Press 🔊. You can also turn on bigger text in ⚙️."])},chal(){startChallenge($('#ccode').value)},chalnew(){startChallenge('')},tset(d){const v=+d.v;if(d.k==='floor'){S.tset.floor=v;if(S.tset.ceil<v)S.tset.ceil=v}else{S.tset.ceil=v;if(S.tset.floor>v)S.tset.floor=v}save();openTeacher()},teacher(){openTeacher()},pcopy(){const t=parentText();try{navigator.clipboard.writeText(t).then(()=>toast("Summary copied."),()=>toast("Select the text to copy it."))}catch(e){toast("Select the text to copy it.")}},
+ csvdl(){openModal(`<div class="phead"><h2>CSV export</h2><button class="btn alt sm" data-act="teacher">← Back</button></div><p class="small">Copy this and paste it into a spreadsheet.</p><textarea id="csvt" style="width:100%;height:240px" readonly>${csv()}</textarea><div class="ans"><button class="btn" data-act="csvcopy">Copy CSV</button></div>`)},csvcopy(){const t=$("#csvt");t.select();try{navigator.clipboard.writeText(t.value).then(()=>toast("CSV copied."),()=>{document.execCommand("copy");toast("CSV copied.")})}catch(e){document.execCommand("copy");toast("CSV copied.")}},prt(){window.print()},
+ setsfx(){S.settings.sfx=!S.settings.sfx;save();openSettings()},setmusic(){S.settings.music=!S.settings.music;save();S.settings.music?musicStart():clearTimeout(musicT);openSettings()},
+ dbgday(){S.log.forEach(e=>{const x=new Date(e.d);x.setDate(x.getDate()-1);e.d=x.toISOString().slice(0,10)});save();toast("Shifted logged answers back one day (playtest)")}});
+
+/* ---- reflect step (explain why) ---- */
+const WHY={1:{q:"Why can 4 groups of 3 be written as 4 × 3?",o:["Multiplication puts equal groups together.","Multiplication takes groups apart.","Because 4 is bigger than 3.","Because the answer is always 12."],a:0},
+ 2:{q:"Why can you find the dots in an array by multiplying rows × dots in a row?",o:["Every row has the same number of dots, so the rows are equal groups.","All arrays have 12 dots.","Rows and columns are added together.","Because dots are small."],a:0},
+ 3:{q:"Why does breaking 14 into 10 + 4 help solve 3 × 14?",o:["You multiply each easier part, then add the products.","It makes 14 smaller.","You skip the 3.","It changes the answer."],a:0},
+ 4:{q:"Why does 6 × 7 = 42 help you solve 42 ÷ 7?",o:["Division undoes multiplication: 42 ÷ 7 asks 'what times 7 is 42?'","They are two unrelated facts.","Because 42 is even.","Division is just subtraction."],a:0},
+ 5:{q:"How can you tell whether to multiply or divide?",o:["Multiply when equal groups are put together. Divide when a total is split into equal groups.","Always multiply.","Look for the biggest number.","Always divide."],a:0}};
+const STRATS=["Skip counting","Equal groups or drawing","Break apart (place value)","Related fact","Not sure yet"];
+function showReflect(){const w=WHY[M.id];M.refl={step:0};const order=shuffle([0,1,2,3]);M.refl.order=order;
+ $("#s-mission").innerHTML=`<div class="mwrap"><div class="mhead"><b>Mission ${M.id}: ${M.def.title}</b><span class="small">Last step: reflect</span></div><div class="qcard"><div class="small">Reflect 1 of 2</div><div class="qtext">Which strategy helped you most in this mission?</div><div class="mc" role="group" aria-label="Strategies">${STRATS.map((s,i)=>`<button data-act="rstrat" data-i="${i}">${s}</button>`).join("")}</div></div></div>`}
+Object.assign(ACT,{rstrat(d){S.strat[M.id]=STRATS[+d.i];save();const w=WHY[M.id],o=M.refl.order;
+  $("#s-mission").innerHTML=`<div class="mwrap"><div class="mhead"><b>Mission ${M.id}: ${M.def.title}</b><span class="small">Last step: reflect</span></div><div class="qcard"><div class="small">Reflect 2 of 2</div><div class="qtext">${w.q}</div><div class="mc" role="group" aria-label="Choices">${o.map(i=>`<button data-act="rwhy" data-i="${i}">${w.o[i]}</button>`).join("")}</div><div id="rfb" aria-live="polite"></div></div></div>`},
+ rwhy(d){const w=WHY[M.id],ok=+d.i===w.a;logA({src:"why",m:M.id,s:stdOf(M.id,0),ok,n:1});if(ok){S.stats.whyOk++;sfx("ok");$("#rfb").innerHTML=`<div class="fb ok">✅ Yes! That's a strong explanation.<div class="ans"><button class="btn" data-act="rdone" autofocus>Finish mission</button></div></div>`}else{sfx("oops");$("#rfb").innerHTML=`<div class="fb show">Good thinking. The best explanation is: <b>${w.o[w.a]}</b><div class="ans"><button class="btn" data-act="rdone" autofocus>Finish mission</button></div></div>`}$("#rfb .btn").focus();save()},
+ rdone(){finishMission()}});
+function recoHtml(ft){const lab=`<button class="btn alt" data-act="lab">🧪 Try the Practice Lab</button>`;return `<div class="fb ${ft>=6?"ok":"warn"}" style="margin-top:.6rem">${ft>=7?"You're ready for a challenge! The Practice Lab will raise the level as you succeed.":ft>=5?"Nice work. The Practice Lab can help you lock these skills in.":"Practice makes it stick! The Practice Lab gives you new numbers and extra hints."}<div class="ans">${lab}</div></div>`}
+
+/* ---- map life: wandering NPC + random events ---- */
+let evtOn=null;
+function mapEvent(){if(!$("#s-map").classList.contains("active")||busy()||evtOn)return;const k=pick([["Jalen","jalen","Quick question!"],["Miss Marcia","marcia","Can you help me count?"],["Theo","theo","Pop quiz time?"]]);evtOn=k;
+ let b=$("#evt");if(!b){b=document.createElement("button");b.id="evt";b.className="btn";b.setAttribute("data-act","evt");$("#mapwrap").appendChild(b)}b.textContent=`❗ ${k[0]}: ${k[2]} (+coins)`;b.hidden=false;setTimeout(()=>{if(evtOn===k){evtOn=null;b.hidden=true}},20000)}
+Object.assign(ACT,{evt(){const b=$("#evt");b.hidden=true;const k=evtOn;evtOn=null;RNG=Math.random;runQuiz({title:"❗ "+(k?k[0]:"Jalen")+"'s Question",n:1,lv:1+(levelOf(S.xp)>3?1:0),src:"event",kinds:["compare","groups","money","div"],back:"closem",backLabel:"Back to the city"})}});
+setInterval(mapEvent,38000);
+
+(function boot(){loadImg(HERO(S.avatar.hero));Object.values(PIC).forEach(n=>loadImg(n));["map_theo","map_marcia"].forEach(n=>loadImg(n));
+  const has=load()&&S.created;
+  $("#btnCont").hidden=!has;
+  if(S.settings.big)document.body.classList.add("big");
+  ["easy","hc","nomo"].forEach(k=>{if(S.settings[k])document.body.classList.add(k)});
+  if(has)$("#btnNew").textContent="Start over";
+  v2init();CR=Object.assign({},S.avatar);
+})();
+</script>
+<script src="learn_core.js"></script><script src="learn_ui.js"></script>
+</body>
+</html>

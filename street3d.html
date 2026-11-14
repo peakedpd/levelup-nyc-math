@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en"><head><link rel="icon" href="data:,"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LevelUp City — 3D NYC Street</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#1b1640;font-family:"Trebuchet MS",system-ui,sans-serif}
+#c{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:fixed;left:12px;bottom:12px;background:rgba(20,18,58,.82);color:#fff;padding:.55rem .8rem;border-radius:12px;font-size:14px;line-height:1.35;max-width:min(92vw,520px)}
+.hud b{color:#ffd23f}
+#prompt{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#ffd23f;color:#14123a;font-weight:800;padding:.6rem 1rem;border-radius:14px;font-size:18px;display:none;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+#load{position:fixed;inset:0;display:grid;place-items:center;color:#fff;font-size:20px;font-weight:800;background:#1b1640;transition:opacity .5s}
+#title{position:fixed;left:12px;top:12px;background:rgba(20,18,58,.82);color:#fff;padding:.45rem .8rem;border-radius:12px;font-weight:800}
+.emb .emb-hide{display:none}.emb .hud{font-size:12px;padding:.35rem .6rem}.emb #lockhint{top:64px}#lockhint{position:fixed;left:50%;top:12px;transform:translateX(-50%);background:rgba(20,18,58,.85);color:#ffd23f;font-weight:800;padding:.4rem .8rem;border-radius:10px;font-size:13px;pointer-events:none}</style></head><body>
+<canvas id="c"></canvas>
+<div id="title" class="emb-hide">🗽 LevelUp City — 3D Street (pilot)</div>
+<div id="prompt"></div>
+<div class="hud" id="help"><b>Walk:</b> WASD / ↑↓ · <b>Jump:</b> Space · <b>Run:</b> Shift · <b>Look up/down/around:</b> click the street, then move the mouse or trackpad (two-finger swipe also works) · ← → turn · <b>Zoom / first person:</b> pinch, or I / O · <b>Go inside / use things:</b> E when the yellow prompt shows </div>
+<div id="load">Building New York…</div>
+<script src="three-lib.js"></script>
+<script src="hero00_data.js"></script><script src="theo_data.js"></script><script src="marcia_data.js"></script>
+<!-- world2.js (school lobby/hallway/rooftop, arcade worker + prize counter, street talk, Ticket Blaster, touch controls) is loaded after the main script -->
+<script>
+"use strict";if(/embed/.test(location.search))document.body.classList.add("emb");
+const T=THREE,cv=document.getElementById("c");
+const R=new T.WebGLRenderer({canvas:cv,antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));R.outputColorSpace=T.SRGBColorSpace;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.15;
+const S=new T.Scene();S.background=new T.Color(0xf6a76b);S.fog=new T.Fog(0xf3b07a,45,120);
+const cam=new T.PerspectiveCamera(55,1,.1,400);
+function size(){const w=innerWidth,h=innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}addEventListener("resize",size);size();
+S.add(new T.HemisphereLight(0xfff1dc,0x6a5a7a,1.6));
+const sun=new T.DirectionalLight(0xffe2b8,2.2);sun.position.set(-30,40,25);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-70,right:70,top:40,bottom:-40,far:150});S.add(sun);
+const TL=new T.TextureLoader();
+function tex(n,rx=1,ry=1){const t=TL.load("tex/"+n+".webp");t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;if(rx!==1||ry!==1){t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rx,ry)}return t}
+/* ---------- ground ---------- */
+const LEN=124;
+function plane(w,d,mat,x,z,y=0){const m=new T.Mesh(new T.PlaneGeometry(w,d),mat);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;S.add(m);return m}
+const rt=tex("road",LEN/8,1);rt.center.set(.5,.5);rt.rotation=Math.PI/2;rt.repeat.set(1,LEN/8);
+plane(LEN,8,new T.MeshStandardMaterial({map:rt,roughness:.9}),0,0);
+plane(LEN,5,new T.MeshStandardMaterial({map:tex("sidewalk",LEN/5,1),roughness:.95}),0,-6.5,.12);
+plane(LEN,5,new T.MeshStandardMaterial({map:tex("sidewalk",LEN/5,1),roughness:.95}),0,6.5,.12);
+const curbM=new T.MeshStandardMaterial({color:0xbdb8b0});
+[-4,4].forEach(z=>{const c=new T.Mesh(new T.BoxGeometry(LEN,.24,.3),curbM);c.position.set(0,.12,z);c.receiveShadow=true;c.userData.solid=1;S.add(c)});
+/* ---------- skyline ---------- */
+const st=tex("skyline",3,1);st.repeat.x=-3;
+const sky=new T.Mesh(new T.CylinderGeometry(95,95,60,64,1,true),new T.MeshBasicMaterial({map:st,side:T.BackSide,fog:false,toneMapped:false}));sky.position.y=24;S.add(sky);
+/* sky dome: matches the top colour of the skyline art, deepens to zenith, so looking up never shows a gap */
+const SKYDOME=new T.Mesh(new T.SphereGeometry(320,32,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,
+  vertexShader:"varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
+  fragmentShader:"varying vec3 vP;void main(){float h=clamp(vP.y,0.0,1.0);vec3 hz=vec3(0.204,0.506,0.859),zn=vec3(0.10,0.30,0.70);vec3 c=mix(hz,zn,smoothstep(0.30,0.95,h));float cl=smoothstep(0.55,0.75,sin(vP.x*9.0+vP.z*4.0)*0.5+0.5)*smoothstep(0.25,0.5,h)*0.12;gl_FragColor=vec4(c+cl,1.0);}"}));
+SKYDOME.renderOrder=-10;S.add(SKYDOME);S.background=new T.Color(0x3481db);
+/* ground that reaches the horizon (no void under the skyline) */
+plane(900,900,new T.MeshStandardMaterial({color:0x4a4550,roughness:1}),0,0,-.03);
+/* procedural brick texture (mortar lines + colour variation) so walls read as real masonry */
+const BRICK_IMG=(()=>{const c=document.createElement("canvas");c.width=c.height=256;const g=c.getContext("2d");g.fillStyle="#cdb9a6";g.fillRect(0,0,256,256);
+  const rows=16,bh=256/rows,bw=32;for(let r=0;r<rows;r++)for(let k=-1;k<9;k++){const x=k*bw+(r%2?bw/2:0),v=Math.random();g.fillStyle=`rgb(${130+v*40|0},${60+v*22|0},${48+v*18|0})`;g.fillRect(x+1.5,r*bh+1.5,bw-3,bh-3);g.fillStyle="rgba(0,0,0,.08)";g.fillRect(x+1.5,r*bh+bh-4,bw-3,2.5)}return c})();
+const BRICKC={};function brickMat(w,h){const k=Math.round(w)+"x"+Math.round(h);if(BRICKC[k])return BRICKC[k];const t=new T.CanvasTexture(BRICK_IMG);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(Math.max(1,w/4),Math.max(1,h/3));t.anisotropy=4;return BRICKC[k]=new T.MeshStandardMaterial({map:t,roughness:.95})}
+/* instanced detail parts: thousands of sills / frames / window panes for the cost of a few draw calls */
+const INST={};function inst(name,m4){(INST[name]=INST[name]||[]).push(m4)}
+const _q=new T.Quaternion(),_e=new T.Euler();
+function partAt(g,name,x,y,z,sx,sy,sz,ry=0){const m=new T.Matrix4().compose(new T.Vector3(x,y,z),_q.setFromEuler(_e.set(0,ry,0)),new T.Vector3(sx,sy,sz));inst(name,new T.Matrix4().multiplyMatrices(g.matrixWorld,m))}
+/* ---------- buildings (Canva facades) ---------- */
+const FAC={school:tex("school"),arcade:tex("arcade"),clothing:tex("clothing"),apartment:tex("apartment")};
+const brick=new T.MeshStandardMaterial({color:0x8d4b3b,roughness:.95}),roofM=new T.MeshStandardMaterial({color:0x4a3b44}),bulbM0=new T.MeshStandardMaterial({color:0xfff2c0,emissive:0xffc66b,emissiveIntensity:1.5});
+const DOORS=[];
+const NAMES={school:"Level Up Academy",arcade:"Arcade",clothing:"Clothing Store",apartment:"Theo's Apartment"};
+function building(kind,x,side,h){const W=10,D=10,H=10;const g=new T.Group();
+  const front=new T.MeshStandardMaterial({map:FAC[kind],roughness:.8,emissive:kind==="arcade"?0x331144:0x000000,emissiveIntensity:.35,emissiveMap:kind==="arcade"?FAC[kind]:null});
+  const bm=brickMat(D,H),mats=[bm,bm,roofM,bm,front,bm];const b=new T.Mesh(new T.BoxGeometry(W,H,D),mats);b.position.y=H/2;b.castShadow=b.receiveShadow=true;b.userData.solid=1;g.add(b);
+  if(h>0){const tb=brickMat(D*.96,h),t=new T.Mesh(new T.BoxGeometry(W*.96,h,D*.96),[tb,tb,roofM,tb,tb,tb]);t.position.y=H+h/2;t.castShadow=true;t.receiveShadow=true;t.userData.solid=1;g.add(t)}
+  const accent={school:0x24407a,arcade:0x7a2bd0,clothing:0x1f7a72,apartment:0x5a3326}[kind];const aM=new T.MeshStandardMaterial({color:accent,roughness:.6}),stone=new T.MeshStandardMaterial({color:0xd9cdb8,roughness:.9}),iron=new T.MeshStandardMaterial({color:0x222222,metalness:.5,roughness:.5});
+  const add=(geo,m,px,py,pz)=>{const o=new T.Mesh(geo,m);o.position.set(px,py,pz);o.castShadow=o.receiveShadow=true;o.userData.solid=1;g.add(o);return o};
+  const fz=D/2;
+  add(new T.BoxGeometry(W+.6,.6,1.1),stone,0,H+(h>0?0:-.3),fz+.3); /* cornice */
+  add(new T.BoxGeometry(W+.4,.35,.5),stone,0,3.9,fz+.2); /* storefront ledge */
+  [-W/2+.25,W/2-.25].forEach(px=>add(new T.BoxGeometry(.5,H,.6),stone,px,H/2,fz+.25)); /* pilasters */
+  if(kind==="clothing"||kind==="arcade"){const aw=add(new T.BoxGeometry(W*.9,.25,2.2),aM,0,4.3,fz+1.1);aw.rotation.x=-.28;
+     if(kind==="arcade"){const sg=add(new T.BoxGeometry(.25,2.2,1.6),new T.MeshStandardMaterial({color:0xff3bd4,emissive:0xff2bc0,emissiveIntensity:1.2}),W/2-.6,6,fz+1);}}
+  if(kind==="apartment"||kind==="school"){const sx=kind==="apartment"?2:0;for(let i=0;i<4;i++)add(new T.BoxGeometry(3.2,.3,.9),stone,sx,.15+i*.3,fz+3.0-i*.7);
+     [-1.7,1.7].forEach(px=>{const rl=add(new T.BoxGeometry(.08,.08,3.3),iron,sx+px,1.55,fz+1.6);rl.rotation.x=-.33;[fz+.3,fz+2.9].forEach(pz=>add(new T.BoxGeometry(.08,pz<fz+1?2:1,.08),iron,sx+px,pz<fz+1?1:.5,pz))});
+     if(kind==="school"){const pole=add(new T.CylinderGeometry(.06,.06,4),iron,3.2,6.5,fz+.6);pole.rotation.x=.6;add(new T.BoxGeometry(.05,.9,1.4),new T.MeshStandardMaterial({color:0xc8102e}),3.2,8,fz+1.6)}}
+  if(kind!=="school"){for(let fl=0;fl<2;fl++){add(new T.BoxGeometry(3.4,.1,1.1),iron,-2.6,5.6+fl*2.4,fz+.55);add(new T.BoxGeometry(3.4,.9,.05),iron,-2.6,6.05+fl*2.4,fz+1.08)}}
+  /* door portal: jambs + lintel stand out from the wall so the painted door reads as set back into the building */
+  {const dx=kind==="apartment"?2:0,y0=kind==="school"||kind==="apartment"?1.2:0,y1=kind==="school"?5.9:kind==="apartment"?5.5:3.9,hw=kind==="apartment"?1.25:1.45,trim=kind==="arcade"?M(0x2a1a4a,{emissive:0xff2bc0,emissiveIntensity:.25}):stone;
+   [-hw,hw].forEach(px=>add(new T.BoxGeometry(.32,y1-y0,.55),trim,dx+px,y0+(y1-y0)/2,fz+.27));add(new T.BoxGeometry(hw*2+.5,.45,.7),trim,dx,y1+.2,fz+.34);
+   const lamp=new T.Mesh(new T.SphereGeometry(.16,12,10),bulbM0);lamp.position.set(dx-hw-.45,y1-.6,fz+.35);g.add(lamp)}
+  g.position.set(x,0,side*(9+D/2));if(side>0)g.rotation.y=Math.PI;S.add(g);g.updateMatrixWorld(true);
+  const top=H+h,fzz=D/2;
+  /* upper-floor windows: dark/lit glass set back, stone sill + lintel + side frames in front */
+  if(h>0){const rows=Math.floor(h/2.6);for(let r=0;r<rows;r++)for(let c=0;c<4;c++){const wx=-3.3+c*2.2,wy=H+1.5+r*2.6,fzw=D*.48;
+     partAt(g,Math.random()<.45?"glassLit":"glass",wx,wy,fzw+.005,1.1,1.4,.02);partAt(g,"stone",wx,wy-.78,fzw+.12,1.4,.14,.28);partAt(g,"stone",wx,wy+.8,fzw+.08,1.3,.18,.18);
+     partAt(g,"frame",wx-.6,wy,fzw+.06,.1,1.5,.14);partAt(g,"frame",wx+.6,wy,fzw+.06,.1,1.5,.14);partAt(g,"frame",wx,wy,fzw+.05,1.1,.06,.08);
+     if((r+c+Math.round(x))%7===0)partAt(g,"ac",wx,wy-.55,fzw+.32,.7,.42,.5)}}
+  /* parapet + coping around the roof */
+  {const w0=h>0?W*.96:W,d0=h>0?D*.96:D;partAt(g,"parapet",0,top+.45,d0/2-.15,w0,.9,.3);partAt(g,"parapet",0,top+.45,-d0/2+.15,w0,.9,.3);partAt(g,"parapet",w0/2-.15,top+.45,0,.3,.9,d0);partAt(g,"parapet",-w0/2+.15,top+.45,0,.3,.9,d0);
+   partAt(g,"stone",0,top+.95,d0/2-.15,w0+.2,.12,.45);
+   /* roof props: stair bulkhead, AC units, chimneys, and the classic NYC water tower on some roofs */
+   const sd=Math.abs(Math.round(x*7+h*3))%5;partAt(g,"bulk",-2.4+sd*.4,top+1.1,-1.5,2.2,2.2,2.4);partAt(g,"ac",2.2,top+.45,1.2,1.2,.8,1);partAt(g,"ac",2.2,top+.45,-.6,1.2,.8,1);partAt(g,"chim",-3.6,top+1.2,3,.6,2.4,.6);
+   if(sd<2){const wt=new T.Group();const wood=M(0x7a5236,{roughness:.9});const barrel=new T.Mesh(new T.CylinderGeometry(1.15,1.2,2.2,16),wood);barrel.position.y=3.3;const cone=new T.Mesh(new T.ConeGeometry(1.35,1.1,16),M(0x3c3c3c));cone.position.y=4.95;
+     for(let k=0;k<3;k++){const band=new T.Mesh(new T.TorusGeometry(1.19,.04,6,20),M(0x222222,{metalness:.6}));band.rotation.x=Math.PI/2;band.position.y=2.5+k*.8;wt.add(band)}
+     [[-.8,-.8],[.8,-.8],[-.8,.8],[.8,.8]].forEach(([lx,lz])=>{const l=new T.Mesh(new T.BoxGeometry(.12,2.2,.12),M(0x2a2a2a,{metalness:.5}));l.position.set(lx,1.1,lz);wt.add(l)});
+     wt.add(barrel,cone);wt.position.set(1.8,top,-2.2);wt.traverse(o=>{if(o.isMesh)o.castShadow=true});g.add(wt)}}
+  DOORS.push({kind,id:{school:"school",arcade:"arcade",clothing:"shop",apartment:"apt"}[kind],name:NAMES[kind],x:x+(kind==="apartment"?(side>0?-2:2):0),z:side*9.2});}
+const ORDER=["school","arcade","clothing","apartment","clothing","apartment","arcade","apartment","clothing","arcade","apartment","clothing"];
+ORDER.forEach((k,i)=>building(k,-55+i*10,-1,[0,6,3,9,0,5,12,2,6,0,8,4][i]));
+ORDER.slice().reverse().forEach((k,i)=>building(k,-55+i*10,1,[5,0,9,3,7,0,4,10,2,6,0,8][i]));
+{const IM={glass:M(0x1e2a3a,{roughness:.15,metalness:.6}),glassLit:M(0xffe2a0,{emissive:0xffc06a,emissiveIntensity:.75,roughness:.3}),stone:M(0xd9cdb8,{roughness:.9}),frame:M(0xece4d4,{roughness:.8}),parapet:M(0x6e3a2e,{roughness:.95}),bulk:M(0x7b4a3a,{roughness:.95}),ac:M(0xb8bcc2,{metalness:.4,roughness:.5}),chim:M(0x5e3428,{roughness:.95})};
+  const ub=new T.BoxGeometry(1,1,1);for(const k in INST){const im=new T.InstancedMesh(ub,IM[k],INST[k].length);INST[k].forEach((m,i)=>im.setMatrixAt(i,m));im.castShadow=k!=="glass"&&k!=="glassLit";im.receiveShadow=true;im.frustumCulled=false;S.add(im)}}
+[-1,1].forEach(e=>{const m=new T.Mesh(new T.BoxGeometry(10,26,40),[brickMat(40,26),brickMat(40,26),roofM,brickMat(40,26),brickMat(40,26),brickMat(40,26)]);m.position.set(e*66,13,0);m.receiveShadow=true;m.userData.solid=1;S.add(m)});
+/* ---------- props ---------- */
+const poleM=new T.MeshStandardMaterial({color:0x2f4f3a,metalness:.4,roughness:.5}),bulbM=new T.MeshStandardMaterial({color:0xfff2c0,emissive:0xffd77a,emissiveIntensity:1.4});
+for(let x=-54;x<=54;x+=12)[-4.6,4.6].forEach(z=>{const p=new T.Mesh(new T.CylinderGeometry(.09,.12,4.6,10),poleM);p.position.set(x,2.3,z);p.castShadow=true;p.userData.solid=1;S.add(p);const b=new T.Mesh(new T.SphereGeometry(.28,16,12),bulbM);b.position.set(x,4.7,z);S.add(b)});
+const treeT=new T.MeshStandardMaterial({color:0x6b4a2f}),treeL=new T.MeshStandardMaterial({color:0x4f9a4a,roughness:.9});
+for(let x=-48;x<=48;x+=24)[-8.2,8.2].forEach(z=>{const t=new T.Mesh(new T.CylinderGeometry(.15,.2,2.4),treeT);t.position.set(x+6,1.2,z);t.castShadow=true;t.userData.solid=1;S.add(t);const l=new T.Mesh(new T.SphereGeometry(1.3,16,12),treeL);l.position.set(x+6,3,z);l.castShadow=true;S.add(l)});
+function taxi(){const g=new T.Group(),y=new T.MeshStandardMaterial({color:0xffc81e,roughness:.4}),gl=new T.MeshStandardMaterial({color:0x223344,roughness:.2,metalness:.3}),wh=new T.MeshStandardMaterial({color:0x1a1a1a});
+  const body=new T.Mesh(new T.BoxGeometry(4.2,1,1.9),y);body.position.y=.75;const top=new T.Mesh(new T.BoxGeometry(2.3,.75,1.7),gl);top.position.set(-.1,1.6,0);const sign=new T.Mesh(new T.BoxGeometry(.7,.25,.3),new T.MeshStandardMaterial({color:0xffffff,emissive:0xfff4c0,emissiveIntensity:.8}));sign.position.set(-.1,2.1,0);
+  g.add(body,top,sign);[[1.3,.95],[1.3,-.95],[-1.3,.95],[-1.3,-.95]].forEach(([x,z])=>{const w=new T.Mesh(new T.CylinderGeometry(.38,.38,.3,16),wh);w.rotation.x=Math.PI/2;w.position.set(x,.38,z);g.add(w)});
+  g.traverse(o=>{if(o.isMesh)o.castShadow=true});S.add(g);return g}
+const TAXIS=[{x:-40,z:-2,v:7},{x:10,z:-2,v:6},{x:30,z:2,v:-7.5},{x:-20,z:2,v:-6}].map(t=>Object.assign(t,{m:taxi()}));
+/* ---------- characters (3D GLB) ---------- */
+const GL=new GLTFLoader();
+function b64buf(u){const b=atob(u.slice(u.indexOf(",")+1)),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a.buffer}
+function loadChar(url,targetH){return new Promise(res=>{if(!url)return res(null);let buf;try{buf=b64buf(url)}catch(e){return res(null)}GL.parse(buf,"",g=>{const m=g.scene;m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false}});
+  const mix=new T.AnimationMixer(m),clip=g.animations[0],act=clip?mix.clipAction(clip):null;act&&act.play();mix.setTime(0);m.updateMatrixWorld(true);
+  const bb=new T.Box3().setFromObject(m,true),h=bb.max.y-bb.min.y||1.8;const s=targetH/h;const wrap=new T.Group();m.scale.setScalar(s);m.position.y=-bb.min.y*s;wrap.add(m);S.add(wrap);const o={g:wrap,mix,act,dur:clip?clip.duration:1,t:0,yaw:0};calibrate(o,m);mix.setTime(0);res(o)},e=>{console.error(e);res(null)})})}
+const ACT={};
+/* ---------- input ---------- */
+const K={};addEventListener("keydown",e=>{if(window.OVERLAY_KEYS&&OVERLAY_KEYS(e))return;K[e.key.toLowerCase()]=true;if(e.key.startsWith("Arrow"))e.preventDefault();if(TOOL.style.display==="flex"&&e.key.toLowerCase()!=="t")return;if(e.key.toLowerCase()==="t"){toggleTool();return}if(e.key.toLowerCase()==="e")tryDoor();if(e.key.toLowerCase()==="m"&&nearDoor&&nearDoor.type==="station"&&!QG){try{parent.postMessage({lv3d:"door",id:nearDoor.id},"*")}catch(_){}}if(QG&&QG.phase==="ask"&&/^[1-4]$/.test(e.key)){const a=QG.ans[+e.key-1];if(a&&!a.used)answer(a)}if(e.key===" "){e.preventDefault();if(P.onG)P.vy=7.5}if(e.key.toLowerCase()==="i")camDist=Math.max(.6,camDist-1.5);if(e.key.toLowerCase()==="o")camDist=Math.min(20,camDist+1.5)});addEventListener("keyup",e=>K[e.key.toLowerCase()]=false);
+let camYaw=0,camPitch=.38,camDist=8.5,drag=null,target=null,IDLE=0;
+cv.addEventListener("contextmenu",e=>e.preventDefault());cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,moved:0}});
+addEventListener("pointermove",e=>{if(!drag||locked)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved+=Math.abs(dx)+Math.abs(dy);camYaw-=dx*.006;camPitch=Math.max(-1.25,Math.min(1.45,camPitch+dy*.004));drag.x=e.clientX;drag.y=e.clientY});
+addEventListener("pointerup",e=>{if(drag&&drag.moved<6&&!locked&&(e.pointerType==="touch"||e.button===2||e.altKey)){const r=new T.Raycaster(),p=new T.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);r.setFromCamera(p,cam);const hit=new T.Vector3();if(r.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),0),hit))target=hit}drag=null});
+cv.addEventListener("wheel",e=>{e.preventDefault();if(e.ctrlKey||(e.deltaMode===0&&Math.abs(e.deltaY)>=60&&Number.isInteger(e.deltaY)&&e.deltaX===0)){camDist=Math.max(.6,Math.min(20,camDist+e.deltaY*(e.ctrlKey?.05:.01)))}else{camYaw-=e.deltaX*.004;camPitch=Math.max(-1.25,Math.min(1.45,camPitch-e.deltaY*.003))}},{passive:false});
+/* pointer lock: click once, then move the mouse / trackpad finger to look (true FPS/Roblox shift-lock feel) */
+let locked=false;const LK=document.createElement("div");LK.id="lockhint";LK.textContent="🖱️ Click the street to look around with your mouse or trackpad · Esc to free the mouse";document.body.appendChild(LK);
+cv.addEventListener("click",e=>{if(!locked&&e.pointerType!=="touch"&&cv.requestPointerLock){try{const p=cv.requestPointerLock();p&&p.catch&&p.catch(()=>{})}catch(_){}}});
+document.addEventListener("pointerlockchange",()=>{locked=document.pointerLockElement===cv;LK.style.display=locked?"none":"block"});
+document.addEventListener("mousemove",e=>{if(!locked)return;camYaw-=e.movementX*.0032;camPitch=Math.max(-1.25,Math.min(1.45,camPitch+e.movementY*.0032))});
+/* ---------- doors ---------- */
+const PR=document.getElementById("prompt");let nearDoor=null;
+function tryDoor(){if(!nearDoor)return;const d=nearDoor;if(d.type==="door")enterRoom(d.kind);else if(d.type==="exit")leaveRoom();else if(d.type==="game")startGame(d.npc,d.indoor,d.kinds,d.src);else if(d.type==="pad")answer(QG.nearPad);else if(d.type==="none"){}else if(d.type==="station"&&d.id==="school"){startGame("Ms. Okafor",true,["books","apples","pencils","marbles"],[1,2,4])}else if(d.type==="station"&&(d.id==="shop"||d.id==="apt")){startGame("Theo",true,d.id==="shop"?["coins","tickets"]:["marbles","books"],"review")}else{try{parent.postMessage({lv3d:"door",id:d.id},"*")}catch(_){}}}
+function interactions(){if(QG){if(QG.phase==="ask"&&QG.nearPad)return [{type:"pad",x:P.x,z:P.z,r:9,label:"Press E to answer "+QG.nearPad.v}];if(QG.phase==="ask")return [{type:"none",x:P.x,z:P.z,r:9,label:QG.indoor?"Jump (Space) under the right answer block!":"Walk onto the right number pad, then press E"}];return []}
+  const npcI=[];const mlab=ids=>{const pk=pickItem(ids);return pk?(pk.review?"Review round":"Mission "+pk.m.id+" · "+pk.m.title+" ("+(pk.idx+1)+"/"+pk.m.items.length+")"):""};
+  if(AREA==="street"&&Math.hypot(P.x-MA.x,P.z-MA.z)<2.8)npcI.push({type:"game",npc:"Ms. Marcia",indoor:false,kinds:["coins","marbles"],src:[3,5],x:MA.x,z:MA.z,r:2.8,label:"Press E — Ms. Marcia needs help! "+mlab([3,5])});
+  if(AREA==="street"&&IDLE>1.2&&Math.hypot(P.x-TH.x,P.z-TH.z)<2.6)npcI.push({type:"game",npc:"Theo",indoor:false,kinds:["marbles","coins"],src:"review",x:TH.x,z:TH.z,r:2.6,label:"Press E — Theo has a review challenge for you!"});
+  if(AREA==="arcade"&&Math.hypot(P.x-ROOMS.arcade.cx,P.z-(ROOMS.arcade.cz+1.2))<2.6)npcI.push({type:"game",npc:"Theo",indoor:true,kinds:["tickets","tokens"],src:"review",x:ROOMS.arcade.cx,z:ROOMS.arcade.cz+1.2,r:2.6,label:"Press E to play Ticket Blaster!"});
+  if(npcI.length&&AREA!=="street")return npcI;
+  if(AREA==="street")return [].concat(DOORS.map(d=>({type:"door",kind:d.kind,x:d.x,z:d.z,r:2.2,label:"Press E to go inside "+d.name})),npcI);const R0=ROOMS[AREA];return [{type:"exit",x:R0.exit.x,z:R0.exit.z,r:1.8,label:"Press E to go back outside"}].concat(R0.ST.map(s=>({type:"station",id:s.id,x:AREA==="school"?TCH.x:s.x,z:AREA==="school"?TCH.z:s.z,r:2.6,label:s.id==="school"?"Press E — Ms. Okafor: "+(pickItem([1,2,4])&&!pickItem([1,2,4]).review?"Mission "+pickItem([1,2,4]).m.id+" · "+pickItem([1,2,4]).m.title:"review round")+" · M for the mission list":s.id==="shop"||s.id==="apt"?"Press E for Theo's math game · M to "+s.label:"Press E to "+s.label+" · or walk to the green machine to play Ticket Blaster"})))}
+
+/* ---------- 3D interiors ---------- */
+const ROOMS={},RW=18,RD=16,RH=5.6;
+function M(c,o={}){return new T.MeshStandardMaterial(Object.assign({color:c,roughness:.8},o))}
+function box(g,w,h,d,mat,x,y,z,solid=1){const o=new T.Mesh(new T.BoxGeometry(w,h,d),mat);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;if(solid)o.userData.solid=1;g.add(o);return o}
+function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(cx,0,cz);S.add(g);
+  const wallC={school:0xf4e3b5,arcade:0x241640,clothing:0xf2efe8,apartment:0xe9c9a0}[kind],floorC={school:0xc8915a,arcade:0x2b1d52,clothing:0xd9d2c5,apartment:0x9b6a43}[kind];
+  const wm=M(wallC),fm=M(floorC,{roughness:.6});
+  const fl=new T.Mesh(new T.PlaneGeometry(RW,RD),fm);fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;g.add(fl);
+  const ce=new T.Mesh(new T.PlaneGeometry(RW,RD),M(0xf8f4ec));ce.rotation.x=Math.PI/2;ce.position.y=RH;g.add(ce);
+  box(g,RW,RH,.4,wm,0,RH/2,-RD/2);box(g,.4,RH,RD,wm,-RW/2,RH/2,0);box(g,.4,RH,RD,wm,RW/2,RH/2,0);
+  box(g,(RW-2.6)/2,RH,.4,wm,-(RW+2.6)/4,RH/2,RD/2);box(g,(RW-2.6)/2,RH,.4,wm,(RW+2.6)/4,RH/2,RD/2);box(g,2.6,RH-3,.4,wm,0,3+(RH-3)/2,RD/2);
+  box(g,2.6,3,.1,M(0x3a6fd8,{emissive:0x1d3f8a,emissiveIntensity:.4}),0,1.5,RD/2+.3,0); // exit door glow
+  const mural={school:"img/lua_classroom.webp",arcade:"img/settings_arcade_bg_arcade_wide_interior.webp",clothing:"img/ls_ts_loc_clothing.webp",apartment:null}[kind];
+  if(mural){const t=TL.load(mural);t.colorSpace=T.SRGBColorSpace;const mp=new T.Mesh(new T.PlaneGeometry(RW-1,(RW-1)*.5625),new T.MeshBasicMaterial({map:t}));mp.position.set(0,RH/2,-RD/2+.22);if(kind!=="school"){mp.scale.set(.7,.7,1)}g.add(mp)}
+  const L=new T.PointLight(kind==="arcade"?0xc28bff:0xfff1d8,kind==="arcade"?60:45,30);L.position.set(0,RH-.4,0);g.add(L);
+  const ST=[];const st=(x,z,label,id)=>ST.push({x:cx+x,z:cz+z,label,id});
+  if(kind==="school"){const desk=M(0xd8a86a),leg=M(0x555555),chair=M(0x3d7be0);
+    for(let rr=0;rr<3;rr++)for(let c=0;c<4;c++){const x=-5.4+c*3.6,z=-1.5+rr*2.8;box(g,1.6,.08,1,desk,x,.78,z);box(g,1.5,.74,.9,M(0x8a6a44),x,.37,z);box(g,.6,.5,.6,chair,x,.25,z+.85);box(g,.6,.6,.08,chair,x,.8,z+1.12)}
+    box(g,3.4,1,1.4,M(0x7a4a2a),0,.5,-5.2);box(g,6,2.4,.1,M(0xffffff),0,2.6,-RD/2+.3,0);
+    st(3,-4.2,"talk to Ms. Okafor: today's missions","school")}
+  if(kind==="arcade"){const cab=[0xff3bd4,0x2bd9ff,0xffd23f,0x6dff6b,0xff6b3b];
+    for(let i=0;i<6;i++)[-1,1].forEach(sd=>{const x=sd*(RW/2-1.1),z=-5+i*1.9,cl=cab[(i+(sd>0?2:0))%5];const c=box(g,1.1,2.3,1,M(0x1a1030),x,1.15,z);box(g,.05,.8,.8,M(cl,{emissive:cl,emissiveIntensity:1.4}),x-sd*.56,1.6,z,0)});
+    box(g,8,1.1,1.2,M(0xffd23f),0,.55,-4.6);[-3.4,-2.7,2.7,3.4].forEach((x,k)=>box(g,.42,.42,.42,M(cab[k%5],{emissive:cab[k%5],emissiveIntensity:.3}),x,1.31,-4.6,0));
+    box(g,3,2.2,1.4,M(0x5b2bd0),0,1.1,1.2);box(g,2.6,.05,1.1,M(0x22ff88,{emissive:0x22ff88,emissiveIntensity:.8}),0,2.25,1.2,0);
+    st(0,-3.5,"Prize Counter & Ticket Rush","arcade")}
+  if(kind==="clothing"){const cl=[0xe23b3b,0xffd23f,0x2a9d8f,0x3d5af1,0xff8fb1];
+    for(let rk=0;rk<4;rk++){const x=-6+rk*4;box(g,.08,1.8,.08,M(0x333333),x-1.3,.9,-1);box(g,.08,1.8,.08,M(0x333333),x+1.3,.9,-1);box(g,2.7,.06,.06,M(0x333333),x,1.75,-1);
+      for(let k=0;k<5;k++)box(g,.4,1,.12,M(cl[(k+rk)%5]),x-1+k*.5,1.15,-1,0)}
+    box(g,4,1.1,1.2,M(0x1f7a72),0,.55,-5.3);[-6,6].forEach(x=>{box(g,.9,.15,.9,M(0xdddddd),x,1.6,3,0);box(g,.6,1.4,.6,M(0xf0d0b0),x,.7,3)});
+    st(0,-4.2,"shop: spend City Coins","shop")}
+  if(kind==="apartment"){box(g,4,.9,1.6,M(0x3d6fb0),-3,.45,-3);box(g,4,1,.5,M(0x3d6fb0),-3,1,-3.8);box(g,2.4,.5,1.2,M(0x7a4a2a),-3,.25,-.8);
+    box(g,3.6,2,.15,M(0x111111),-3,2.2,-RD/2+.35,0);box(g,3.4,1.8,.05,M(0x2a6bff,{emissive:0x2a6bff,emissiveIntensity:.5}),-3,2.2,-RD/2+.45,0);
+    box(g,2.6,.6,4,M(0xe8e0d0),5.5,.3,-4.5);box(g,2.6,1.2,.3,M(0x7a4a2a),5.5,.6,-6.6);const rug=new T.Mesh(new T.CircleGeometry(2.2,32),M(0xd96a3b));rug.rotation.x=-Math.PI/2;rug.position.set(-3,.01,-1);g.add(rug);
+    st(-3,0,"check your outfit & progress","apt")}
+  ROOMS[kind]={cx,cz,ST,g,light:L,exit:{x:cx,z:cz+RD/2-.9}}}
+["school","arcade","clothing","apartment"].forEach(room);
+/* ---------- teacher avatar: 8-direction Canva turnaround on a camera-facing card ---------- */
+const TV=["front","fq","side","bq","back","wave","talk","wfa","wfb","wside","wback","wfq","wbq"].reduce((o,k)=>{const x=TL.load("tex/teacher_"+k+".webp");x.colorSpace=T.SRGBColorSpace;o[k]=x;return o},{});
+const TCH={x:ROOMS.school.cx+3,z:ROOMS.school.cz-5.6,fy:0,yaw:0,home:0,meet:0,name:"Ms. Okafor",wp:0,wait:0,walkT:0};
+const TWP=[[3,-5.6],[3,-3.1],[-5,-3.1],[-5.6,-5.8],[-5,-3.1],[3,-3.1]].map(([x,z])=>[ROOMS.school.cx+x,ROOMS.school.cz+z]);
+{const h=2.2,w=h*.7;const geo=new T.PlaneGeometry(w,h);geo.translate(0,h/2,0);TCH.mat=new T.MeshStandardMaterial({map:TV.front,alphaTest:.5,side:T.DoubleSide,roughness:.9});
+ TCH.mesh=new T.Mesh(geo,TCH.mat);TCH.mesh.castShadow=true;TCH.mesh.position.set(TCH.x,0,TCH.z);S.add(TCH.mesh);
+ const sh=new T.Mesh(new T.CircleGeometry(.42,24),new T.MeshBasicMaterial({color:0,transparent:true,opacity:.28}));sh.rotation.x=-Math.PI/2;sh.position.set(TCH.x,.012,TCH.z);S.add(sh);TCH.shadow=sh}
+const BUB=document.createElement("div");BUB.style.cssText="position:fixed;max-width:280px;background:#fff;color:#14123a;border:3px solid #14123a;border-radius:14px;padding:.5rem .7rem;font:700 15px 'Trebuchet MS',sans-serif;transform:translate(-50%,-100%);pointer-events:none;display:none;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:9";document.body.appendChild(BUB);
+let BUBW=null;
+function say(who,text,x,y,z){BUBW={who,text,x,y,z,t:performance.now()}}
+const THEO_LINES=["Race you to school!","The arcade has new prizes today!","Ms. Okafor's missions are the best.","Let's earn some City Coins!"];
+function wrapA(a){while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a}
+function updateTeacher(dt,now){if(AREA!=="school"){TCH.meet=0;return}
+  const dx=P.x-TCH.x,dz=P.z-TCH.z,d=Math.hypot(dx,dz);let tx=null,tz=null;
+  if(d<6.5&&d>2.1){tx=P.x;tz=P.z}                      // walk over to greet the student
+  else if(d>=6.5){if(now<TCH.wait){}else{const w=TWP[TCH.wp];if(Math.hypot(w[0]-TCH.x,w[1]-TCH.z)<.2){TCH.wp=(TCH.wp+1)%TWP.length;TCH.wait=now+2500}else{tx=w[0];tz=w[1]}}}
+  let walking=false;
+  if(tx!==null){const ex=tx-TCH.x,ez=tz-TCH.z,ed=Math.hypot(ex,ez);if(ed>.05){const sp=1.7*dt;moveBody(TCH,ex/ed*Math.min(sp,ed),ez/ed*Math.min(sp,ed));walking=true;TCH.yaw+=wrapA(Math.atan2(ex,ez)-TCH.yaw)*Math.min(1,dt*8)}}
+  if(!walking){const want=d<6.5?Math.atan2(dx,dz):TCH.yaw;TCH.yaw+=wrapA(want-TCH.yaw)*Math.min(1,dt*5)}
+  if(d<=2.4&&!walking){if(!TCH.meet)TCH.meet=now}else if(d>3.2)TCH.meet=0;
+  const ca=Math.atan2(cam.position.x-TCH.x,cam.position.z-TCH.z),rel=wrapA(ca-TCH.yaw),k=Math.min(4,Math.round(Math.abs(rel)/(Math.PI/4)));
+  let key=["front","fq","side","bq","back"][k];
+  if(walking){TCH.walkT+=dt;const f=Math.floor(TCH.walkT*4)%4;const W=[["wfa","front","wfb","front"],["wfq","fq","wfq","fq"],["wside","side","wside","side"],["wbq","bq","wbq","bq"],["wback","back","wback","back"]][k];key=W[f]}
+  else if(k===0&&TCH.meet)key=now-TCH.meet<1800?"wave":"talk";
+  const tex2=TV[key];if(TCH.mat.map!==tex2){TCH.mat.map=tex2;TCH.mat.needsUpdate=true}
+  const flip=(k>0&&k<4&&rel>0)?-1:1;const bob=walking?Math.abs(Math.sin(TCH.walkT*Math.PI*2))*.03:Math.sin(now/600)*.008;
+  TCH.mesh.scale.set(flip,1+bob*.3,1);TCH.mesh.position.set(TCH.x,walking?bob:0,TCH.z);TCH.shadow.position.set(TCH.x,.012,TCH.z);
+  TCH.mesh.rotation.y=ca;
+  if(TCH.meet){const nm=(window.PNAME||"friend");say(TCH.name,now-TCH.meet<1800?"Good morning, "+nm+"! 👋":"Welcome to class! I'm "+TCH.name+". Press E and I'll give you today's math mission.",TCH.x,2.5,TCH.z)}}
+function updateBubble(now){if(!BUBW||now-BUBW.t>400||(QG&&QG.phase==="ask"&&QC.style.display==="block")){BUB.style.display="none";return}const v=new T.Vector3(BUBW.x,BUBW.y,BUBW.z).project(cam);if(v.z>1){BUB.style.display="none";return}
+  BUB.style.display="block";BUB.innerHTML="<b>"+BUBW.who+":</b> "+BUBW.text;BUB.style.left=(v.x*.5+.5)*innerWidth+"px";BUB.style.top=(-v.y*.5+.5)*innerHeight+"px"}
+addEventListener("message",e=>{if(e.data&&e.data.lv3d==="name")window.PNAME=e.data.name});
+/* ---------- physics: solid boxes, step-up, gravity ---------- */
+const SOL=[];S.updateMatrixWorld(true);
+S.traverse(o=>{if(o.isMesh&&o.userData.solid){const b=new T.Box3().setFromObject(o);SOL.push({x0:b.min.x,x1:b.max.x,z0:b.min.z,z1:b.max.z,y0:b.min.y,top:b.max.y})}});
+[-1,1].forEach(sd=>SOL.push({x0:-62,x1:62,z0:sd>0?4:-9.4,z1:sd>0?9.4:-4,y0:0,top:.12}));
+const PRAD=.32,STEP=.5,BODY=1.7;
+function supportAt(x,z,feet){let g=0;for(const b of SOL)if(x>b.x0-PRAD&&x<b.x1+PRAD&&z>b.z0-PRAD&&z<b.z1+PRAD&&b.top<=feet+STEP&&b.top>g)g=b.top;return g}
+function blocked(x,z,feet){for(const b of SOL)if(x>b.x0-PRAD&&x<b.x1+PRAD&&z>b.z0-PRAD&&z<b.z1+PRAD&&b.top>feet+STEP&&b.y0<feet+BODY)return true;return false}
+function moveBody(o,dx,dz){const f=o.fy||0;if(!blocked(o.x+dx,o.z,f))o.x+=dx;if(!blocked(o.x,o.z+dz,f))o.z+=dz}
+let AREA="street",RET=null,camSnap=false;
+function enterRoom(kind){const R0=ROOMS[kind];if(!R0)return;if(AREA==="street")RET={x:P.x,z:P.z-Math.sign(P.z||1)*1.2};AREA=kind;P.x=R0.exit.x;P.z=R0.exit.z-2.6;P.fy=0;P.vy=0;P.yaw=Math.PI;TH.x=P.x+1.2;TH.z=P.z+.6;camYaw=0;camPitch=.32;camDist=5.2;camSnap=true;try{parent.postMessage({lv3d:"area",area:kind},"*")}catch(_){}}
+function leaveRoom(){AREA="street";if(!RET)RET={x:-52,z:-6.5};P.x=RET.x;P.z=RET.z;P.fy=.12;P.vy=0;P.yaw=RET.z<0?0:Math.PI;camYaw=P.yaw+Math.PI;TH.x=P.x+1;TH.z=P.z;camDist=8.5;camSnap=true;try{parent.postMessage({lv3d:"area",area:"street"},"*")}catch(_){}}
+/* =====================================================================
+   3D MATH GAMES — world questions (street) and cinematic arcade games (indoors)
+   Flow: zoom-in on the real objects -> question read aloud -> answer in the world
+         -> victory jumps + confetti -> character hands over a glowing XP orb
+   ===================================================================== */
+let QG=null;
+/* ---- on-screen question card: mission + level badge + question + big tappable answers ---- */
+const LVCOL=["","#2fbf71","#27a3d9","#7b5cff","#ff9f1c","#ff5d8f","#e63946"];
+const QC=document.createElement("div");QC.id="qcard";QC.style.cssText="box-sizing:border-box;position:fixed;left:50%;top:8px;transform:translateX(-50%);width:min(94vw,640px);background:rgba(255,255,255,.96);color:#14123a;border:4px solid #14123a;border-radius:18px;padding:.5rem .8rem .6rem;font:700 17px 'Trebuchet MS',sans-serif;z-index:11;display:none;box-shadow:0 8px 24px rgba(0,0,0,.35)";
+document.body.appendChild(QC);if(/embed/.test(location.search))QC.style.top="58px";
+function showCard(q){QC.innerHTML=`<div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;font-size:13px"><span style="background:${LVCOL[q.level]};color:#fff;border-radius:999px;padding:.1rem .55rem">${LVN[q.level]}</span><span>${q.review?"⭐ Review round":"Mission "+q.mid+" · "+q.title+" · "+(q.idx+1)+"/"+q.count}</span><span style="flex:1"></span><span id="qcStreak">${STREAK>=2?"🔥 Streak "+STREAK:""}</span><button id="qcRead" style="font:700 13px inherit;border:2px solid #14123a;border-radius:10px;background:#ffd23f;cursor:pointer">🔊</button></div><div id="qcText" style="margin:.35rem 0 .45rem;line-height:1.3">${q.text}</div><div id="qcAns" style="display:none;gap:.45rem;flex-wrap:wrap"></div><div id="qcMsg" style="font-size:14px;color:#b3261e;min-height:0"></div>`;
+  QC.style.display="block";QC.querySelector("#qcRead").onclick=()=>speak(q.text)}
+function cardAnswers(){const w=QC.querySelector("#qcAns");if(!w||!QG)return;w.style.display="flex";w.innerHTML="";QG.ans.forEach((a,i)=>{const b=document.createElement("button");b.textContent=(i+1)+")  "+a.v;b.style.cssText="flex:1 1 40%;min-height:46px;font:900 19px 'Trebuchet MS',sans-serif;border:3px solid #14123a;border-radius:14px;background:"+(QG.indoor?"#ffd23f":"#2bd9ff")+";color:#14123a;cursor:pointer;touch-action:manipulation";b.onclick=e=>{e.stopPropagation();if(!a.used&&QG&&QG.phase==="ask")answer(a)};a.btn=b;w.appendChild(b)})}
+function hideCard(){QC.style.display="none"}
+const OBJ={
+ marbles:{s:"marbles",one:"marble",make:i=>new T.Mesh(new T.SphereGeometry(.09,16,12),new T.MeshStandardMaterial({color:[0x2bd9ff,0xff3bd4,0xffd23f,0x6dff6b,0xff6b3b][i%5],roughness:.15,metalness:.1})),h:.09},
+ coins:{s:"coins",one:"coin",make:()=>{const m=new T.Mesh(new T.CylinderGeometry(.1,.1,.03,20),new T.MeshStandardMaterial({color:0xffc83d,metalness:.8,roughness:.25}));return m},h:.015},
+ tickets:{s:"tickets",one:"ticket",make:()=>new T.Mesh(new T.BoxGeometry(.22,.02,.11),new T.MeshStandardMaterial({color:0xff4d6d,emissive:0x661122,emissiveIntensity:.4})),h:.01},
+ tokens:{s:"game tokens",one:"game token",make:()=>new T.Mesh(new T.CylinderGeometry(.09,.09,.04,18),new T.MeshStandardMaterial({color:0x8a5cff,emissive:0x3a1d99,emissiveIntensity:.6,metalness:.5})),h:.02},
+ books:{s:"books",one:"book",make:i=>new T.Mesh(new T.BoxGeometry(.2,.06,.15),new T.MeshStandardMaterial({color:[0x3d7be0,0xe23b3b,0x2a9d8f,0xffd23f][i%4]})),h:.03},
+ apples:{s:"apples",one:"apple",make:()=>new T.Mesh(new T.SphereGeometry(.09,16,12),new T.MeshStandardMaterial({color:0xd92b2b,roughness:.4})),h:.09},
+ hotdogs:{s:"hot dogs",one:"hot dog",make:()=>{const g=new T.Group();const bun=new T.Mesh(new T.CapsuleGeometry(.05,.18,4,10),new T.MeshStandardMaterial({color:0xe0a85a}));bun.rotation.z=Math.PI/2;const d=new T.Mesh(new T.CapsuleGeometry(.03,.22,4,8),new T.MeshStandardMaterial({color:0xb23b2b}));d.rotation.z=Math.PI/2;d.position.y=.04;g.add(bun,d);return g},h:.05},
+ pretzels:{s:"pretzels",one:"pretzel",make:()=>{const m=new T.Mesh(new T.TorusGeometry(.08,.025,8,20),new T.MeshStandardMaterial({color:0x9a5a24,roughness:.6}));m.rotation.x=-Math.PI/2;return m},h:.03},
+ bars:{s:"granola bars",one:"granola bar",make:()=>new T.Mesh(new T.BoxGeometry(.2,.04,.08),new T.MeshStandardMaterial({color:0xb8864b})),h:.02},
+ pencils:{s:"pencils",one:"pencil",make:()=>{const m=new T.Mesh(new T.CylinderGeometry(.02,.02,.32,8),new T.MeshStandardMaterial({color:0xffc81e}));m.rotation.z=Math.PI/2;return m},h:.02}};
+let MS=[],PROG={},STREAK=0;const R_=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const LVN=["","L1 · See it all","L2 · See one group","L3 · Scrap paper & tools","L4 · Mental math","L5 · Big numbers + tools","L6 · Big numbers, mental math"];
+addEventListener("message",e=>{const d=e.data;if(d&&d.lv3d==="missions"){MS=d.list;PROG=d.prog||{}}});
+const NOUN={dogs:"hotdogs",pretzels:"pretzels",bars:"bars",granola:"bars",apples:"apples",apple:"apples",muffins:"apples",cookies:"coins",marbles:"marbles",dots:"marbles",beads:"marbles",coins:"coins",dollars:"coins",cents:"coins",books:"books",notebooks:"books",boxes:"books",pencils:"pencils",crayons:"pencils",markers:"pencils",pens:"pencils",tickets:"tickets",stickers:"tickets",cards:"tickets",tokens:"tokens",chairs:"books",desks:"books",erasers:"books",cupcakes:"apples",oranges:"apples",balls:"marbles"};
+const GROUPW=/^(bags?|boxes|box|trays?|groups?|rows?|tables?|packs?|teams?|shelves|shelf|jars?|buckets?|baskets?|plates?|cups?|students?|kids?|friends?|bins?|cartons?|columns?)$/;
+function visualFor(text,ans,kinds){const words=text.replace(/[^\w\s]/g," ").split(/\s+/),nums=[];let kind=null;
+  words.forEach((w,i)=>{if(/^\d+$/.test(w)){const nx=(words[i+1]||"").toLowerCase(),nx2=(words[i+2]||"").toLowerCase();nums.push({v:+w,grp:GROUPW.test(nx)||GROUPW.test(nx2)});if(!kind&&NOUN[nx])kind=NOUN[nx];if(!kind&&NOUN[nx2])kind=NOUN[nx2]}else if(!kind&&NOUN[w.toLowerCase()])kind=NOUN[w.toLowerCase()]});
+  kind=kind||kinds[0];const L=text.toLowerCase();
+  const gm=L.match(/(\d+)\s+(?:groups?|rows?|bags?|boxes)\s+of\s+(\d+)/);if(gm)return{mode:"groups",k:+gm[1],n:+gm[2],kind};
+  if(nums.length<2)return{mode:"none",kind};
+  const [A,B]=nums;if(/times as many|times as much/.test(L)){const base=Math.min(A.v,B.v)===A.v&&ans===A.v*B.v?A.v:A.v,k=ans/base;if(Number.isInteger(k)&&k<=8&&base<=9)return{mode:"compare",n:base,k,kind}}
+  if(A.v*B.v===ans){let k=A.grp?A.v:B.grp?B.v:Math.min(A.v,B.v),n=ans/k;if(k<=10&&n<=10&&ans<=70)return{mode:"groups",k,n,kind}}
+  if(Number.isInteger(ans)&&A.v===ans*B.v&&B.v<=8&&ans<=10)return{mode:"divide",k:B.v,n:ans,kind};
+  if(Number.isInteger(ans)&&B.v===ans*A.v&&A.v<=8&&ans<=10)return{mode:"divide",k:A.v,n:ans,kind};
+  return{mode:"none",kind}}
+/* L5/L6: same story, harder numbers (2-digit × 1-digit, 3-digit × 1-digit, 2-digit × 2-digit, 4-digit ÷ 1-digit) */
+function swapNums(text,pairs){let out=text;const tok=[];pairs.forEach(([o,nw],i)=>{const re=new RegExp("\\b"+o+"\\b");if(re.test(out)){out=out.replace(re,"§"+i+"§");tok.push([i,nw])}});tok.forEach(([i,nw])=>out=out.replace("§"+i+"§",String(nw)));return tok.length===pairs.length?out:null}
+function scaleItem(it,v,level){if(!v||v.mode==="none")return null;const big=level===6;
+  if(v.mode==="groups"){const k2=big?R_(11,29):R_(3,9),n2=big?R_(12,49):R_(12,48);const k=v.k,n=v.n;let q=swapNums(it.q,[[k,k2],[n,n2]]);if(!q)return null;if(k2!==n2)q=q.replace(/is a square with/i,"is an array with");
+    return{t:"num",q,a:k2*n2,h:["Break the bigger number into tens and ones, multiply each part, then add.",`${k2} × ${n2}: try ${k2} × ${Math.floor(n2/10)*10} and ${k2} × ${n2%10}.`],e:`${k2} groups of ${n2} = ${k2*n2}.`}}
+  if(v.mode==="compare"){const k2=big?R_(11,19):R_(3,9),n2=big?R_(21,89):R_(12,48);const q=swapNums(it.q,[[v.n,n2],[v.k,k2]]);if(!q)return null;
+    return{t:"num",q,a:k2*n2,h:["'Times as many' means multiply.",`${k2} × ${n2}: split ${n2} into tens and ones.`],e:`${k2} × ${n2} = ${k2*n2}.`}}
+  if(v.mode==="divide"){const k2=R_(3,9),n2=big?R_(Math.max(12,Math.ceil(100/k2)),Math.floor(999/k2)):R_(12,30),tot=k2*n2;const q=swapNums(it.q,[[v.n*v.k,tot],[v.k,k2]]);if(!q)return null;
+    return{t:"num",q,a:n2,h:[`Think: ${k2} × what = ${tot}?`,"Share the hundreds first, then the tens, then the ones."],e:`${tot} ÷ ${k2} = ${n2}.`}}
+  return null}
+/* wrong answers that a real 4th grader would pick, so a wrong tap teaches something */
+function misconceptions(it,ans){const out=[],txt=(it.e||"")+" "+(it.q||"");let m=txt.match(/(\d+)\s*[×x]\s*(\d+)\s*=\s*(?:[\d\s+]*=\s*)?(\d+)/);
+  let f=null;if(m&&(+m[1])*(+m[2])===ans)f=[+m[1],+m[2]];
+  if(!f){const ns=(it.q.match(/\d+/g)||[]).map(Number);for(let i=0;i<ns.length&&!f;i++)for(let j=i+1;j<ns.length&&!f;j++)if(ns[i]*ns[j]===ans)f=[ns[i],ns[j]]}
+  if(f){const[a,b]=f;out.push([a+b,`That's ${a} + ${b}. Equal groups put together means multiply, not add!`]);out.push([ans+b,`Close! That's one group of ${b} too many. Count the groups again: ${a}.`]);out.push([ans-b,`Close! That's one group short. There are ${a} groups, not ${a-1}.`]);
+    if(b>=10&&a<10){const t=Math.floor(b/10)*10,o=b%10;if(o)out.push([a*t+o,`You did ${a} × ${t} but forgot to multiply the ${o} ones too: ${a} × ${o} = ${a*o}.`])}
+    if(b>=10&&a>=10){const t=Math.floor(b/10)*10,o=b%10;out.push([a*t,`You only did ${a} × ${t}. Don't forget ${a} × ${o}!`])}}
+  const d=txt.match(/(\d+)\s*÷\s*(\d+)\s*=\s*(\d+)/);if(d&&(+d[1])/(+d[2])===ans){const tot=+d[1],k=+d[2];out.push([tot-k,`That's ${tot} − ${k}. Sharing equally is division: ${k} × ? = ${tot}.`]);out.push([ans+1,`Check it: ${k} × ${ans+1} = ${k*(ans+1)}, which is more than ${tot}.`]);if(ans>1)out.push([ans-1,`Check it: ${k} × ${ans-1} = ${k*(ans-1)}, which is less than ${tot}.`])}
+  return out.sort(()=>Math.random()-.5)}
+function pickItem(src){/* src = mission id list, or "review" */
+  const ids=src==="review"?MS.map(m=>m.id):src;for(const id of ids){const m=MS.find(x=>x.id===id);if(!m)continue;const sv=PROG[id]||{};if(src!=="review"&&!sv.done){const idx=(sv.progress&&sv.progress.idx)||0;return{m,idx,it:m.items[idx],review:false}}}
+  const pool=MS.filter(m=>ids.includes(m.id));if(!pool.length)return null;const m=pool[R_(0,pool.length-1)],idx=R_(0,m.items.length-1);return{m,idx,it:m.items[idx],review:true}}
+function makeQ(npc,kinds,src,opt){opt=opt||{};const pk=opt.pk||pickItem(src);if(!pk)return null;let it=pk.it;
+  const level=opt.level||(pk.review?Math.min(6,1+Math.floor(STREAK/2)):Math.min(6,1+Math.floor(pk.idx*6/pk.m.items.length)));
+  if(level>=2&&it.t==="num"&&/\b(count|look at|shown|picture|see)\b/i.test(it.q)){const v0=visualFor(it.q+" "+(it.e||""),it.a,kinds);if(v0.mode==="groups")it=Object.assign({},it,{q:`There are ${v0.k} groups with ${v0.n} ${OBJ[v0.kind]?OBJ[v0.kind].s:"dots"} in each group. How many ${OBJ[v0.kind]?OBJ[v0.kind].s:"dots"} are there in all?`})}
+  if(level>=5&&it.t==="num"){const v0=visualFor(it.q+" "+(it.e||""),it.a,kinds);const sc=scaleItem(it,v0,level);if(sc)it=sc}
+  let ans,ch,why={};if(it.t==="mc"){ans=it.o[it.a];ch=it.o.slice()}else{ans=it.a;const mis=misconceptions(it,ans);const set=new Set([ans]);mis.forEach(([v,w])=>{if(set.size<4&&Number.isInteger(v)&&v>0&&!set.has(v)){set.add(v);why[v]=w}});[ans+(ans>20?10:2),Math.max(1,ans-(ans>20?10:3)),ans+(ans>100?100:1),ans+5,Math.max(1,ans-1),ans*2].forEach(v=>{if(set.size<4&&v>0&&!set.has(v))set.add(v)});ch=[...set].sort(()=>Math.random()-.5)}
+  const vis=visualFor(it.q+" "+(it.e||""),typeof it.a==="number"&&it.t==="num"?it.a:-1,kinds);
+  return{level,why,text:it.q,ans,ch,hints:it.h||[],expl:it.e||"",kind:vis.kind,mode:vis.mode,k:vis.k,n:vis.n,kid:"",mid:pk.m.id,idx:pk.idx,review:pk.review,title:pk.m.title,count:pk.m.items.length}}
+function numTex(v,bg,fg){const c=document.createElement("canvas");c.width=c.height=256;const g=c.getContext("2d");g.fillStyle=bg;g.fillRect(0,0,256,256);g.strokeStyle="#14123a";g.lineWidth=18;g.strokeRect(9,9,238,238);g.fillStyle=fg;g.textAlign="center";g.textBaseline="middle";const sv=String(v);if(sv.length<=4){g.font="900 130px Trebuchet MS,sans-serif";g.fillText(sv,128,138)}else{g.font="800 34px Trebuchet MS,sans-serif";const ws=sv.split(" "),ls=[];let cur="";ws.forEach(w=>{if(g.measureText(cur+" "+w).width>220&&cur){ls.push(cur);cur=w}else cur=cur?cur+" "+w:w});ls.push(cur);ls.forEach((l,i)=>g.fillText(l,128,128+(i-(ls.length-1)/2)*40))};const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;return t}
+function labelSprite(txt,w=1.6){const c=document.createElement("canvas");c.width=512;c.height=128;const g=c.getContext("2d");g.fillStyle="rgba(20,18,58,.85)";g.beginPath();g.roundRect(4,4,504,120,40);g.fill();g.fillStyle="#fff";g.font="800 54px Trebuchet MS,sans-serif";g.textAlign="center";g.textBaseline="middle";g.fillText(txt,256,68);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;const s=new T.Sprite(new T.SpriteMaterial({map:t,depthTest:false}));s.scale.set(w,w/4,1);s.renderOrder=5;return s}
+function speak(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/×/g," times ").replace(/÷/g," divided by ").replace(/−/g," minus ").replace(/=/g," equals ").replace(/[🎉👋⭐]/gu,""));u.rate=.95;u.pitch=1.05;speechSynthesis.speak(u)}catch(_){}}
+function npcPos(n){return n==="Ms. Okafor"?{x:TCH.x,z:TCH.z,y:2.5}:n==="Ms. Marcia"?{x:MA.x,z:MA.z,y:2.75}:{x:TH.x,z:TH.z,y:2.4+(TH.fy||0)}}
+function startGame(npc,indoor,kinds,src){if(QG)return;
+  const q=makeQ(npc,kinds,src||"review");if(!q){say(npc,"Hold on, I'm getting my questions ready!",npcPos(npc).x,npcPos(npc).y,npcPos(npc).z);return}const g=new T.Group();S.add(g);
+  const fx=Math.sin(P.yaw),fz=Math.cos(P.yaw),rx=Math.cos(P.yaw),rz=-Math.sin(P.yaw);
+  const ax=P.x+fx*2.4,az=P.z+fz*2.4,baseY=indoor?.9:P.fy+.02;
+  if(indoor){const tb=new T.Mesh(new T.BoxGeometry(3.2,.08,1.6),new T.MeshStandardMaterial({color:0x5b2bd0,emissive:0x220a55,emissiveIntensity:.5}));tb.position.set(ax,.86,az);tb.rotation.y=P.yaw;g.add(tb);
+    const lg=new T.Mesh(new T.CylinderGeometry(.08,.12,.86,10),M(0x222222));lg.position.set(ax,.43,az);g.add(lg);
+    const sp=new T.SpotLight(0xffffff,40,10,.6,.5);sp.position.set(ax,4.5,az);sp.target.position.set(ax,.9,az);g.add(sp,sp.target)}
+  // build the objects for the question, laid out on a mat aligned with the player
+  const o=OBJ[q.kind],items=[],put=(lx,lz,i,group)=>{const m=o.make(i);m.castShadow=true;const wx=ax+rx*lx+fx*lz,wz=az+rz*lx+fz*lz;m.userData={tx:wx,ty:baseY+o.h,tz:wz,delay:items.length*.06+group*.25};m.position.set(wx,baseY+3,wz);m.visible=false;g.add(m);items.push(m)};
+  const bag=(lx,lz)=>{const b=new T.Mesh(new T.CylinderGeometry(.24,.2,.22,18,1,true),new T.MeshStandardMaterial({color:0xc89b5a,side:T.DoubleSide}));b.position.set(ax+rx*lx+fx*lz,baseY+.11,az+rz*lx+fz*lz);g.add(b)};
+  const sp2=.24;
+  const LV=q.level,ghost=(lx,lz,w,d,txt)=>{const gm=new T.Mesh(new T.BoxGeometry(w,.3,d),new T.MeshBasicMaterial({color:0x7cf7ff,wireframe:true,transparent:true,opacity:.6}));gm.position.set(ax+rx*lx+fx*lz,baseY+.15,az+rz*lx+fz*lz);gm.rotation.y=P.yaw;g.add(gm);const gl=labelSprite(txt,1.5);gl.position.set(gm.position.x,baseY+.55,gm.position.z);g.add(gl)};
+  if(q.mode==="none"||LV>=3){}else if(q.mode==="compare"){for(let i=0;i<q.n;i++)put(-1.1+(i%4)*sp2,-.35+Math.floor(i/4)*sp2,i,0);
+    const lA=labelSprite("1 group: "+q.n);lA.position.set(ax-rx*.75,baseY+.75,az-rz*.75);g.add(lA);
+    if(LV===1){for(let r=0;r<q.k;r++)for(let i=0;i<q.n;i++)put(.2+i*sp2*.85,-.55+r*sp2,i,1+r)}else ghost(.9,-.1,1.5,1,"? = "+q.k+" times as many");
+    const lB=labelSprite(q.k+" times as many = ?",1.9);lB.position.set(ax+rx*.9,baseY+.95,az+rz*.9);g.add(lB)}
+  else{const spread=Math.min(.75,2.6/q.k);for(let b=0;b<q.k;b++){const lx=-((q.k-1)*spread)/2+b*spread;bag(lx,0);
+      if(q.mode==="groups"&&(LV===1||b===0))for(let i=0;i<q.n;i++)put(lx+((i%3)-1)*.1,(Math.floor(i/3)-1)*.1,i,b)}
+    if(q.mode==="divide"&&LV===1)for(let i=0;i<q.n*q.k;i++)put(-1+((i%8))*.17,.55+Math.floor(i/8)*.17,i,0);
+    const lB=labelSprite(q.mode==="groups"?(LV===1?q.k+" groups of "+q.n+" = ?":"1 bag shown · "+q.k+" bags in all"):(LV===1?(q.n*q.k)+" shared into "+q.k+" = ?":(q.n*q.k)+" total · "+q.k+" empty bags"),2.3);lB.position.set(ax,baseY+1,az);g.add(lB)}
+  showCard(q);
+  // answer pads (street) or jump-to-hit answer blocks (indoor game)
+  const ans=[];q.ch.forEach((v,i)=>{const lx=-2.4+i*1.6;
+    if(indoor){const wide=String(v).length>4,b=new T.Mesh(new T.BoxGeometry(wide?1.3:.7,.7,.7),new T.MeshStandardMaterial({map:numTex(v,"#ffd23f","#14123a"),emissive:0x332200,emissiveIntensity:.3}));const x=P.x+rx*lx+fx*1.1,z=P.z+rz*lx+fz*1.1;b.position.set(x,2.85+P.fy,z);b.visible=false;g.add(b);ans.push({v,m:b,x,z,y:2.85+P.fy})}
+    else{const p=new T.Mesh(new T.CylinderGeometry(String(v).length>4?.7:.55,String(v).length>4?.7:.55,.06,32),new T.MeshStandardMaterial({map:numTex(v,"#2bd9ff","#14123a"),emissive:0x0a4466,emissiveIntensity:.5}));const x=P.x+rx*lx-fx*1.2,z=P.z+rz*lx-fz*1.2;p.position.set(x,(AREA==="street"&&Math.abs(z)>4?.12:0)+.04,z);p.rotation.y=P.yaw;p.visible=false;g.add(p);ans.push({v,m:p,x,z})}});
+  QG={q,g,items,ans,npc,indoor,phase:"intro",t0:performance.now(),lock:true,ax,az,baseY,fx,fz,rx,rz,camWant:new T.Vector3(ax-fx*1.6+rx*1.2,baseY+1.5,az-fz*1.6+rz*1.2),camLook:new T.Vector3(ax,baseY+.2,az),tries:0};
+  const intro=["","Watch closely… count everything you see!","I'll only show you ONE group. Picture the rest in your head!","No pictures this time. Grab your scrap paper — or press T for the counter tool!","Mental math challenge! No pictures and no tools. You've got this!","Big numbers! Use scrap paper or press T for tools. Break the numbers into tens and ones.","Boss level! Big numbers, no tools. Break it apart in your head!"][q.level];QG.intro=intro;say(npc,intro,npcPos(npc).x,npcPos(npc).y,npcPos(npc).z);if(q.level>=3)speak(intro)}
+function answer(a){if(!QG||QG.phase!=="ask")return;QG.tries++;
+  if(a.v===QG.q.ans){if(a.btn)a.btn.style.background="#6dff6b";a.m.material.emissive.setHex(0x22ff66);a.m.material.emissiveIntensity=1.2;QG.phase="win";QG.t0=performance.now();QG.lock=true;speechSynthesis&&speechSynthesis.cancel();
+    const cx=P.x+Math.sin(P.yaw)*3.4,cz=P.z+Math.cos(P.yaw)*3.4;QG.camWant=new T.Vector3(cx,P.fy+1.6,cz);QG.camLook=new T.Vector3(P.x,P.fy+1.1,P.z);QG.jumps=0}
+  else{STREAK=0;a.m.material.emissive.setHex(0xff2222);a.m.material.emissiveIntensity=1;a.used=true;
+    const h="Try again! "+((QG.q.why&&QG.q.why[a.v])||QG.q.hints[Math.min(QG.tries-1,QG.q.hints.length-1)]||"Look at the groups closely.");QG.msg=h;speak(h);if(a.btn){a.btn.style.background="#ff8a8a";a.btn.style.textDecoration="line-through";a.btn.disabled=true}const mm=QC.querySelector("#qcMsg");if(mm)mm.textContent="💡 "+h}}
+const CONF=[];
+function confetti(x,y,z){for(let i=0;i<90;i++){const m=new T.Mesh(new T.PlaneGeometry(.08,.12),new T.MeshBasicMaterial({color:[0xff3bd4,0x2bd9ff,0xffd23f,0x6dff6b,0xff6b3b][i%5],side:T.DoubleSide}));m.position.set(x,y,z);S.add(m);CONF.push({m,vx:(Math.random()-.5)*5,vy:3+Math.random()*5,vz:(Math.random()-.5)*5,r:Math.random()*10,life:2.6})}}
+const POP=document.createElement("div");POP.style.cssText="position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.6);font:900 54px 'Trebuchet MS',sans-serif;color:#ffd23f;-webkit-text-stroke:3px #14123a;opacity:0;transition:all .5s;pointer-events:none;z-index:10";document.body.appendChild(POP);
+function updateGame(dt,now){
+  for(let i=CONF.length-1;i>=0;i--){const c=CONF[i];c.vy-=9*dt;c.m.position.x+=c.vx*dt;c.m.position.y+=c.vy*dt;c.m.position.z+=c.vz*dt;c.m.rotation.x+=c.r*dt;c.m.rotation.y+=c.r*.7*dt;c.life-=dt;if(c.life<=0||c.m.position.y<0){S.remove(c.m);CONF.splice(i,1)}}
+  if(!QG)return;const t=(now-QG.t0)/1000,np=npcPos(QG.npc);
+  if(QG.phase==="intro"){QG.items.forEach(m=>{const d=t-.4-m.userData.delay;if(d>0){m.visible=true;const k=Math.min(1,d/.45);m.position.y=m.userData.ty+(1-k*k)*1.6+(k===1?0:0)}});
+    const a=t*.12;QG.camWant.set(QG.ax-QG.fx*1.6+QG.rx*(1.2-a),QG.baseY+1.5,QG.az-QG.fz*1.6+QG.rz*(1.2-a));
+    const last=QG.items.length?Math.max(...QG.items.map(m=>m.userData.delay)):1.8;say(QG.npc,QG.intro,np.x,np.y,np.z);if(t>last+1.4){QG.phase="ask";QG.t0=now;QG.lock=false;QG.camWant=null;camYaw=P.yaw+Math.PI;camDist=QG.indoor?5.6:6.5;camPitch=QG.indoor?.36:.45;QG.ans.forEach(a=>a.m.visible=true);cardAnswers();speak(QG.q.text);if(QG.q.level===3||QG.q.level===5)TOOLBTN.style.display="block"}}
+  else if(QG.phase==="ask"){say(QG.npc,QG.msg||QG.q.text,np.x,np.y,np.z);
+    QG.ans.forEach(a=>{if(QG.indoor){a.m.rotation.y+=dt;if(!a.used&&Math.hypot(P.x-a.x,P.z-a.z)<.6&&P.vy>0&&P.fy+2.05>=a.y-.35){a.m.position.y=a.y+.25;setTimeout(()=>a.m.position.y=a.y,150);P.vy=-1;answer(a)}}});
+    const near=!QG.indoor&&QG.ans.find(a=>!a.used&&Math.hypot(P.x-a.x,P.z-a.z)<.6);QG.nearPad=near||null}
+  else if(QG.phase==="win"){P.yaw=Math.atan2(cam.position.x-P.x,cam.position.z-P.z);
+    if(QG.jumps<2&&t>.25+QG.jumps*.85&&P.onG){P.vy=7.5;P.onG=false;QG.jumps++;if(QG.jumps===1){confetti(P.x,P.fy+2.2,P.z);POP.textContent="CORRECT! 🎉";POP.style.opacity=1;POP.style.transform="translate(-50%,-50%) scale(1)";speak("Yes! "+QG.q.ans+" is right!")}}
+    say(QG.npc,"Yes! "+QG.q.ans+" is right! 🎉",np.x,np.y,np.z);
+    if(t>2.1){QG.phase="hand";QG.t0=now;POP.style.opacity=0;const mx=(P.x+np.x)/2,mz=(P.z+np.z)/2,dx=np.x-P.x,dz=np.z-P.z,L=Math.hypot(dx,dz)||1;
+      QG.camWant=new T.Vector3(mx-dz/L*3.6,P.fy+1.7,mz+dx/L*3.6);QG.camLook=new T.Vector3(mx,P.fy+1.2,mz);
+      QG.orb=new T.Mesh(new T.SphereGeometry(.17,24,18),new T.MeshStandardMaterial({color:0x7cf7ff,emissive:0x2bd9ff,emissiveIntensity:2}));QG.orb.add(new T.PointLight(0x7cf7ff,6,3));S.add(QG.orb);QG.orb.position.set(np.x,1.3,np.z)}}
+  else if(QG.phase==="hand"){if(QG.npc==="Theo"){const dx=P.x-TH.x,dz=P.z-TH.z,d=Math.hypot(dx,dz);if(d>1.3){TH.x+=dx/d*2*dt;TH.z+=dz/d*2*dt}}
+    P.yaw=Math.atan2(np.x-P.x,np.z-P.z);say(QG.npc,"Here's your XP — great thinking!",np.x,np.y,np.z);
+    const k=Math.max(0,Math.min(1,(t-.9)/1));const sx=np.x,sz=np.z,ex=P.x,ez=P.z;
+    QG.orb.position.set(sx+(ex-sx)*k,1.3+Math.sin(k*Math.PI)*.8+(P.fy-0)*k,sz+(ez-sz)*k);QG.orb.rotation.y+=dt*4;
+    if(k>=1&&!QG.paid){QG.paid=true;S.remove(QG.orb);let xp=(QG.tries===1?15:10)+(QG.q.level-1)*5;if(window.powerXP)xp=powerXP(xp,QG.q);STREAK=QG.tries===1?STREAK+1:0;if(window.powerAfter)powerAfter(QG);TOOLBTN.style.display="none";TOOL.style.display="none";POP.textContent="+"+xp+" XP ⭐";POP.style.opacity=1;POP.style.transform="translate(-50%,-50%) scale(1.15)";confetti(P.x,P.fy+1.6,P.z);try{parent.postMessage({lv3d:"mres",id:QG.q.mid,idx:QG.q.idx,tries:QG.tries,review:QG.q.review,xp,coins:2},"*")}catch(_){}}
+    if(t>3.6){POP.style.opacity=0;POP.style.transform="translate(-50%,-50%) scale(.6)";S.remove(QG.g);QG=null;hideCard()}}}
+/* ---- L3 tools: scrap paper + counters manipulative ---- */
+const TOOLBTN=document.createElement("button");TOOLBTN.textContent="🧰 Tools (T): scrap paper & counters";TOOLBTN.style.cssText="position:fixed;right:12px;bottom:12px;z-index:11;display:none;background:#ffd23f;color:#14123a;font:800 15px 'Trebuchet MS',sans-serif;border:3px solid #14123a;border-radius:12px;padding:.5rem .8rem;cursor:pointer";document.body.appendChild(TOOLBTN);
+const TOOL=document.createElement("div");TOOL.style.cssText="position:fixed;inset:6% 8%;z-index:12;display:none;background:#fff8e8;border:4px solid #14123a;border-radius:18px;font:700 15px 'Trebuchet MS',sans-serif;color:#14123a;flex-direction:column;overflow:hidden";
+TOOL.innerHTML=`<div style="display:flex;gap:.5rem;align-items:center;padding:.5rem .7rem;background:#14123a;color:#fff"><b>🧰 Math tools</b><button data-tab="paper">✏️ Scrap paper</button><button data-tab="cnt">🔵 Counters</button><span style="flex:1"></span><span id="tq" style="font-weight:600;max-width:50%"></span><button data-x>✕ Close (T)</button></div>
+<div data-p="paper" style="flex:1;position:relative"><canvas id="pad" style="width:100%;height:100%;touch-action:none;background:repeating-linear-gradient(#fff8e8 0 27px,#cfe3ff 27px 28px)"></canvas><button id="clr" style="position:absolute;right:10px;top:10px">🧽 Erase all</button></div>
+<div data-p="cnt" style="flex:1;display:none;padding:.7rem;overflow:auto"><div>Make equal groups: pick how many cups, then tap a cup to drop a counter in it.</div>
+<div style="margin:.4rem 0">Cups: <button id="cm">−</button> <b id="cn">3</b> <button id="cp">+</button> &nbsp; <button id="ca">+1 counter in every cup</button> <button id="cr">↺ Reset</button></div><div id="cups" style="display:flex;flex-wrap:wrap;gap:.6rem"></div></div>`;
+document.body.appendChild(TOOL);TOOL.querySelectorAll("button").forEach(b=>b.style.cssText+="font:700 14px 'Trebuchet MS',sans-serif;border-radius:10px;border:2px solid #14123a;background:#ffd23f;color:#14123a;padding:.25rem .55rem;cursor:pointer");
+const pad=TOOL.querySelector("#pad");let drawing=false,pctx=null;
+function sizePad(){const r=pad.getBoundingClientRect();pad.width=r.width;pad.height=r.height;pctx=pad.getContext("2d");pctx.lineWidth=4;pctx.lineCap="round";pctx.strokeStyle="#14123a"}
+pad.addEventListener("pointerdown",e=>{drawing=true;pctx.beginPath();pctx.moveTo(e.offsetX,e.offsetY)});pad.addEventListener("pointermove",e=>{if(drawing){pctx.lineTo(e.offsetX,e.offsetY);pctx.stroke()}});addEventListener("pointerup",()=>drawing=false);
+TOOL.querySelector("#clr").onclick=()=>pctx.clearRect(0,0,pad.width,pad.height);
+let CUPS=[0,0,0];function drawCups(){TOOL.querySelector("#cn").textContent=CUPS.length;const w=TOOL.querySelector("#cups");w.innerHTML="";CUPS.forEach((c,i)=>{const d=document.createElement("div");d.style.cssText="width:120px;min-height:120px;border:3px solid #c89b5a;border-radius:0 0 40px 40px;background:#fff;padding:6px;cursor:pointer;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-end";d.title="Tap to add a counter (right-click to remove)";for(let k=0;k<c;k++){const s=document.createElement("i");s.style.cssText="width:16px;height:16px;border-radius:50%;background:#2b7cff;display:block";d.appendChild(s)}d.onclick=()=>{CUPS[i]++;drawCups()};d.oncontextmenu=e=>{e.preventDefault();CUPS[i]=Math.max(0,CUPS[i]-1);drawCups()};w.appendChild(d)})}
+TOOL.querySelector("#cm").onclick=()=>{if(CUPS.length>1)CUPS.pop();drawCups()};TOOL.querySelector("#cp").onclick=()=>{if(CUPS.length<10)CUPS.push(0);drawCups()};TOOL.querySelector("#ca").onclick=()=>{CUPS=CUPS.map(c=>c+1);drawCups()};TOOL.querySelector("#cr").onclick=()=>{CUPS=CUPS.map(()=>0);drawCups()};
+TOOL.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{TOOL.querySelectorAll("[data-p]").forEach(p=>p.style.display=p.dataset.p===b.dataset.tab?"block":"none");if(b.dataset.tab==="paper")sizePad()});
+function toggleTool(){if(!QG||(QG.q.level!==3&&QG.q.level!==5))return;const open=TOOL.style.display!=="flex";TOOL.style.display=open?"flex":"none";if(open){try{document.exitPointerLock()}catch(_){}TOOL.querySelector("#tq").textContent=QG.q.text;sizePad();drawCups()}}
+TOOLBTN.onclick=toggleTool;TOOL.querySelector("[data-x]").onclick=toggleTool;
+function gameCam(dt){if(QG&&QG.camWant){cam.position.lerp(QG.camWant,Math.min(1,dt*3));cam.lookAt(QG.camLook);return true}return false}
+
+/* ---------- loop ---------- */
+const P={x:-52,z:-6.5,y:0,fy:.12,vy:0,yaw:Math.PI};const JOY={x:0,z:0};let BLOCKIN=()=>false;let last=performance.now();
+/* Roblox-style animation: walk cycle speed matches ground speed (no foot sliding), run = faster cycle,
+   idle = gentle breathing, airborne = held mid-stride with a slight lean */
+/* realism: measure each model's stride so walk-cycle speed matches ground speed (no sliding feet), and find blink morphs */
+function calibrate(o,m){try{const feet=[];const blinks=[];m.traverse(b=>{if(b.isBone&&/foot|toe|ankle/i.test(b.name)&&!/end|tip/i.test(b.name))feet.push(b);if(b.isMesh&&b.morphTargetDictionary)for(const k in b.morphTargetDictionary)if(/blink|eyeclose|eyesclosed|eye_close/i.test(k))blinks.push([b,b.morphTargetDictionary[k]])});o.blinks=blinks;
+  if(!feet.length||!o.act){o.nat=4.2;return}const v=new T.Vector3();let best=0;feet.slice(0,4).forEach(f=>{let lo=1e9,hi=-1e9;for(let i=0;i<24;i++){o.mix.setTime(o.dur*i/24);m.updateMatrixWorld(true);f.getWorldPosition(v);lo=Math.min(lo,v.z);hi=Math.max(hi,v.z)}best=Math.max(best,hi-lo)});
+  o.nat=Math.max(.8,Math.min(8,2*best/o.dur));o.stride=best}catch(e){o.nat=4.2}}
+function blink(o,dt){if(!o.blinks||!o.blinks.length)return;o.bt=(o.bt||2+Math.random()*3)-dt;let w=0;if(o.bt<0){w=Math.max(0,1-Math.abs(o.bt+.08)/.08);if(o.bt<-.16)o.bt=2.5+Math.random()*3.5}o.blinks.forEach(([mm,i])=>mm.morphTargetInfluences[i]=w)}
+function step(o,mv,dt,speed=4.2,air=false){if(!o)return;const m=o.g.children[0];o.idleT=(o.idleT||0)+dt;blink(o,dt);
+  if(air){o.mix.setTime(o.dur*.25);m.rotation.x=T.MathUtils.lerp(m.rotation.x,-.12,dt*8);m.scale.y=m.scale.x;return}
+  m.rotation.x=T.MathUtils.lerp(m.rotation.x,0,dt*10);
+  if(mv){o.blend=Math.min(1,(o.blend||0)+dt*6);o.t=(o.t+dt*Math.min(3.2,speed/(o.nat||4.2)))%o.dur;o.mix.setTime(o.t);m.scale.y=m.scale.x}
+  else{o.blend=Math.max(0,(o.blend||0)-dt*6);if(o.blend>0){o.t=(o.t+dt*.6)%o.dur;o.mix.setTime(o.t)}else o.mix.setTime(0);
+    m.scale.y=m.scale.x*(1+Math.sin(o.idleT*2.2)*.012)}}
+function turn(o,y,dt){let d=y-o.yaw;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;o.yaw+=d*Math.min(1,dt*16);o.g.rotation.y=o.yaw}
+function clampPos(p){p.x=Math.max(-58,Math.min(58,p.x));p.z=Math.max(-8.9,Math.min(8.9,p.z));if(Math.abs(p.z)>7.2){const d=DOORS.find(d=>Math.abs(d.x-p.x)<1.8&&Math.sign(d.z)===Math.sign(p.z)&&(d.kind==="apartment"||d.kind==="school"));if(d)p.z=Math.sign(p.z)*Math.min(Math.abs(p.z),Math.abs(p.z))}}
+const TH={x:-50,z:-6,fy:.12},MA={x:-10,z:-7.6,d:1};
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(K.arrowleft)camYaw+=dt*2.2;if(K.arrowright)camYaw-=dt*2.2;
+  let ix=(K.d?1:0)-(K.a?1:0)+JOY.x,iz=(K.s||K.arrowdown?1:0)-(K.w||K.arrowup?1:0)+JOY.z;if(BLOCKIN()){ix=0;iz=0}
+  if(QG&&QG.lock){ix=0;iz=0;target=null}
+  let mvx=0,mvz=0;
+  if(ix||iz){target=null;const c=Math.cos(camYaw),s=Math.sin(camYaw);mvx=ix*c+iz*s;mvz=-ix*s+iz*c}
+  else if(target){const dx=target.x-P.x,dz=target.z-P.z,d=Math.hypot(dx,dz);if(d<.25)target=null;else{mvx=dx/d;mvz=dz/d}}
+  const m=Math.hypot(mvx,mvz),moving=m>0;IDLE=moving?0:IDLE+dt;
+  if(moving){const sp=K.shift?7.5:4.2;moveBody(P,mvx/m*sp*dt,mvz/m*sp*dt);if(AREA==="street")clampPos(P);P.yaw=locked?camYaw+Math.PI:Math.atan2(mvx,mvz)}
+  {const g0=supportAt(P.x,P.z,P.fy);if(P.fy<=g0+.001&&P.vy<=0){P.fy=g0;P.vy=0;P.onG=true}else{P.vy-=22*dt;P.fy+=P.vy*dt;P.onG=false;if(P.fy<g0){P.fy=g0;P.vy=0;P.onG=true}}}
+  const ground=P.fy;P.y=0;
+  if(!moving&&AREA==="school"&&TCH.meet)P.yaw=Math.atan2(TCH.x-P.x,TCH.z-P.z);
+  {const d=Math.hypot(P.x-TH.x,P.z-TH.z);if(!moving&&d<2.6&&!(AREA==="school"&&TCH.meet)){P.yaw=Math.atan2(TH.x-P.x,TH.z-P.z);if(!TH.chat)TH.chat={t:now,l:THEO_LINES[Math.floor(Math.random()*THEO_LINES.length)]}}else if(moving)TH.chat=null}
+  const H=ACT.hero;const fp=camDist<1.3;if(H){H.g.visible=!fp;H.g.position.set(P.x,ground+P.y,P.z);turn(H,P.yaw,dt);step(H,moving&&P.onG,dt,K.shift?7.5:4.2,!P.onG)}
+  // Theo follows
+  const tdx=P.x-TH.x,tdz=P.z-TH.z,td=Math.hypot(tdx,tdz),tmv=td>2.2;if(tmv){const sp=Math.min(5,td*1.6);moveBody(TH,tdx/td*sp*dt,tdz/td*sp*dt);if(td>8){TH.x=P.x+1;TH.z=P.z}}TH.fy=supportAt(TH.x,TH.z,TH.fy+.3);
+  if(ACT.theo){ACT.theo.g.position.set(TH.x,TH.fy,TH.z);turn(ACT.theo,tmv?Math.atan2(tdx,tdz):(AREA==="school"&&TCH.meet?Math.atan2(TCH.x-TH.x,TCH.z-TH.z):Math.atan2(tdx,tdz)),dt);if(TH.chat&&now-TH.chat.t<3500)say("Theo",TH.chat.l,TH.x,2.4+TH.fy,TH.z);step(ACT.theo,tmv,dt,Math.min(5,td*1.6))}
+  // Marcia patrols
+  const maG=QG&&QG.npc==="Ms. Marcia";if(maG){if(QG.phase==="hand"){const dx=P.x-MA.x,dz=P.z-MA.z,d=Math.hypot(dx,dz);if(d>1.3){MA.x+=dx/d*2*dt;MA.z+=dz/d*2*dt}}}else{MA.x+=MA.d*1.4*dt;if(MA.x>20)MA.d=-1;if(MA.x<-20)MA.d=1;if(Math.abs(MA.z+7.6)>.01)MA.z+=(-7.6-MA.z)*Math.min(1,dt*2)}
+  if(ACT.marcia){ACT.marcia.g.visible=AREA==="street";ACT.marcia.g.position.set(MA.x,.12,MA.z);turn(ACT.marcia,maG?Math.atan2(P.x-MA.x,P.z-MA.z):(MA.d>0?Math.PI/2:-Math.PI/2),dt);step(ACT.marcia,!maG||QG.phase==="hand",dt,1.4*1.6)}
+  TAXIS.forEach(t=>{t.x+=t.v*dt;if(t.x>66)t.x=-66;if(t.x<-66)t.x=66;t.m.position.set(t.x,0,t.z);t.m.rotation.y=t.v>0?0:Math.PI});
+  // doors
+  nearDoor=interactions().find(d=>Math.hypot(d.x-P.x,d.z-P.z)<d.r)||null;
+  if(nearDoor){PR.style.display="block";PR.textContent=nearDoor.label}else PR.style.display="none";
+  if(!gameCam(dt)){
+  // Roblox-style camera: orbit with full pitch, ground clamp, first person when fully zoomed in
+  const hy=ground+P.y+1.75,cp=Math.cos(camPitch),off=new T.Vector3(Math.sin(camYaw)*cp,Math.sin(camPitch),Math.cos(camYaw)*cp);
+  if(fp){cam.position.set(P.x,hy,P.z);cam.lookAt(P.x-off.x*10,hy-off.y*10,P.z-off.z*10)}
+  else{const head=new T.Vector3(P.x,hy,P.z);let bx0,bx1,bz0,bz1,by1;if(AREA!=="street"){const R0=ROOMS[AREA],rw=R0.w||RW,rd=R0.d||RD;bx0=R0.cx-rw/2+.45;bx1=R0.cx+rw/2-.45;bz0=R0.cz-rd/2+.45;bz1=R0.cz+rd/2-.45;by1=(R0.h||RH)-.35}else{bx0=-60;bx1=60;bz0=-8.7;bz1=8.7;by1=99}
+  let tt=camDist;const lim=(o,d,a0,a1)=>{if(d>1e-4)tt=Math.min(tt,(a1-o)/d);else if(d<-1e-4)tt=Math.min(tt,(a0-o)/d)};lim(head.x,off.x,bx0,bx1);lim(head.z,off.z,bz0,bz1);lim(head.y,off.y,ground+.3,by1);
+  if(AREA!=="street")for(const b of SOL){if(b.top<.5||b.x1<bx0-1||b.x0>bx1+1||b.z1<bz0-1||b.z0>bz1+1)continue;let t0=0,t1=tt,ok=true;for(const[o,d,a0,a1]of[[head.x,off.x,b.x0,b.x1],[head.y,off.y,b.y0,b.top],[head.z,off.z,b.z0,b.z1]]){if(Math.abs(d)<1e-5){if(o<a0||o>a1){ok=false;break}continue}let u=(a0-o)/d,v=(a1-o)/d;if(u>v)[u,v]=[v,u];t0=Math.max(t0,u);t1=Math.min(t1,v);if(t0>t1){ok=false;break}}if(ok&&t0>.35)tt=Math.min(tt,t0-.2)}
+  const want=head.clone().addScaledVector(off,Math.max(.6,tt));if(want.y<ground+.3)want.y=ground+.3;if(camSnap){cam.position.copy(want);camSnap=false}else cam.position.lerp(want,Math.min(1,dt*10));cam.lookAt(P.x,hy-.2+(camPitch<0?-camPitch*1.5:0),P.z)}
+  }
+  SKYDOME.position.copy(cam.position);sun.position.set(P.x-30,40,P.z+25);sun.target.position.set(P.x,0,P.z);sun.target.updateMatrixWorld();
+  updateTeacher(dt,now);updateGame(dt,now);updateBubble(now);R.render(S,cam);requestAnimationFrame(frame)}
+Promise.all([loadChar(window.HERO03D_URL,2.0),loadChar(window.THEO3D_URL,1.95),loadChar(window.MARCIA3D_URL,2.35)]).then(([h,t,m])=>{ACT.hero=h;ACT.theo=t;ACT.marcia=m;const l=document.getElementById("load");l.style.opacity=0;setTimeout(()=>l.remove(),600)});
+camYaw=Math.PI*.12;cam.position.set(P.x+3,4,P.z+7);requestAnimationFrame(frame);
+window.__dbg={P,ACT,K};
+{const hp=document.getElementById("help"),full=hp.innerHTML;let open=true;const close=()=>{open=false;hp.innerHTML="❓ <b>Controls</b>";hp.style.cursor="pointer"};hp.onclick=()=>{if(open)close();else{open=true;hp.innerHTML=full;setTimeout(()=>{if(open)close()},9000)}};setTimeout(close,12000);
+ setTimeout(()=>{if(!locked)LK.style.opacity=".0";LK.style.transition="opacity 1s"},9000)}
+</script>
+<script src="hero_sprites.js"></script><script src="world2.js"></script>
+</body></html>
