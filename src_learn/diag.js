@@ -59,7 +59,7 @@ function finish(st){const l=L(),R=A.results(st),first=!l.diag;const place={},est
     else{m.lv=r.start;m.recent=[];m.taught=r.start-1;m.diagEv=[{t:Date.now(),est:r.est,conf:r.confidence}]}});
   const rec={d:today(),t:Date.now(),kind:st.kind,sess:l.sessions||0,scale:R.scale,place,est,gaps:R.gaps,flagged:R.flagged,items:R.n,mins:R.mins,conf:Object.fromEntries(A.ORDER.map(sk=>[sk,R.skills[sk].confidence]))};
   l.diag=rec;if(!l.base)l.base=Object.assign({},place);l.history=(l.history||[]).concat([rec]).slice(-24);delete l.diagState;
-  l.interventions=R.flagged.map(f=>({id:f.id,name:INTERV[f.id]||f.name,mis:f.name,from:"diagnostic",t:Date.now(),status:"assigned"}));save();award(30,10,"mission");sfx("level");
+  l.interventions=l.interventions||[];R.flagged.forEach(f=>{if(!l.interventions.some(x=>(x.code||x.id)===f.id&&x.status!=="completed"))l.interventions.push({id:f.id,code:f.id,name:(window.DEPTH&&DEPTH.INT[f.id]?DEPTH.INT[f.id].name:INTERV[f.id])||f.name,mis:f.name,from:"diagnostic",t:Date.now(),status:"assigned"})});save();award(30,10,"mission");sfx("level");
   const g=A.growth(l.history.filter(h=>h.scale));
   openModal(`<div class="phead"><h2>🎉 ${st.kind==="checkup"?"Check-Up":"Quest"} complete!</h2><span class="small">${R.n} questions · ${R.mins} min</span></div>
    <div class="lu-who"><img src="${WHO.sal.pic2}" alt="Ms. Okafor"><div><b>Ms. Okafor</b><div>Wonderful work, ${S.name||"friend"}! I ${first?"built":"updated"} <b>My Path</b> just for you. You'll start each skill where you're ready.</div></div></div>

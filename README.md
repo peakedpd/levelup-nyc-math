@@ -22,6 +22,12 @@ real-world problems with Ms. Okafor (teacher), Theo, Ms. Marcia, Mr. Sal (clothi
   CCSS standard, difficulty, misconception tags and an educator review status (default **pending review**).
   [`review.html`](https://peakedpd.github.io/levelup-nyc-math/review.html) lets a Grade 4 educator approve or flag each
   item with notes and export `approvals.json`; `tools/build_itembank.js` merges approvals back without overwriting them.
+- **Think Deeper (instructional depth)** — "Why does it work?" reasoning after Tower Climb answers (pick a reason or
+  write your own), 3-step **Multi-Step Quests** in real-world contexts (budget, recipe, sports, garden, field trip),
+  **Strategy Showdown** (area model vs partial products, standard algorithm vs compensation, common denominator vs
+  benchmark ½ — find the strategy with the mistake), **Explain It** open responses auto-scored 0–3 by rubric and
+  re-scored by the teacher, and **Intervention Missions** (mini-lesson + targeted items) assigned automatically when a
+  misconception repeats.
 - **Teacher/parent dashboard** — mastery, accuracy, time on task, growth, misconception flags, CSV/print
 - Grade-4 coverage: multiplication & division, place value, rounding, multi-digit add/sub, factors &
   multiples, multi-step word problems, fractions. Every generated item is checked by a verification script.
@@ -30,7 +36,7 @@ Works on desktop (WASD/mouse) and phones (touch joystick). Static site — no in
 
 ## Tests
 
-`.github/workflows/test.yml` runs on every push:
+`.github/workflows/test.yml` (GitHub Actions) runs on every push:
 
 | Script | What it checks |
 |---|---|
@@ -40,6 +46,8 @@ Works on desktop (WASD/mouse) and phones (touch joystick). Static site — no in
 | `tools/verify_math.js` | every story-mission item against an independent hand-made answer key (headless Chrome) |
 | `tools/verify_itembank.js` | every bank item has verified answer + explanation, CCSS code, difficulty, misconception codes, valid review status; 81,000 fresh generator instances map to a bank template and pass the answer key |
 | `test/p3review.js` | review page: approve, flag (note required), persist, filter, export + import approvals.json |
+| `tools/verify_depth.js` | 15,000 multi-step tasks (every step equation re-computed, numbers traceable to the story), 9,000 strategy comparisons (error flags + wrong step correct), reasoning prompts for every item type, rubric sanity, intervention targeting |
+| `test/p4depth.js` | reasoning prompt, Multi-Step Quest, Strategy Showdown, Explain It, misconception-triggered mission, teacher scoring |
 | `tools/check_dist.js` | shipped files match their sources, scripts wired in order, no file over 95 MB |
 | `test/play.js` (+ `test/p1diag.js`) | headless play-test: hero → 3D street → rooms → games, then a full Placement Quest, pause/resume, Check-Up and dashboard (`p1diag.js`), Tower Climb evidence, Memory Checks and mastery (`p2mastery.js`); fails on any console error or failed request |
 

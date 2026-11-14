@@ -20,13 +20,15 @@ jobs:
         run: node tools/verify_learn.js
       - name: Item bank (verified answer/explanation, standard, difficulty, misconceptions, review status)
         run: node tools/verify_itembank.js
+      - name: Instructional depth (multi-step, strategies, reasoning, rubric, interventions)
+        run: node tools/verify_depth.js
       - name: Shipped build consistency
         run: node tools/check_dist.js
   e2e:
     name: Headless browser play-tests
     runs-on: ubuntu-latest
     needs: verify
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       CHROME: /usr/bin/google-chrome
@@ -43,6 +45,8 @@ jobs:
         run: TAG=ci_diag HOOK=./p1diag.js node test/play.js
       - name: Mastery e2e (Tower Climb evidence, Memory Checks, mastery)
         run: TAG=ci_mastery HOOK=./p2mastery.js node test/play.js
+      - name: Depth e2e (reasoning, multi-step, showdown, explain-it, intervention mission)
+        run: TAG=ci_depth HOOK=./p4depth.js node test/play.js
       - name: Educator review page e2e
         run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)

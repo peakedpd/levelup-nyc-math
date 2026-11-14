@@ -1,0 +1,24 @@
+// Verifies P4 content: multi-step tasks, strategy comparisons, reasoning prompts, open-response rubric, interventions.
+const D = require('../src_learn/depth.js'), L = require('../src_learn/core.js'), A = require('../src_learn/assess.js'), EQ = require('./eqcheck.js');
+const fails = []; const F = m => { if (fails.length < 60) fails.push(m) }; const num = s => +String(s).replace(/[,$]/g, ''); let ms = 0, sc = 0;
+for (const k of D.CTX) for (let lv = 1; lv <= 6; lv++) for (let seed = 1; seed <= 500; seed++) { const t = D.multiStep(lv, L.rng(seed * 31 + lv), k); ms++; const known = new Set((t.text.match(/\d[\d,]*/g) || []).map(num)); if (t.steps.length !== 3) F(k + ' steps');
+  t.steps.forEach((st, i) => { const tag = `${k} L${lv} s${seed} step${i + 1}`; if (!(Number.isInteger(st.ans) && st.ans > 0)) F(tag + ' answer ' + st.ans); const e = EQ.check(st.eq.replace('?', st.ans)); if (e.bad.length || !e.n) F(tag + ' equation ' + st.eq + ' = ' + st.ans);
+    (st.eq.replace(/ R \d+$/, '').match(/\d[\d,]*/g) || []).map(num).forEach(n => { if (!known.has(n) && !(n === 0 || n === 1)) F(`${tag}: ${n} not in story or earlier answers`) }); (st.mis || []).forEach(([v]) => { if (v === st.ans) F(tag + ' misconception equals answer') });
+    const c = D.stepChoices(st, L.rng(seed)); if (!c.ch.includes(st.ans) || new Set(c.ch).size !== c.ch.length || c.ch.length < 4 || c.ch.some(v => v <= 0)) F(tag + ' choices ' + c.ch); known.add(st.ans) }) }
+for (const k of ['mult', 'add', 'frac']) for (let lv = 1; lv <= 6; lv++) for (let seed = 1; seed <= 500; seed++) { const s = D.strategies(lv, L.rng(seed * 17 + lv), k); sc++; const tag = `${k} L${lv} s${seed}`;
+  if (k === 'frac') { const m = s.prob.match(/(\d+)\/(\d+) ☐ (\d+)\/(\d+)/); const [a, b, c, d] = m.slice(1).map(Number); const exp = a * d > c * b ? '>' : '<'; if (s.ans !== exp || s.B.total !== exp) F(tag + ' fraction answer'); if (s.err ? s.A.total === exp : s.A.total !== exp) F(tag + ' error flag');
+    if (s.A.steps.slice(0, 2).some(x => EQ.check(x).bad.length)) F(tag + ' equivalent fractions wrong') }
+  else { const [x, y] = s.prob.split(/[×+]/).map(num); const exp = k === 'mult' ? x * y : x + y; if (s.ans !== exp || s.B.total !== exp) F(tag + ' answer'); if (s.err ? s.A.total === exp : s.A.total !== exp) F(tag + ' error flag ' + s.A.work);
+    s.A.steps.forEach((st, i) => { const bad = EQ.check(st).bad.length > 0; if (k === 'mult' && (i === s.badStep) !== bad) F(`${tag} step ${i} correctness ${st}`); if (k === 'add' && !s.err && bad) F(tag + ' compensation step wrong') });
+    if (k === 'mult' && /\b0 ×/.test(s.A.work)) F(tag + ' zero part'); if (EQ.check(s.B.work).bad.length) F(tag + ' strategy B has a wrong equation') }
+  if (s.alike.options.filter(o => o.ok).length !== 1) F(tag + ' alike options') }
+const ops = new Set(); for (const s of L.SKILLS) for (let lv = 1; lv <= 6; lv++) for (let seed = 1; seed <= 200; seed++) ops.add(L.item(s.id, lv, L.rng(seed)).v.op);
+const codes = new Set(A.MIS.map(m => m[0]).concat(['array']));
+for (const op of ops) { const r = D.reasoning({ v: { op } }, L.rng(1)); if (!r) { F('no reasoning prompt for ' + op); continue } if (r.options.filter(o => o.ok).length !== 1 || r.options.length !== 3) F('reasoning options ' + op); r.options.forEach(o => { if (!o.ok && !codes.has(o.code)) F('reasoning code ' + o.code) }) }
+for (let i = 0; i < D.OPEN.length; i++) for (let seed = 1; seed <= 50; seed++) { const t = D.openTask(i, L.rng(seed)); if (D.scoreOpen(t, '').score !== 0) F('empty response should score 0'); if (D.scoreOpen(t, 'I like math a lot').score > 1) F('off-topic should score ≤1 ' + t.id);
+  const model = `The answer is ${t.answer} because ${(t.key || []).join(' and ')} ${t.vocab.source.split('|')[0].replace(/[^a-z ]/gi, '')} so the answer is ${t.answer}.`; if (D.scoreOpen(t, model).score !== 3) F(`model answer should score 3 (${t.id}): ${model}`) }
+for (const [code, I] of Object.entries(D.INT)) { if (!codes.has(code)) F('intervention for unknown code ' + code); if (!L.SK[I.sk]) F('intervention skill ' + I.sk); if (!(I.lesson && I.lesson.length >= 2)) F('lesson ' + code);
+  const its = D.targetItems(code, L, A, 3, L.rng(9), 4); const hit = its.filter(it => Object.values(it.why || {}).some(w => A.misCode(w) === code)).length; if (code !== 'array' && hit < 2) F(`intervention ${code}: only ${hit}/4 items target it`) }
+const now = Date.now(); const log = [{ t: now, mis: 'x', code: 'regroup', src: 'path' }, { t: now, mis: 'x', code: 'regroup', src: 'path' }, { t: now, mis: 'y', code: 'fraction', src: 'path' }];
+if (D.triggers(log, [], now).join() !== 'regroup') F('trigger on 2 repeats'); if (D.triggers(log, [{ code: 'regroup', status: 'assigned' }], now).length) F('no duplicate intervention');
+console.log(JSON.stringify({ multiStepTasks: ms, strategyComparisons: sc, reasoningOps: ops.size, interventions: Object.keys(D.INT).length, fails }, null, 1)); process.exit(fails.length ? 1 : 0);
