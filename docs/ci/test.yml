@@ -14,6 +14,8 @@ jobs:
         with: { node-version: 20 }
       - name: Adaptive diagnostic simulation (placement accuracy, formats, gaps, misconceptions, reassessment)
         run: node tools/verify_assess.js
+      - name: Mastery model + transfer items
+        run: node tools/verify_mastery.js
       - name: Item generators (9 skills x 6 levels x 3000 seeds)
         run: node tools/verify_learn.js
       - name: Shipped build consistency
@@ -37,6 +39,8 @@ jobs:
         run: node tools/verify_math.js
       - name: Placement Quest e2e (desktop)
         run: TAG=ci_diag HOOK=./p1diag.js node test/play.js
+      - name: Mastery e2e (Tower Climb evidence, Memory Checks, mastery)
+        run: TAG=ci_mastery HOOK=./p2mastery.js node test/play.js
       - name: 3D street smoke (phone 390x844, touch)
         run: TAG=ci_phone W=390 H=844 TOUCH=1 node test/play.js
       - uses: actions/upload-artifact@v4
