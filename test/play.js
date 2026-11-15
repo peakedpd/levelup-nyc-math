@@ -43,7 +43,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await f.evaluate(() => { camPitch = -1.0; camDist = 6; }); await sleep(1500); await pg.screenshot({ path: OUT + '/05_sky.png' });
   await f.evaluate(() => { __dbg.P.x = -20; __dbg.P.z = 3; camYaw = Math.PI * .5 + .5; camPitch = .25; camDist = 14; }); await sleep(1800); await pg.screenshot({ path: OUT + '/06_buildings.png' });
   await f.evaluate(() => { __dbg.P.x = -45; __dbg.P.z = -7; camYaw = 0.6; camPitch = .15; camDist = 7; }); await sleep(1500); await pg.screenshot({ path: OUT + '/07_door.png' });
-  await f.evaluate(() => { __dbg.P.x = -52; __dbg.P.z = -6.5; camYaw = Math.PI*.12; camPitch=.38; camDist=8.5; });
+  await f.evaluate(() => { __dbg.P.x = SPAWN.x; __dbg.P.z = SPAWN.z; camYaw = Math.PI*.12; camPitch=.38; camDist=8.5; });
   const hook = process.env.HOOK ? require(process.env.HOOK) : null;
   const res = { loadMs, fps, pos };
   const play = async (label, setup) => {

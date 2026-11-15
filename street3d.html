@@ -15,6 +15,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1b1640;font-family:"T
 <div id="prompt"></div>
 <div class="hud" id="help"><b>Walk:</b> WASD / ↑↓ · <b>Jump:</b> Space · <b>Run:</b> Shift · <b>Look up/down/around:</b> click the street, then move the mouse or trackpad (two-finger swipe also works) · ← → turn · <b>Zoom / first person:</b> pinch, or I / O · <b>Go inside / use things:</b> E when the yellow prompt shows </div>
 <div id="load">Building New York…</div>
+<script>/* no WebGL: show a friendly message (the 3D street is the only world — there is no 2D fallback) */
+window.NOGL=!(()=>{try{const c=document.createElement("canvas");return !!(window.WebGLRenderingContext&&(c.getContext("webgl2")||c.getContext("webgl")))}catch(e){return false}})()||/[?&]nogl=1/.test(location.search);
+if(window.NOGL){window.onerror=()=>true;addEventListener("DOMContentLoaded",()=>{document.body.innerHTML='<div style="font:700 18px Trebuchet MS,sans-serif;color:#fff;background:#141a45;position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:1rem">The 3D city needs WebGL. Turn on hardware acceleration in your browser settings and reload.</div>'});try{parent.postMessage({lv3d:"nogl"},"*")}catch(_){}}
+</script>
 <script src="three-lib.js"></script>
 <script src="hero00_data.js"></script><script src="theo_data.js"></script><script src="marcia_data.js"></script>
 <!-- world2.js (school lobby/hallway/rooftop, arcade worker + prize counter, street talk, Ticket Blaster, touch controls) is loaded after the main script -->
@@ -122,7 +126,7 @@ function loadChar(url,targetH){return new Promise(res=>{if(!url)return res(null)
   const bb=new T.Box3().setFromObject(m,true),h=bb.max.y-bb.min.y||1.8;const s=targetH/h;const wrap=new T.Group();m.scale.setScalar(s);m.position.y=-bb.min.y*s;wrap.add(m);S.add(wrap);const o={g:wrap,mix,act,dur:clip?clip.duration:1,t:0,yaw:0};calibrate(o,m);mix.setTime(0);res(o)},e=>{console.error(e);res(null)})})}
 const ACT={};
 /* ---------- input ---------- */
-const K={};addEventListener("keydown",e=>{if(window.OVERLAY_KEYS&&OVERLAY_KEYS(e))return;K[e.key.toLowerCase()]=true;if(e.key.startsWith("Arrow"))e.preventDefault();if(TOOL.style.display==="flex"&&e.key.toLowerCase()!=="t")return;if(e.key.toLowerCase()==="t"){toggleTool();return}if(e.key.toLowerCase()==="e")tryDoor();if(e.key.toLowerCase()==="m"&&nearDoor&&nearDoor.type==="station"&&!QG){try{parent.postMessage({lv3d:"door",id:nearDoor.id},"*")}catch(_){}}if(QG&&QG.phase==="ask"&&/^[1-4]$/.test(e.key)){const a=QG.ans[+e.key-1];if(a&&!a.used)answer(a)}if(e.key===" "){e.preventDefault();if(P.onG)P.vy=7.5}if(e.key.toLowerCase()==="i")camDist=Math.max(.6,camDist-1.5);if(e.key.toLowerCase()==="o")camDist=Math.min(20,camDist+1.5)});addEventListener("keyup",e=>K[e.key.toLowerCase()]=false);
+const K={};addEventListener("keydown",e=>{if(window.OVERLAY_KEYS&&OVERLAY_KEYS(e))return;K[e.key.toLowerCase()]=true;if(e.key.startsWith("Arrow"))e.preventDefault();if(TOOL.style.display==="flex"&&e.key.toLowerCase()!=="t")return;if(e.key.toLowerCase()==="t"){toggleTool();return}if(e.key.toLowerCase()==="e")tryDoor();if(e.key.toLowerCase()==="m"&&nearDoor&&nearDoor.type==="station"&&!QG){try{parent.postMessage({lv3d:"door",id:nearDoor.id},"*")}catch(_){}}if(QG&&QG.phase==="ask"&&/^[1-4]$/.test(e.key)){const a=QG.ans[+e.key-1];if(a&&!a.used)answer(a)}if(e.key===" "){e.preventDefault();if(P.onG)P.vy=7.5}if(e.key.toLowerCase()==="i")camDist=Math.max(.6,camDist-1.5);if(e.key.toLowerCase()==="o")camDist=Math.min(20,camDist+1.5)});addEventListener("keyup",e=>K[e.key.toLowerCase()]=false);addEventListener("blur",()=>{for(const k in K)K[k]=false});
 let camYaw=0,camPitch=.38,camDist=8.5,drag=null,target=null,IDLE=0;
 cv.addEventListener("contextmenu",e=>e.preventDefault());cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,moved:0}});
 addEventListener("pointermove",e=>{if(!drag||locked)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved+=Math.abs(dx)+Math.abs(dy);camYaw-=dx*.006;camPitch=Math.max(-1.25,Math.min(1.45,camPitch+dy*.004));drag.x=e.clientX;drag.y=e.clientY});
@@ -219,10 +223,10 @@ S.traverse(o=>{if(o.isMesh&&o.userData.solid){const b=new T.Box3().setFromObject
 const PRAD=.32,STEP=.5,BODY=1.7;
 function supportAt(x,z,feet){let g=0;for(const b of SOL)if(x>b.x0-PRAD&&x<b.x1+PRAD&&z>b.z0-PRAD&&z<b.z1+PRAD&&b.top<=feet+STEP&&b.top>g)g=b.top;return g}
 function blocked(x,z,feet){for(const b of SOL)if(x>b.x0-PRAD&&x<b.x1+PRAD&&z>b.z0-PRAD&&z<b.z1+PRAD&&b.top>feet+STEP&&b.y0<feet+BODY)return true;return false}
-function moveBody(o,dx,dz){const f=o.fy||0;if(!blocked(o.x+dx,o.z,f))o.x+=dx;if(!blocked(o.x,o.z+dz,f))o.z+=dz}
+function moveBody(o,dx,dz){const f=o.fy||0;if(blocked(o.x,o.z,f)){o.x+=dx;o.z+=dz;return}/* already overlapping a collider (spawn/teleport/NPC moved onto us): let any move out instead of freezing */if(!blocked(o.x+dx,o.z,f))o.x+=dx;if(!blocked(o.x,o.z+dz,f))o.z+=dz}
 let AREA="street",RET=null,camSnap=false;
 function enterRoom(kind){const R0=ROOMS[kind];if(!R0)return;if(AREA==="street")RET={x:P.x,z:P.z-Math.sign(P.z||1)*1.2};AREA=kind;P.x=R0.exit.x;P.z=R0.exit.z-2.6;P.fy=0;P.vy=0;P.yaw=Math.PI;TH.x=P.x+1.2;TH.z=P.z+.6;camYaw=0;camPitch=.32;camDist=5.2;camSnap=true;try{parent.postMessage({lv3d:"area",area:kind},"*")}catch(_){}}
-function leaveRoom(){AREA="street";if(!RET)RET={x:-52,z:-6.5};P.x=RET.x;P.z=RET.z;P.fy=.12;P.vy=0;P.yaw=RET.z<0?0:Math.PI;camYaw=P.yaw+Math.PI;TH.x=P.x+1;TH.z=P.z;camDist=8.5;camSnap=true;try{parent.postMessage({lv3d:"area",area:"street"},"*")}catch(_){}}
+function leaveRoom(){AREA="street";if(!RET)RET={x:SPAWN.x,z:SPAWN.z};P.x=RET.x;P.z=RET.z;P.fy=.12;P.vy=0;P.yaw=RET.z<0?0:Math.PI;camYaw=P.yaw+Math.PI;TH.x=P.x+1;TH.z=P.z;camDist=8.5;camSnap=true;try{parent.postMessage({lv3d:"area",area:"street"},"*")}catch(_){}}
 /* =====================================================================
    3D MATH GAMES — world questions (street) and cinematic arcade games (indoors)
    Flow: zoom-in on the real objects -> question read aloud -> answer in the world
@@ -372,7 +376,8 @@ TOOLBTN.onclick=toggleTool;TOOL.querySelector("[data-x]").onclick=toggleTool;
 function gameCam(dt){if(QG&&QG.camWant){cam.position.lerp(QG.camWant,Math.min(1,dt*3));cam.lookAt(QG.camLook);return true}return false}
 
 /* ---------- loop ---------- */
-const P={x:-52,z:-6.5,y:0,fy:.12,vy:0,yaw:Math.PI};const JOY={x:0,z:0};let BLOCKIN=()=>false;let last=performance.now();
+/* spawn on open sidewalk by the school steps — clear of Ms. Okafor's street collider at (-52.3,-6.3), which used to trap the avatar at (-52,-6.5) */
+const SPAWN={x:-49.6,z:-6.4};const P={x:SPAWN.x,z:SPAWN.z,y:0,fy:.12,vy:0,yaw:Math.PI};const JOY={x:0,z:0};let BLOCKIN=()=>false;let last=performance.now();
 /* Roblox-style animation: walk cycle speed matches ground speed (no foot sliding), run = faster cycle,
    idle = gentle breathing, airborne = held mid-stride with a slight lean */
 /* realism: measure each model's stride so walk-cycle speed matches ground speed (no sliding feet), and find blink morphs */

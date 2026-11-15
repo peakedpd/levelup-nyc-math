@@ -52,7 +52,7 @@ input[type=text],input[type=number],select{font:inherit;padding:.55rem .7rem;bor
 #xpbar{width:120px;height:12px;background:rgba(255,255,255,.25);border-radius:8px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:.4rem}
 #xpbar i{display:block;height:100%;background:var(--yellow);width:0}
 #hud .sp{flex:1}
-#acts{flex:none;max-height:190px;overflow:auto;background:#141a45;border-top:3px solid #2b3a8f;padding:.5rem .7rem .9rem}#acts h3{color:#ffd24a;margin:.5rem 0 .3rem;font-size:.95rem;letter-spacing:.02em}#acts .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.45rem}#acts .act{display:flex;align-items:center;gap:.5rem;text-align:left;background:#fff;color:#1d2b64;border:0;border-radius:14px;padding:.55rem .7rem;min-height:48px;font-weight:800;font-size:.95rem;box-shadow:0 3px 0 #d8cfa8;cursor:pointer}#acts .act small{display:block;font-weight:600;color:#5a6286;font-size:.74rem}#acts .act.go{background:#ffd24a;box-shadow:0 3px 0 #c99b00}#street3d{width:min(100%,calc((100vh - 170px)*16/9));aspect-ratio:16/9;border:0;border-radius:14px;background:#1b1640;display:block}#mapwrap.flat #street3d{display:none}#mapwrap:not(.flat) #map,#mapwrap:not(.flat) .hint-bar,#mapwrap:not(.flat) #actBtn{display:none!important}#mapToggle{position:absolute;top:8px;right:8px;z-index:5}
+#acts{flex:none;max-height:190px;overflow:auto;background:#141a45;border-top:3px solid #2b3a8f;padding:.5rem .7rem .9rem}#acts h3{color:#ffd24a;margin:.5rem 0 .3rem;font-size:.95rem;letter-spacing:.02em}#acts .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.45rem}#acts .act{display:flex;align-items:center;gap:.5rem;text-align:left;background:#fff;color:#1d2b64;border:0;border-radius:14px;padding:.55rem .7rem;min-height:48px;font-weight:800;font-size:.95rem;box-shadow:0 3px 0 #d8cfa8;cursor:pointer}#acts .act small{display:block;font-weight:600;color:#5a6286;font-size:.74rem}#acts .act.go{background:#ffd24a;box-shadow:0 3px 0 #c99b00}#street3d{width:min(100%,calc((100vh - 170px)*16/9));aspect-ratio:16/9;border:0;border-radius:14px;background:#1b1640;display:block}#map,#mapwrap .hint-bar,#actBtn{display:none!important}#mapToggle{position:absolute;top:8px;right:8px;z-index:5}
 #mapwrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;position:relative}
 #map{width:100%;max-width:calc((100vh - 280px)*1.78);height:auto;max-height:calc(100vh - 280px);background:#8fd0f5;touch-action:none;image-rendering:auto}
 #actBtn{position:absolute;left:50%;bottom:3.4rem;transform:translateX(-50%);z-index:5;font-size:1.1rem;padding:.8rem 1.6rem}
@@ -180,13 +180,12 @@ body.play3d #mapwrap:not(.flat) #street3d{position:fixed;inset:0;width:100vw;hei
 body.play3d #hud{position:fixed;top:0;left:0;right:0;z-index:14;background:linear-gradient(rgba(20,25,70,.88),rgba(20,25,70,.55));min-height:0;padding:.3rem .5rem;pointer-events:none}
 body.play3d #hud>*{pointer-events:auto}
 body.play3d #hud .btn.sm{padding:.3rem .55rem;font-size:.85rem}
-body.play3d #mapToggle{position:fixed;top:auto;bottom:10px;right:10px;z-index:14}
 body.play3d #acts{position:fixed;left:0;right:0;bottom:0;z-index:16;max-height:60vh;transform:translateY(105%);transition:transform .25s;border-radius:18px 18px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.45)}
 body.play3d.drawer #acts{transform:none}
 body.play3d #evt{display:none}
 #menuBtn{display:none}body.play3d #menuBtn{display:inline-flex}
 @media (max-width:700px){body.play3d #hud{flex-wrap:nowrap;gap:.25rem;overflow:hidden}body.play3d #hud .pill{font-size:.78rem;padding:.15rem .45rem;white-space:nowrap}body.play3d #hud .lbl{display:none}body.play3d #hud #xpbar{width:34px}body.play3d #hud [data-act=goto],body.play3d #hud [data-act=today],body.play3d #hud [data-act=settings],body.play3d #hud [data-act=help]{display:none}body.play3d #mapToggle{display:none}}
-body.play3d.busy3d #mapToggle{display:none}
+#nogl{position:fixed;inset:0;z-index:11;display:flex;align-items:center;justify-content:center;background:#141a45;color:#fff;padding:1rem}#nogl[hidden]{display:none}#nogl .nogl-card{max-width:520px;background:#1f2a6b;border:3px solid #ffd24a;border-radius:18px;padding:1.2rem 1.4rem;font-size:1.05rem;line-height:1.45}#nogl h2{color:#ffd24a;margin:.2rem 0 .6rem}
 </style>
 </head>
 <body>
@@ -222,10 +221,10 @@ body.play3d.busy3d #mapToggle{display:none}
   <section id="s-map" class="screen">
     <div id="hud"></div>
     <div id="mapwrap">
-      <iframe id="street3d" onload="setTimeout(sendMissions,300)" src="street3d.html?embed=1" title="3D city street. Use arrow keys or WASD to walk, drag to look around, E at a door to go in." allow="fullscreen; pointer-lock"></iframe><button class="chip" id="mapToggle" data-act="maptoggle" aria-pressed="false">🗺️ 2D map</button>
-      <canvas id="map" width="960" height="540" aria-label="Map of the city. Use arrow keys or WASD to walk, or tap where you want to go."></canvas>
+      <iframe id="street3d" onload="setTimeout(sendMissions,300);try{if(this.contentWindow.NOGL)postMessage({lv3d:'nogl'},'*')}catch(_){}" src="street3d.html?embed=1" title="3D city street. Use arrow keys or WASD to walk, drag to look around, E at a door to go in." allow="fullscreen; pointer-lock"></iframe>
+      <canvas id="map" width="960" height="540" hidden aria-hidden="true" style="display:none"></canvas><div id="nogl" hidden></div>
       <button class="btn" id="actBtn" data-act="interact" hidden></button>
-      <div class="hint-bar">Walk: arrow keys or WASD, or tap where to go · walk up into a door to go in · Talk / Enter: E</div>
+      
     </div>
     <div id="acts" aria-label="Things to do"></div>
   </section>
@@ -237,8 +236,7 @@ body.play3d.busy3d #mapToggle{display:none}
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
-<script>/* perf: the 2D map's 3D sprites (~21 MB) load only when the 2D map is opened; the 3D street loads its own copies */
-let L2D=false;function load2D(){if(L2D)return;L2D=true;["three3d.js","marcia_data.js","theo_data.js","hero00_data.js"].reduce((p,src)=>p.then(()=>new Promise(r=>{const s=document.createElement("script");s.src=src;s.onload=s.onerror=r;document.head.appendChild(s)})),Promise.resolve())}</script>
+<!-- the 3D street is the only world (the old 2D map was removed) -->
 <script>
 "use strict";
 function sendMissions(){const f=document.getElementById("street3d");if(!f||!f.contentWindow||typeof MISSIONS==="undefined")return;try{f.contentWindow.postMessage({lv3d:"missions",list:MISSIONS.map(m=>({id:m.id,title:m.title,loc:m.loc,items:m.items.map(it=>({t:it.t,q:it.q,a:it.a,o:it.o,h:it.h,e:it.e}))})),prog:JSON.parse(JSON.stringify(S.missions||{}))},"*")}catch(e){console.error(e)}}
@@ -249,7 +247,6 @@ addEventListener("message",e=>{const d=e.data;if(d&&d.lv3d==="mres"){try{
       if(pr.idx>=def.items.length){sv.done=true;sv.progress=null;sv.plays=(sv.plays||0)+1;award(40,20,"mission");try{checkBadges()}catch(_){}sfx("level");confetti();toast("🎉 Mission complete: "+def.title+"! +40 XP")}}}
   save();hud();sendMissions()}catch(err){console.error(err)}return}if(d&&d.lv3d==="busy"){document.body.classList.toggle("busy3d",!!d.on);return}if(d&&d.lv3d==="boss"){try{S.bossWins=(S.bossWins||0)+1;const r=award(d.xp||0,d.coins||0,"boss");save();sfx("level");toast("🏆 Festival Champion! "+"⭐".repeat(d.stars||1)+" +"+r.xp+" XP · +"+r.coins+" coins · +"+(d.tix||0)+" tickets")}catch(err){console.error(err)}return}if(d&&d.lv3d==="prize"){try{S.prizes=S.prizes||[];for(let i=0;i<(d.qty||1);i++)S.prizes.push(d.id);save();sfx("level");toast(d.emoji+" You got "+(d.qty>1?d.qty+" × ":"")+d.name+" from the Prize Corner!")}catch(err){console.error(err)}return}
   if(d&&d.lv3d==="door"&&typeof openLocation==="function"){try{sfx("tap")}catch(_){}setTimeout(()=>openLocation(d.id),700)}});
-document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("#mapToggle");if(!b)return;const w=document.getElementById("mapwrap"),fl=w.classList.toggle("flat");b.setAttribute("aria-pressed",fl);b.textContent=fl?"🧊 3D street":"🗺️ 2D map";if(fl)load2D();document.body.classList.toggle("play3d",!fl);document.body.classList.remove("drawer");if(!fl)focus3d()});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-act=drawer]");if(b){document.body.classList.toggle("drawer");return}if(document.body.classList.contains("drawer")&&e.target.closest&&e.target.closest("#acts .act"))document.body.classList.remove("drawer")},true);
 /* ============================================================
    LevelUp — Playable slice (5 locations, 5 missions, 40 items)
@@ -492,12 +489,14 @@ const doneCount=()=>MISSIONS.filter(m=>mdone(m.id)).length;
 /* ---------- utils ---------- */
 function toast(t){const el=$("#toast");el.textContent=t;el.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>el.style.display="none",2600)}
 function speak(t){if(!("speechSynthesis" in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/×/g,"times").replace(/÷/g,"divided by").replace(/−/g,"minus").replace(/\+/g,"plus"));u.rate=.95;speechSynthesis.speak(u)}catch(e){}}
-function setScreen(n){if(n==="map"&&document.getElementById("mapwrap").classList.contains("flat"))load2D();$$(".screen").forEach(s=>s.classList.remove("active"));$("#s-"+n).classList.add("active");document.body.classList.toggle("play3d",n==="map"&&!$("#mapwrap").classList.contains("flat"));document.body.classList.remove("drawer");if(n==="map"){hud();loopStart();const f=document.getElementById("street3d");if(f&&!$("#mapwrap").classList.contains("flat"))setTimeout(()=>{try{f.focus();f.contentWindow.focus();f.contentWindow.postMessage({lv3d:"name",name:S.name,hero:(S.avatar&&S.avatar.hero)|0},"*");sendMissions()}catch(_){}},60)}}
+function setScreen(n){$$(".screen").forEach(s=>s.classList.remove("active"));$("#s-"+n).classList.add("active");document.body.classList.toggle("play3d",n==="map");document.body.classList.remove("drawer");if(n==="map"){hud();const f=document.getElementById("street3d");if(f)setTimeout(()=>{try{f.focus();f.contentWindow.focus();f.contentWindow.postMessage({lv3d:"name",name:S.name,hero:(S.avatar&&S.avatar.hero)|0},"*");sendMissions()}catch(_){}},60)}}
+function go3d(id){const f=document.getElementById("street3d");try{f.contentWindow.postMessage({lv3d:"goto",id},"*")}catch(_){}focus3d()}
+addEventListener("message",e=>{if(e.data&&e.data.lv3d==="nogl"){const n=document.getElementById("nogl");n.hidden=false;n.innerHTML='<div class="nogl-card"><h2>🏙️ The 3D city needs a little help</h2><p>Your browser couldn\'t start 3D graphics (WebGL), so the city street can\'t open right now.</p><ul><li>Turn on <b>hardware acceleration</b> in your browser settings, then reload.</li><li>Or try the latest Chrome, Edge, Safari or Firefox.</li></ul><p>You can still play: open <b>My Path</b>, <b>Missions</b> or <b>⚔️ Challenge</b> from the top bar.</p></div>';document.getElementById("street3d").style.display="none"}});
 function modalOpen(){return $("#modal").classList.contains("open")}
 function openModal(html,after){const m=$("#modal");const bn=BANNER;BANNER=null;if(bn)html=html.replace(/(<\/div>)/,'$1<img class="ban" src="'+IM(bn)+'" alt="">');m.innerHTML=`<div class="panel">${html}</div>`;m.classList.add("open");m.scrollTop=0;after&&after(m);const f=m.querySelector("[autofocus],button");f&&f.focus&&f.focus()}
 function closeModal(){if(typeof quizStop==="function")quizStop();$("#modal").classList.remove("open","arc-mode");$("#modal").innerHTML="";focus3d()}
 /* give keyboard focus back to the 3D street after any 2D screen closes */
-function focus3d(){const f=document.getElementById("street3d");if(f&&$("#s-map").classList.contains("active")&&!$("#mapwrap").classList.contains("flat"))setTimeout(()=>{try{f.focus();f.contentWindow.focus()}catch(_){}},30)}
+function focus3d(){const f=document.getElementById("street3d");if(f&&$("#s-map").classList.contains("active"))setTimeout(()=>{try{f.focus();f.contentWindow.focus()}catch(_){}},30)}
 var ENTER=null;const busy=()=>!!ENTER||modalOpen()||$("#dlg").classList.contains("open")||$("#s-mission").classList.contains("active");
 
 /* dialogue */
@@ -530,7 +529,7 @@ function hud(){try{renderActs()}catch(e){}
   v2init();if(!S.howto&&S.created&&!hud.t){hud.t=1;setTimeout(()=>{if(!S.howto&&!busy())ACT.help()},900)}
   const l=levelOf(S.xp),lo=LV[l-1],hi=LV[l]??LV[LV.length-1]+500,pct=l>=LV.length?100:Math.round((S.xp-lo)/(hi-lo)*100);
   $("#hud").innerHTML=`<span class="pill">⭐ Level ${l}<span id="xpbar" aria-label="${pct}% to next level"><i style="width:${pct}%"></i></span></span><span class="pill">🪙 ${S.coins}<span class="lbl"> City Coins</span></span><span class="pill">🎪<span class="lbl"> Festival</span> ${doneCount()}/5</span><span class="sp"></span><button class="btn alt sm" data-act="today">📅 Today${S.dailyDone!==today()?" ●":""}</button><button class="btn alt sm" data-act="missions" aria-label="Missions">📋<span class="lbl"> Missions</span></button><button class="btn alt sm" data-act="goto">🧭 Go to…</button><button class="btn alt sm" data-act="help" aria-label="How to play">❓</button><button class="btn alt sm" data-act="settings">⚙️</button><button class="btn sm" id="menuBtn" data-act="drawer" aria-label="Places and activities">☰<span class="lbl"> Menu</span></button>`;
-  {const a=document.getElementById("acts");if(a&&!a.querySelector("#drawerExtra")){const d=document.createElement("div");d.id="drawerExtra";d.style.cssText="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem";d.innerHTML=`<button class="btn alt sm act" data-act="settings">⚙️ Settings</button><button class="btn alt sm act" data-act="help">❓ How to play</button><button class="btn alt sm act" onclick="document.getElementById('mapToggle').click()">🗺️ 2D map</button>`;a.appendChild(d)}}
+  {const a=document.getElementById("acts");if(a&&!a.querySelector("#drawerExtra")){const d=document.createElement("div");d.id="drawerExtra";d.style.cssText="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem";d.innerHTML=`<button class="btn alt sm act" data-act="settings">⚙️ Settings</button><button class="btn alt sm act" data-act="help">❓ How to play</button>`;a.appendChild(d)}}
 }
 
 /* ---------- map (Times Square photo) ---------- */
@@ -548,7 +547,7 @@ const TH={x:470,y:FY0+64,o:0,g:null};
 const keys={};setTimeout(()=>{for(let i=0;i<12;i++)["_back","_side","_fq","_bq"].forEach(q=>loadImg(HERO(i)+q));["map_theo","map_marcia"].forEach(n=>["_back","_side","_fq","_bq"].forEach(q=>loadImg(n+q)))},0);
 let loopOn=false,last=0,nearId=null;
 const BGIMG=loadImg("ls_ts_panorama_wide");
-function loopStart(){if(!loopOn){loopOn=true;last=performance.now();requestAnimationFrame(frame)}}
+function loopStart(){/* 2D map removed: the 3D street is the only world */}
 function clampP(){P.x=Math.max(30,Math.min(MW-30,P.x));P.y=Math.max(FY0,Math.min(FY1,P.y))}
 function frame(now){
   if(!$("#s-map").classList.contains("active")){loopOn=false;return}
@@ -772,13 +771,15 @@ cv.addEventListener("pointerdown",e=>{
   const w=toWorld(x,y);P.tx=Math.max(30,Math.min(MW-30,w.x));P.ty=Math.max(FY0,Math.min(FY1,w.y));P.auto=null;
 });
 const KM={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",w:"up",s:"down",a:"left",d:"right",W:"up",S:"down",A:"left",D:"right"};
+/* keyboard: if focus is in this page (after a HUD click or a popup), pass the keys on to the 3D street so the avatar always walks */
+const K3D=/^(arrow(up|down|left|right)|[wasdeqtmio ]|shift)$/i;
+function key3d(e,type){const f=document.getElementById("street3d");if(!f||!f.contentWindow||!$("#s-map").classList.contains("active"))return false;if(type==="keydown"&&modalOpen())return false;if(!K3D.test(e.key))return false;try{f.contentWindow.postMessage({lv3d:"key",type,key:e.key},"*")}catch(_){}return true}
 addEventListener("keydown",e=>{
   if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;
-  if(KM[e.key]&&$("#s-map").classList.contains("active")&&!busy()){keys[KM[e.key]]=true;e.preventDefault()}
-  if((e.key==="e"||e.key==="E")&&$("#s-map").classList.contains("active")&&!busy()&&nearId){enter(nearId)}
-  if(e.key==="Escape"&&modalOpen())closeModal();
+  if(e.key==="Escape"&&modalOpen()){closeModal();return}
+  if(!e.repeat&&key3d(e,"keydown")){e.preventDefault();focus3d()}else if(e.repeat&&!modalOpen()&&K3D.test(e.key)&&$("#s-map").classList.contains("active"))e.preventDefault();
 });
-addEventListener("keyup",e=>{if(KM[e.key])keys[KM[e.key]]=false});
+addEventListener("keyup",e=>{key3d(e,"keyup")});
 
 /* ---------- locations ---------- */
 function npcBlock(who,text){return `<div class="npc"><canvas width="96" height="96" data-npc="${who}"></canvas><div><div class="who">${NPCS[who].name}</div><div>${text}</div><button class="btn alt sm" style="margin-top:.3rem" data-act="speak" data-t="${text.replace(/"/g,"&quot;")}" aria-label="Read aloud">🔊 Read aloud</button></div></div>`}
@@ -1001,12 +1002,12 @@ const ACT={
  dread(){speak($("#dtxt").textContent)},
  dnext(){dnext()},
  missions(){
-  openModal(`<div class="phead"><h2>📋 Mission Board</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div><p class="small">Missions begin at different places in the city. Tap "Take me there" and the arrow will lead the way.</p><div class="cards">${MISSIONS.map(m=>{const st=mState(m);const place=m.loc==="school"?"Level Up Academy":"Times Square (Miss Marcia)";return `<div class="card ${st==="done"?"done":""} ${st==="lock"?"lock":""}"><b>Mission ${m.id}: ${m.title}</b><span class="small">${m.focus}</span><span class="small">📍 ${place} · 8 questions · ~${m.mins} min</span>${st==="done"?'<span class="tag ok">✓ Completed</span>':st==="lock"?'<span class="tag lock">🔒 Locked</span>':st==="prog"?'<span class="tag gold">In progress</span>':'<span class="tag">Ready</span>'}<button class="btn sm" data-act="goto2" data-id="${m.loc}" ${st==="lock"?"disabled":""}>Take me there</button></div>`}).join("")}</div>`);
+  openModal(`<div class="phead"><h2>📋 Mission Board</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div><p class="small">Missions begin at different places in the city. Tap "Take me there" and you'll jump right to it on the street.</p><div class="cards">${MISSIONS.map(m=>{const st=mState(m);const place=m.loc==="school"?"Level Up Academy":"Times Square (Miss Marcia)";return `<div class="card ${st==="done"?"done":""} ${st==="lock"?"lock":""}"><b>Mission ${m.id}: ${m.title}</b><span class="small">${m.focus}</span><span class="small">📍 ${place} · 8 questions · ~${m.mins} min</span>${st==="done"?'<span class="tag ok">✓ Completed</span>':st==="lock"?'<span class="tag lock">🔒 Locked</span>':st==="prog"?'<span class="tag gold">In progress</span>':'<span class="tag">Ready</span>'}<button class="btn sm" data-act="goto2" data-id="${m.loc}" ${st==="lock"?"disabled":""}>Take me there</button></div>`}).join("")}</div>`);
  },
  goto(){
   openModal(`<div class="phead"><h2>🧭 Go to…</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div><div class="cards">${Object.keys(LOCS).map(k=>`<button class="btn alt" data-act="goto2" data-id="${k}">${{school:"🏫",arcade:"🕹️",apt:"🏠",shop:"🛍️",square:"🗽"}[k]} ${LOCS[k].name}</button>`).join("")}</div>`);
  },
- goto2(d){closeModal();const L=LOCS[d.id];P.x=L.door.x;P.y=Math.min(L.door.y+30,FY1);P.tx=null;P.auto=null;TH.x=P.x-48;TH.y=P.y+4;hud()},
+ goto2(d){closeModal();go3d(d.id);hud()},
  settings(){openSettings()},
  look(d){$("#lookimg").src=IM(d.i)},
  zoom(d){const lb=$("#lb");$("img",lb).src=IM(d.i);lb.classList.add("open")},
@@ -1329,7 +1330,7 @@ function renderActs(){const el=document.getElementById("acts");if(!el)return;con
  ${B("","🖼️","Gallery","All the art",{a:"gallery"})}
  ${B("","🧑‍🏫","Teacher view","Progress & class tools",{a:"teacher"})}
  ${B("","⚙️","Settings","Sound, text size, access",{a:"settings"})}</div>`}
-Object.assign(ACT,{goenter(d){const L=LOCS[d.id];if(!L)return;P.x=L.door.x;P.y=Math.min(L.door.y+30,FY1);P.tx=null;P.auto=null;TH.x=P.x-48;TH.y=P.y+4;CAM.px=P.x;CAM.py=P.y;hud();enter(d.id)}});
+Object.assign(ACT,{goenter(d){if(!LOCS[d.id])return;go3d(d.id);hud();openLocation(d.id)}});
 
 function openTeacher(){const d=reportData();const stCls={Secure:"ok","Practicing":"warn","Not started":""};
  openModal(`<div class="phead"><h2>👩‍🏫 Teacher & parent view</h2><button class="btn alt sm" data-act="closem">✕ Close</button></div><p class="small">Evidence, not just scores. XP is effort, not mastery. Data stays in this browser.</p>

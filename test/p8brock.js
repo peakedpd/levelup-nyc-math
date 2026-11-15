@@ -29,5 +29,5 @@ module.exports = async ({ pg, OUT, res, sleep }) => {
   await f.evaluate(() => { P.x = BRK.x + .9; P.z = BRK.z }); await sleep(1500);
   res.noAuto = await pg.evaluate(() => !document.querySelector('#modal.open')); ok(res.noAuto, 'friendly Brock does not auto-start a battle');
   res.label = await f.evaluate(() => (interactions()[0] || {}).label); ok(/bonus round/.test(res.label || ''), 'E offers a bonus round: ' + res.label);
-  await f.evaluate(() => { P.x = -52; P.z = -6.5 });
+  await f.evaluate(() => { P.x = SPAWN.x; P.z = SPAWN.z });
 };
