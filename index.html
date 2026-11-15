@@ -52,7 +52,7 @@ input[type=text],input[type=number],select{font:inherit;padding:.55rem .7rem;bor
 #xpbar{width:120px;height:12px;background:rgba(255,255,255,.25);border-radius:8px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:.4rem}
 #xpbar i{display:block;height:100%;background:var(--yellow);width:0}
 #hud .sp{flex:1}
-#acts{flex:none;max-height:190px;overflow:auto;background:#141a45;border-top:3px solid #2b3a8f;padding:.5rem .7rem .9rem}#acts h3{color:#ffd24a;margin:.5rem 0 .3rem;font-size:.95rem;letter-spacing:.02em}#acts .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.45rem}#acts .act{display:flex;align-items:center;gap:.5rem;text-align:left;background:#fff;color:#1d2b64;border:0;border-radius:14px;padding:.55rem .7rem;min-height:48px;font-weight:800;font-size:.95rem;box-shadow:0 3px 0 #d8cfa8;cursor:pointer}#acts .act small{display:block;font-weight:600;color:#5a6286;font-size:.74rem}#acts .act.go{background:#ffd24a;box-shadow:0 3px 0 #c99b00}#street3d{width:min(100%,calc((100vh - 170px)*16/9));aspect-ratio:16/9;border:0;border-radius:14px;background:#1b1640;display:block}#map,#mapwrap .hint-bar,#actBtn{display:none!important}#mapToggle{position:absolute;top:8px;right:8px;z-index:5}
+#acts{flex:none;max-height:190px;overflow:auto;background:#141a45;border-top:3px solid #2b3a8f;padding:.5rem .7rem .9rem}#acts h3{color:#ffd24a;margin:.5rem 0 .3rem;font-size:.95rem;letter-spacing:.02em}#acts .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.45rem}#acts .act{display:flex;align-items:center;gap:.5rem;text-align:left;background:#fff;color:#1d2b64;border:0;border-radius:14px;padding:.55rem .7rem;min-height:48px;font-weight:800;font-size:.95rem;box-shadow:0 3px 0 #d8cfa8;cursor:pointer}#acts .act small{display:block;font-weight:600;color:#5a6286;font-size:.74rem}#acts .act.go{background:#ffd24a;box-shadow:0 3px 0 #c99b00}#street3d{width:min(100%,calc((100vh - 170px)*16/9));aspect-ratio:16/9;border:0;border-radius:14px;background:#1b1640;display:block}#map,#mapwrap .hint-bar,#actBtn{display:none!important}
 #mapwrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;position:relative}
 #map{width:100%;max-width:calc((100vh - 280px)*1.78);height:auto;max-height:calc(100vh - 280px);background:#8fd0f5;touch-action:none;image-rendering:auto}
 #actBtn{position:absolute;left:50%;bottom:3.4rem;transform:translateX(-50%);z-index:5;font-size:1.1rem;padding:.8rem 1.6rem}
@@ -184,7 +184,7 @@ body.play3d #acts{position:fixed;left:0;right:0;bottom:0;z-index:16;max-height:6
 body.play3d.drawer #acts{transform:none}
 body.play3d #evt{display:none}
 #menuBtn{display:none}body.play3d #menuBtn{display:inline-flex}
-@media (max-width:700px){body.play3d #hud{flex-wrap:nowrap;gap:.25rem;overflow:hidden}body.play3d #hud .pill{font-size:.78rem;padding:.15rem .45rem;white-space:nowrap}body.play3d #hud .lbl{display:none}body.play3d #hud #xpbar{width:34px}body.play3d #hud [data-act=goto],body.play3d #hud [data-act=today],body.play3d #hud [data-act=settings],body.play3d #hud [data-act=help]{display:none}body.play3d #mapToggle{display:none}}
+@media (max-width:700px){body.play3d #hud{flex-wrap:nowrap;gap:.25rem;overflow:hidden}body.play3d #hud .pill{font-size:.78rem;padding:.15rem .45rem;white-space:nowrap}body.play3d #hud .lbl{display:none}body.play3d #hud #xpbar{width:34px}body.play3d #hud [data-act=goto],body.play3d #hud [data-act=today],body.play3d #hud [data-act=settings],body.play3d #hud [data-act=help]{display:none}}
 #nogl{position:fixed;inset:0;z-index:11;display:flex;align-items:center;justify-content:center;background:#141a45;color:#fff;padding:1rem}#nogl[hidden]{display:none}#nogl .nogl-card{max-width:520px;background:#1f2a6b;border:3px solid #ffd24a;border-radius:18px;padding:1.2rem 1.4rem;font-size:1.05rem;line-height:1.45}#nogl h2{color:#ffd24a;margin:.2rem 0 .6rem}
 </style>
 </head>
@@ -236,7 +236,6 @@ body.play3d #evt{display:none}
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
-<!-- the 3D street is the only world (the old 2D map was removed) -->
 <script>
 "use strict";
 function sendMissions(){const f=document.getElementById("street3d");if(!f||!f.contentWindow||typeof MISSIONS==="undefined")return;try{f.contentWindow.postMessage({lv3d:"missions",list:MISSIONS.map(m=>({id:m.id,title:m.title,loc:m.loc,items:m.items.map(it=>({t:it.t,q:it.q,a:it.a,o:it.o,h:it.h,e:it.e}))})),prog:JSON.parse(JSON.stringify(S.missions||{}))},"*")}catch(e){console.error(e)}}
@@ -495,7 +494,7 @@ addEventListener("message",e=>{if(e.data&&e.data.lv3d==="nogl"){const n=document
 function modalOpen(){return $("#modal").classList.contains("open")}
 function openModal(html,after){const m=$("#modal");const bn=BANNER;BANNER=null;if(bn)html=html.replace(/(<\/div>)/,'$1<img class="ban" src="'+IM(bn)+'" alt="">');m.innerHTML=`<div class="panel">${html}</div>`;m.classList.add("open");m.scrollTop=0;after&&after(m);const f=m.querySelector("[autofocus],button");f&&f.focus&&f.focus()}
 function closeModal(){if(typeof quizStop==="function")quizStop();$("#modal").classList.remove("open","arc-mode");$("#modal").innerHTML="";focus3d()}
-/* give keyboard focus back to the 3D street after any 2D screen closes */
+/* give keyboard focus back to the 3D street after any popup closes */
 function focus3d(){const f=document.getElementById("street3d");if(f&&$("#s-map").classList.contains("active"))setTimeout(()=>{try{f.focus();f.contentWindow.focus()}catch(_){}},30)}
 var ENTER=null;const busy=()=>!!ENTER||modalOpen()||$("#dlg").classList.contains("open")||$("#s-mission").classList.contains("active");
 
@@ -547,7 +546,7 @@ const TH={x:470,y:FY0+64,o:0,g:null};
 const keys={};setTimeout(()=>{for(let i=0;i<12;i++)["_back","_side","_fq","_bq"].forEach(q=>loadImg(HERO(i)+q));["map_theo","map_marcia"].forEach(n=>["_back","_side","_fq","_bq"].forEach(q=>loadImg(n+q)))},0);
 let loopOn=false,last=0,nearId=null;
 const BGIMG=loadImg("ls_ts_panorama_wide");
-function loopStart(){/* 2D map removed: the 3D street is the only world */}
+function loopStart(){}
 function clampP(){P.x=Math.max(30,Math.min(MW-30,P.x));P.y=Math.max(FY0,Math.min(FY1,P.y))}
 function frame(now){
   if(!$("#s-map").classList.contains("active")){loopOn=false;return}

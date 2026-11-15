@@ -47,8 +47,8 @@ module.exports = async ({ pg, OUT, res, sleep }) => {
   ok(!res.no2d.drawer, 'no 2D button in any menu');
   // 10) no WebGL: a friendly message, never a 2D map
   const pg2 = await pg.context().newPage(); const base = pg.url().replace(/[^/]*$/, '');
-  await pg2.goto(base + 'street3d.html?nogl=1'); await sleep(1500); res.nogl3d = await pg2.evaluate(() => document.body.innerText); ok(/needs WebGL/.test(res.nogl3d), 'street shows the no-WebGL message');
+  await pg2.goto(base + 'street3d.html?nogl=1'); await sleep(1500); res.nogl3d = await pg2.evaluate(() => document.body.innerText); ok(/needs WebGL/.test(res.nogl3d), 'street shows the no-WebGL message'); await pg2.close(); await pg.bringToFront(); await sleep(500);
   await pg.evaluate(() => postMessage({ lv3d: 'nogl' }, '*')); await sleep(400); res.noglParent = await pg.evaluate(() => { const n = document.getElementById('nogl'); return !n.hidden && n.innerText }); ok(/hardware acceleration/.test(res.noglParent || ''), 'game page shows a friendly no-WebGL card: ' + res.noglParent);
-  await shot('p9_nogl'); await pg2.close();
+  await shot('p9_nogl');
   await pg.evaluate(() => { const n = document.getElementById('nogl'); n.hidden = true; document.getElementById('street3d').style.display = '' });
 };

@@ -15,7 +15,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1b1640;font-family:"T
 <div id="prompt"></div>
 <div class="hud" id="help"><b>Walk:</b> WASD / ↑↓ · <b>Jump:</b> Space · <b>Run:</b> Shift · <b>Look up/down/around:</b> click the street, then move the mouse or trackpad (two-finger swipe also works) · ← → turn · <b>Zoom / first person:</b> pinch, or I / O · <b>Go inside / use things:</b> E when the yellow prompt shows </div>
 <div id="load">Building New York…</div>
-<script>/* no WebGL: show a friendly message (the 3D street is the only world — there is no 2D fallback) */
+<script>/* no WebGL: show a friendly message (the 3D street is the only world) */
 window.NOGL=!(()=>{try{const c=document.createElement("canvas");return !!(window.WebGLRenderingContext&&(c.getContext("webgl2")||c.getContext("webgl")))}catch(e){return false}})()||/[?&]nogl=1/.test(location.search);
 if(window.NOGL){window.onerror=()=>true;addEventListener("DOMContentLoaded",()=>{document.body.innerHTML='<div style="font:700 18px Trebuchet MS,sans-serif;color:#fff;background:#141a45;position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:1rem">The 3D city needs WebGL. Turn on hardware acceleration in your browser settings and reload.</div>'});try{parent.postMessage({lv3d:"nogl"},"*")}catch(_){}}
 </script>
