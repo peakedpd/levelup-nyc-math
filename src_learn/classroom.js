@@ -58,7 +58,7 @@ function assignment(teacher,items,students,now){now=now||Date.now();return{id:"A
 function applyAssignment(S,a){const l=S.learn=S.learn||{};l.assignments=l.assignments||[];if(l.assignments.some(x=>x.id===a.id))return{added:0,dup:true};
   if(a.for!=="all"&&Array.isArray(a.for)&&!a.for.includes(S.studentId)&&!a.for.includes(S.name))return{added:0,notForMe:true};
   l.assignments.push({id:a.id,teacher:a.teacher,at:a.at,items:a.items,status:"assigned"});l.interventions=l.interventions||[];let added=0;
-  for(const it of a.items)if(it.type==="mission"&&it.code){if(!l.interventions.some(x=>(x.code||x.id)===it.code&&x.status!=="completed")){l.interventions.push({id:it.code,code:it.code,name:it.code,from:"teacher",teacher:a.teacher,t:Date.now(),status:"assigned",due:it.due});added++}else{const x=l.interventions.find(x=>(x.code||x.id)===it.code&&x.status!=="completed");x.from="teacher";x.teacher=a.teacher}}else added++;
+  for(const it of a.items)if(it.type==="challenge"){l.ch=l.ch||{history:[],queue:[],streak:{last:null,n:0,best:0},badges:[],day:null};const qid=a.id+":"+(it.code||it.sk);if(!l.ch.queue.some(q=>q.id===qid)){l.ch.queue.push({id:qid,code:it.code||null,sk:it.sk||MISSKILL[it.code]||null,teacher:a.teacher,t:Date.now(),due:it.due||null});added++}}else if(it.type==="mission"&&it.code){if(!l.interventions.some(x=>(x.code||x.id)===it.code&&x.status!=="completed")){l.interventions.push({id:it.code,code:it.code,name:it.code,from:"teacher",teacher:a.teacher,t:Date.now(),status:"assigned",due:it.due});added++}else{const x=l.interventions.find(x=>(x.code||x.id)===it.code&&x.status!=="completed");x.from="teacher";x.teacher=a.teacher}}else added++;
   return{added}}
 /* ---------- growth report ---------- */
 function growthReport(s,now){const r=studentRow(s,now),L=s.learn||{};const h=(L.history||[]).filter(x=>x.scale);const base=L.base||{};
@@ -71,6 +71,7 @@ function assignmentStatus(s,a){const L=s.learn||{},log=L.log||[],iv=L.interventi
     if(it.type==="mission"){const x=iv.find(x=>(x.code||x.id)===it.code&&(x.t||0)>=a.at-6e4)||iv.find(x=>(x.code||x.id)===it.code&&x.from==="teacher");done=!!(x&&x.status==="completed");progress=x?x.status:"not started"}
     else if(it.type==="practice"||it.type==="prereq"){const n=log.filter(e=>e.sk===it.sk&&e.src!=="diag"&&e.t>=a.at&&(!it.lv||e.lv>=it.lv)).length;done=n>=5;progress=n+"/5 problems"}
     else if(it.type==="memory"){const ev=(((L.m||{})[it.sk]||{}).ev||[]).filter(e=>e.src==="check"&&e.t>=a.at);done=ev.length>0;progress=done?"checked":"due"}
+    else if(it.type==="challenge"){const ch=L.ch||{history:[]};const sk=it.sk||MISSKILL[it.code];const h=(ch.history||[]).filter(x=>x.t>=a.at&&(it.code?x.code===it.code:x.sk===sk));done=h.some(x=>x.defeated);progress=done?"Brock defeated":h.length?h.length+" tr"+(h.length===1?"y":"ies"):"not started"}
     else if(it.type==="checkup"){done=(L.history||[]).some(h=>h.t>=a.at);progress=done?"taken":"not yet"}
     return Object.assign({},it,{done,progress})});
   return{id:a.id,items,done:items.filter(x=>x.done).length,of:items.length,complete:items.length>0&&items.every(x=>x.done)}}

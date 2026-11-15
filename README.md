@@ -36,6 +36,20 @@ real-world problems with Ms. Okafor (teacher), Theo, Ms. Marcia, Mr. Sal (clothi
   Class** to join, see assignments, share their progress code, and combine progress from another device (merge never
   loses answers). Sync is pluggable: local + codes work now; Supabase accounts/sync switch on with a project URL +
   anon key — see [docs/backend/SETUP.md](docs/backend/SETUP.md).
+- **Reteach Plan (Teacher Hub → 🧭 Reteach Plan)** — from the class's real results only: (a) the misconception most
+  students have (students, % of class, error count, sample wrong answers) and (b) the CCSS standard most students are
+  below grade level on, each with the top 3 and ties called out. Every plan has a goal, why students make the error, a
+  3-part mini-lesson (concrete/visual model → guided practice → independent check), a 3–5 question exit ticket with
+  key, small groups (≤6), and one-tap assign of the matching Brock challenge + mission. Print/PDF and CSV. Empty
+  classes get a clear "no results yet" with how to get data; a demo preview is clearly labeled and never saved.
+- **Weakness Challenges vs Brock "The Block"** — every student's home screen and My Path lead with **Your Challenge
+  today**, picked from their biggest gaps (prerequisite building blocks first), repeated misconceptions, due Memory
+  Checks and teacher assignments. Brock, a smug-but-harmless neighborhood kid, blocks an NYC spot with a math "trick"
+  matching the misconception; the student learns the trick-buster (reteach), does 2 guided tries, then a boss battle
+  where first-try answers drain Brock's confidence and wrong answers trigger a quick reteach (no penalty). Difficulty
+  adapts during the battle; a Memory Check rematch comes 3 days later. Rewards: coins, streaks, badges ("Block
+  Buster" when a gap is closed); Brock is redeemed and becomes a friend. Teacher Hub shows **Closing the gap**: below
+  grade level per skill at placement vs now and who closed it. Brock art: Canva AI.
 - **Teacher/parent dashboard** — mastery, accuracy, time on task, growth, misconception flags, CSV/print
 - Grade-4 coverage: multiplication & division, place value, rounding, multi-digit add/sub, factors &
   multiples, multi-step word problems, fractions. Every generated item is checked by a verification script.
@@ -58,6 +72,9 @@ Works on desktop (WASD/mouse) and phones (touch joystick). Static site — no in
 | `test/p4depth.js` | reasoning prompt, Multi-Step Quest, Strategy Showdown, Explain It, misconception-triggered mission, teacher scoring |
 | `tools/verify_classroom.js` | class/progress/assignment codes (round-trip, tamper detection), cross-device merge (no lost evidence, idempotent, order-independent, slips respected), class analytics, recommendations, assignment delivery/status, growth reports, CSV, Supabase adapter against a mock REST server |
 | `test/p5class.js` | Teacher Hub end-to-end: create class, import progress codes, heatmap, assign mission (on-device + code), student plan, growth report; student joins, shares, merges progress, opens assigned mission |
+| `tools/verify_reteach.js` | reteach content for all 13 misconceptions + 9 standards, every equation in lessons (eqcheck) and every exit-ticket answer (independent key), ranking/ties/groups/samples vs brute force on 150 simulated classes, empty state, no invented data |
+| `tools/verify_challenge.js` | challenge selection (building blocks first, biggest gap, repeated misconceptions, Memory Check due, teacher assigned, cool-down, stretch), adaptive difficulty, 3,200 simulated battles, rewards/streaks/badges, gap report, kid-appropriate Brock text |
+| `test/p6reteach.js`, `test/p7challenge.js` | Reteach Plan and Weakness Challenge end-to-end in the browser |
 | `tools/check_dist.js` | shipped files match their sources, scripts wired in order, no file over 95 MB |
 | `test/play.js` (+ `test/p1diag.js`) | headless play-test: hero → 3D street → rooms → games, then a full Placement Quest, pause/resume, Check-Up and dashboard (`p1diag.js`), Tower Climb evidence, Memory Checks and mastery (`p2mastery.js`); fails on any console error or failed request |
 

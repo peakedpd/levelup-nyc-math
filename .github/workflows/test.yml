@@ -24,13 +24,17 @@ jobs:
         run: node tools/verify_depth.js
       - name: Teacher platform (codes, cross-device merge, analytics, recommendations, assignments, sync adapters)
         run: node tools/verify_classroom.js
+      - name: Reteach Plan (13 misconceptions + 9 standards content, every lesson/exit-ticket number, ranking logic on simulated classes)
+        run: node tools/verify_reteach.js
+      - name: Weakness Challenges (target selection, adaptive difficulty, battle progression, Memory Checks, streaks, badges, gap report)
+        run: node tools/verify_challenge.js
       - name: Shipped build consistency
         run: node tools/check_dist.js
   e2e:
     name: Headless browser play-tests
     runs-on: ubuntu-latest
     needs: verify
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       CHROME: /usr/bin/google-chrome
@@ -51,6 +55,10 @@ jobs:
         run: TAG=ci_depth HOOK=./p4depth.js node test/play.js
       - name: Teacher Hub + My Class e2e (class code, analytics, assignments, growth report, cross-device merge)
         run: TAG=ci_class HOOK=./p5class.js node test/play.js
+      - name: Reteach Plan e2e (empty state, labeled demo, real results, groups, one-tap assign, CSV)
+        run: TAG=ci_reteach HOOK=./p6reteach.js node test/play.js
+      - name: Weakness Challenge e2e (Your Challenge today, Brock boss battle, reteach on wrong, Memory Check, teacher assign, gap table)
+        run: TAG=ci_challenge HOOK=./p7challenge.js node test/play.js
       - name: Educator review page e2e
         run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)
