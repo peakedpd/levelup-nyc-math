@@ -79,3 +79,6 @@ Works on desktop (WASD/mouse) and phones (touch joystick). Static site — no in
 | `test/play.js` (+ `test/p1diag.js`) | headless play-test: hero → 3D street → rooms → games, then a full Placement Quest, pause/resume, Check-Up and dashboard (`p1diag.js`), Tower Climb evidence, Memory Checks and mastery (`p2mastery.js`); fails on any console error or failed request |
 
 Run locally: `npm i --no-save playwright`, serve the folder on port 8765, then `node tools/verify_assess.js` etc.
+
+### Brock in the 3D street
+Brock stands at the street spot of the student's current challenge (src_parts/w2h.js, part of world2.js). Walking up to him starts the challenge; once beaten he turns friendly and steps aside. Test: `TAG=p8 HOOK=./p8brock.js node test/play.js`.

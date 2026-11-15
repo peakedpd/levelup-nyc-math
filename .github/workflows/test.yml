@@ -59,6 +59,8 @@ jobs:
         run: TAG=ci_reteach HOOK=./p6reteach.js node test/play.js
       - name: Weakness Challenge e2e (Your Challenge today, Brock boss battle, reteach on wrong, Memory Check, teacher assign, gap table)
         run: TAG=ci_challenge HOOK=./p7challenge.js node test/play.js
+      - name: Brock in the 3D street e2e (stands at the challenge spot, walk-up starts it, friendly after defeat)
+        run: TAG=ci_brock3d HOOK=./p8brock.js node test/play.js
       - name: Educator review page e2e
         run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)

@@ -53,4 +53,9 @@ if (wins < sims * 0.4) F(`too few wins ${wins}/${sims}`); if (!climbs) F('diffic
 // gap report: then vs now vs closed
 { const st = [['A', 1, 3], ['B', 2, 2], ['C', 1, 4], ['D', 3, 1], ['E', null, 1]].map(([n, b, lv]) => ({ name: n, learn: { base: b ? { mult: b } : {}, m: { mult: { lv } } } })); const g = C.gapReport(st).find(x => x.sk === 'mult');
   if (g.n !== 4 || g.start !== 3 || g.now !== 2 || g.closed !== 2 || g.closedNames.join() !== 'A,C') F('gap report ' + JSON.stringify(g)) }
+// 3D street: every challenge skill has a Brock spot on the sidewalk, clear of doors, Ms. Marcia and the spawn point; bubble lines are kid-appropriate
+{ const src = require('fs').readFileSync(require('path').join(__dirname, '../src_parts/w2h.js'), 'utf8'); const X = eval('(' + src.match(/BRK_X=(\{[^}]*\})/)[1] + ')'), PR = src.match(/BRK_PROP=\{([\s\S]*?)\};/)[1];
+  const doors = []; for (let i = 0; i < 12; i++) doors.push(-55 + i * 10, -55 + i * 10 - 2, -55 + i * 10 + 2); const xs = Object.values(X);
+  for (const sk of Object.keys(C.SPOT)) { if (X[sk] === undefined) F('no 3D spot for ' + sk); if (!new RegExp('\\b' + sk + ':\\[').test(PR)) F('no 3D prop for ' + sk); const x = X[sk]; if (doors.some(d => Math.abs(d - x) < 2.4)) F('3D spot on a door ' + sk); if (Math.abs(x + 10) < 4 || Math.abs(x + 52) < 6) F('3D spot crowds Marcia/spawn ' + sk); if (Math.abs(x) > 56) F('3D spot off street ' + sk) }
+  if (new Set(xs).size !== xs.length) F('3D spots overlap'); if (BAD.test(src)) F('3D Brock wording') }
 console.log(JSON.stringify({ check: 'challenge', simulatedBattles: sims, wins, climbs, fails }, null, 1)); process.exit(fails.length ? 1 : 0);
