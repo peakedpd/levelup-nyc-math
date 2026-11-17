@@ -63,9 +63,10 @@ const MSK={1:"groups",2:"groups",3:"mult",4:"divide",5:"multistep"};
 addEventListener("message",e=>{const d=e.data;if(!d||!S||!S.created)return;if(d.lv3d==="mres"&&MSK[d.id]){const ev=record(MSK[d.id],L().m[MSK[d.id]].lv,d.tries===1,15000,null,"3d",{rep:"visual",ind:false});if(ev==="up")toast("⬆️ "+LN.SK[MSK[d.id]].name+" level up!")}});
 /* ---------- question runner ---------- */
 function runItem(box,it,opt){const t0=performance.now();window.__luLastAns=String(it.a);let tries=0,done=false,hinted=false;const who=WHO[(LN.SK[it.sk]||{}).who||"sal"];
-  box.innerHTML=`<div class="lu-q">${it.q} <button class="btn alt sm" data-x="read" aria-label="Read aloud">🔊</button></div><div class="lu-vis">${opt.noVis?"":vis(it.vis)}</div><div class="lu-ch">${it.ch.map(c=>`<button data-v="${String(c).replace(/"/g,"&quot;")}">${show(c)}</button>`).join("")}</div><div class="lu-msg"></div>${opt.hint===false?"":`<button class="btn alt sm" data-x="hint">💡 Hint</button>`}`;
+  box.innerHTML=`<div class="lu-q">${it.q} <button class="btn alt sm" data-x="read" aria-label="Read aloud">🔊</button></div><div class="lu-vis">${opt.noVis?"":vis(it.vis)}</div><div class="lu-ch">${it.ch.map(c=>`<button data-v="${String(c).replace(/"/g,"&quot;")}">${show(c)}</button>`).join("")}</div><div class="lu-msg"></div>${opt.hint===false?"":`<button class="btn alt sm" data-x="hint">💡 Hint</button>`}${opt.play3d&&can3D()?` <button class="btn alt sm" data-x="real">🎮 Play it for real</button>`:""}`;
   const msg=box.querySelector(".lu-msg");box.querySelector("[data-x=read]").onclick=()=>speak(it.q);const hb=box.querySelector("[data-x=hint]");if(hb)hb.onclick=()=>{hinted=true;msg.style.color="#24407a";msg.textContent="💡 "+it.hint;speak(it.hint)};
   if(S.settings&&S.settings.read)speak(it.q);
+  const rb=box.querySelector("[data-x=real]");if(rb)rb.onclick=()=>{if(done||tries)return;done=true;real3d(it,opt,t0)};
   box.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{if(done)return;const v=b.dataset.v,ok=v===String(it.a);tries++;if(!ok&&tries===1)window.__luGiven={q:it.q,given:v,ans:String(it.a),t:Date.now()};
     if(opt.diag){done=true;b.classList.add("ok");msg.style.color="#24407a";msg.textContent=["Got it! ✨","Thanks! On to the next one!","Nice effort! 💪","Recorded! ⭐"][Math.floor(Math.random()*4)];sfx("tap");setTimeout(()=>opt.done(ok,performance.now()-t0,ok?null:it.why[v]),650);return}
     if(ok){done=true;b.classList.add("ok");sfx("ok");msg.style.color="#1b7a3a";msg.innerHTML=`✅ ${["Yes!","Awesome!","You got it!","Super!"][Math.floor(Math.random()*4)]} <span class="small">${(it.steps||[]).slice(-1)[0]||""}</span>`;setTimeout(()=>opt.done(tries===1,performance.now()-t0,null,{hinted}),1100)}
@@ -108,14 +109,14 @@ function teachMe(sk,lv){const s=LN.SK[sk],w=WHO[s.who],ex=LN.item(sk,lv);let k=0
       const b3=m.querySelector("[data-x=t3d]");if(b3)b3.onclick=()=>{closeModal();W3.pending={sk,lv};const f=document.getElementById("street3d");try{f.contentWindow.postMessage({lv3d:"teach",who:w.name,vis:ex.vis,q:ex.q,steps,a:show(ex.a),intro:INTRO[sk]},"*")}catch(_){yourTurn(sk,lv)}}})};
   paint()}
 const W3={};addEventListener("message",e=>{if(e.data&&e.data.lv3d==="teachdone"&&W3.pending){const p=W3.pending;W3.pending=null;yourTurn(p.sk,p.lv)}});
-function yourTurn(sk,lv){const s=LN.SK[sk],w=WHO[s.who],it=LN.item(sk,lv);openModal(`<div class="phead"><h2>🙋 Your Turn</h2>${lvTag(lv)}</div><div class="lu-who"><img src="${w.pic}" alt=""><div><b>${w.name}</b><div>Now you try one just like it. I'm right here if you need a hint!</div></div></div><div class="card" id="luItem"></div>`,m=>runItem(m.querySelector("#luItem"),it,{done:(ok,ms)=>{const l=L();l.m[sk].taught=Math.max(l.m[sk].taught||0,lv);record(sk,lv,ok,ms,null,"teach",{rep:it.vis?"visual":"symbolic",ind:false});save();practice(sk)}}))}
+function yourTurn(sk,lv){const s=LN.SK[sk],w=WHO[s.who],it=LN.item(sk,lv);openModal(`<div class="phead"><h2>🙋 Your Turn</h2>${lvTag(lv)}</div><div class="lu-who"><img src="${w.pic}" alt=""><div><b>${w.name}</b><div>Now you try one just like it. I'm right here if you need a hint!</div></div></div><div class="card" id="luItem"></div>`,m=>runItem(m.querySelector("#luItem"),it,{play3d:true,done:(ok,ms)=>{const l=L();l.m[sk].taught=Math.max(l.m[sk].taught||0,lv);record(sk,lv,ok,ms,null,"teach",{rep:it.vis?"visual":"symbolic",ind:false});save();practice(sk)}}))}
 /* practice plan: every Tower Climb mixes representations and ends with independent work (P2 mastery evidence) */
 const PLAN=[{vis:1,hint:1,tag:"🖼️ With a picture"},{vis:1,hint:1,tag:"🖼️ With a picture"},{typed:1,tag:"⌨️ Type it"},{transfer:1,hint:1,tag:"🌍 New situation"},{solo:1,typed:1,tag:"🦸 Solo — no hints, no pictures"}];
 function askItem(box,it,mode,cb){const t0=performance.now();const A=window.ASSESS,fmts=A?A.formatsFor(it):["mc"];const tf=mode.typed&&window.DIAG&&DIAG.entry?(fmts.includes("num")?"num":fmts.includes("frac")?"frac":null):null;
   const vis=!!(mode.vis&&it.vis);const base={vis,ind:!mode.vis&&!mode.hint?true:null};
   if(tf){const it2=Object.assign({},it,{vis:null});DIAG.entry(box,it2,tf,(ok,why)=>{const msg=box.querySelector(".lu-msg");if(msg){msg.style.color=ok?"#1b7a3a":"#b3261e";msg.innerHTML=ok?"✅ Yes! "+((it.steps||[]).slice(-1)[0]||""):`💡 ${why||it.hint}<div class="small" style="color:#24407a">Answer: <b>${show(it.a)}</b> · ${(it.steps||[]).join(" → ")}</div>`}sfx(ok?"ok":"oops");
       setTimeout(()=>cb(ok,performance.now()-t0,ok?null:why,{rep:"typed",ind:true,fmt:tf}),ok?1100:2600)},{noAck:1});return}
-  let wrongWhy=null;runItem(box,it,{noVis:!vis,hint:mode.hint?undefined:false,firstWrong:w=>wrongWhy=w,done:(ok,ms,_w,x)=>{const hinted=!!(x&&x.hinted);
+  let wrongWhy=null;runItem(box,it,{noVis:!vis,play3d:vis,hint:mode.hint?undefined:false,firstWrong:w=>wrongWhy=w,done:(ok,ms,_w,x)=>{const hinted=!!(x&&x.hinted);
     cb(ok,ms,wrongWhy,{rep:mode.transfer&&it.transfer?"transfer":vis?"visual":(window.MASTERY?MASTERY.repOf(it,{}):"symbolic"),ind:!vis&&!hinted,transfer:!!it.transfer})}})}
 function memCheck(sk,lv){const s=LN.SK[sk],w=WHO[s.who];const res=[];const items=[LN.item(sk,lv),(window.MASTERY&&MASTERY.transfer(LN.item(sk,lv)))||LN.item(sk,lv)];let k=0;
   const nx=()=>{if(k>=items.length)return fin();const it=items[k++];window.__luLastAns=String(it.a);window.__luPrac={i:k,mode:{solo:1,typed:k===1},a:String(it.a),transfer:!!it.transfer};
@@ -157,5 +158,19 @@ Object.assign(ACT,{mypath(){LUI.openPath()},diag(){startDiag()}});
 const _hud=window.hud;window.hud=function(){_hud();const h=document.getElementById("hud");if(h&&!h.querySelector("[data-act=mypath]")){const b=document.createElement("button");b.className="btn sm";b.dataset.act="mypath";b.setAttribute("aria-label","My Path");b.innerHTML='🗺️<span class="lbl"> My Path</span>';b.style.cssText="background:#2fbf71;color:#fff;box-shadow:0 4px 0 #1b7a3a";const mb=h.querySelector("[data-act=missions]");h.insertBefore(b,mb||null)}
   const l=S.learn;if(S.created&&S.howto&&!(l&&l.diag)&&!S.diagAsked&&!window.__luAsk){window.__luAsk=1;setTimeout(()=>{if(document.getElementById("modal").classList.contains("open"))return;S.diagAsked=true;save();LUI.openPath()},2500)}};
 try{hud=window.hud}catch(_){}
+/* ---------- real-life games in the 3D street (every skill; scenes drawn by world2.js from learn_scenes.js) ---------- */
+function can3D(){const f=document.getElementById("street3d");return document.body.classList.contains("play3d")&&!!(f&&f.contentWindow)}
+const RL={};
+function real3d(it,opt,t0){const f=document.getElementById("street3d"),m=document.getElementById("modal");RL.turn={it,opt,t0};m.classList.remove("open");if(typeof focus3d==="function")focus3d();
+  try{f.contentWindow.postMessage({lv3d:"skillgame",src:"turn",it:{sk:it.sk,lv:it.lv,q:it.q,a:it.a,ch:it.ch,why:it.why,hint:it.hint,steps:it.steps,v:it.v}},"*")}catch(_){m.classList.add("open")}}
+function streetSkill(){const l=L(),last=l.rlLast||"";const order=LN.SKILLS.map(s=>s.id).sort((a,b)=>{const A=l.m[a],B=l.m[b];return (A.done?7:A.lv)-(B.done?7:B.lv)||(A.n||0)-(B.n||0)});
+  const sk=order.find(x=>x!==last)||order[0],m=l.m[sk];l.rlLast=sk;return LN.item(sk,m.done?6:m.lv)}
+addEventListener("message",e=>{const d=e.data;if(!d||!d.lv3d)return;const f=document.getElementById("street3d");
+  if(d.lv3d==="skillreq"){const it=streetSkill();try{f.contentWindow.postMessage({lv3d:"skillgame",src:"street",npc:d.npc,it:{sk:it.sk,lv:it.lv,q:it.q,a:it.a,ch:it.ch,why:it.why,hint:it.hint,steps:it.steps,v:it.v}},"*")}catch(_){}return}
+  if(d.lv3d!=="skillres")return;
+  if(d.src==="turn"&&RL.turn){const T=RL.turn;RL.turn=null;if(d.skipped){document.getElementById("modal").classList.add("open");toast("Finish what you're doing on the street first!");return}
+    const ok=d.tries===1;if(!ok&&T.opt.firstWrong)T.opt.firstWrong(d.why||T.it.hint);T.opt.done(ok,performance.now()-T.t0,null,{hinted:false,real3d:true});return}
+  if(d.src==="street"&&!d.skipped&&d.sk){const ok=d.tries===1,s=LN.SK[d.sk];const ev=record(d.sk,d.lv,ok,d.ms||0,ok?null:(d.why||null),"street",{rep:"visual",ind:false});
+    const r=award(d.xp||10,ok?2:1,"street");save();if(ev==="up")toast("⬆️ Level up! "+s.name+" L"+L().m[d.sk].lv);else toast(s.icon+" "+s.name+": +"+r.xp+" XP")}});
 window.LUI={sprint,openPath,startDiag,startLesson,practice,teachMe,dashData,dashCSV,openSkills,vis,_:{L,record,runItem,WHO,lvTag,show}};
 })();
