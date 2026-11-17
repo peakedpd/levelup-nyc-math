@@ -28,6 +28,8 @@ jobs:
         run: node tools/verify_reteach.js
       - name: Weakness Challenges (target selection, adaptive difficulty, battle progression, Memory Checks, streaks, badges, gap report)
         run: node tools/verify_challenge.js
+      - name: Real-life game scenes (objects match the answer, never give it away, every skill has one)
+        run: node tools/verify_scenes.js
       - name: Shipped build consistency
         run: node tools/check_dist.js
   e2e:
@@ -63,6 +65,8 @@ jobs:
         run: TAG=ci_brock3d HOOK=./p8brock.js node test/play.js
       - name: Avatar movement e2e (real keyboard after load/popups, next to Theo + Brock, Go to in 3D, no 2D map, no-WebGL message)
         run: TAG=ci_move HOOK=./p9move.js node test/play.js
+      - name: Real-life games e2e (Theo's street game, Play it for real from a lesson, objects for all 9 skills)
+        run: TAG=ci_real HOOK=./p10real.js node test/play.js
       - name: Educator review page e2e
         run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)
