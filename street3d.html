@@ -20,7 +20,8 @@ window.NOGL=!(()=>{try{const c=document.createElement("canvas");return !!(window
 if(window.NOGL){window.onerror=()=>true;addEventListener("DOMContentLoaded",()=>{document.body.innerHTML='<div style="font:700 18px Trebuchet MS,sans-serif;color:#fff;background:#141a45;position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:1rem">The 3D city needs WebGL. Turn on hardware acceleration in your browser settings and reload.</div>'});try{parent.postMessage({lv3d:"nogl"},"*")}catch(_){}}
 </script>
 <script src="three-lib.js"></script>
-<script src="hero00_data.js"></script><script src="theo_data.js"></script><script src="marcia_data.js"></script>
+<script>/* character models are small .glb files fetched after the page opens (they used to be ~20 MB of inline base64) */
+window.HERO03D_URL=window.HERO03D_URL||"models/hero00.glb";window.THEO3D_URL=window.THEO3D_URL||"models/theo.glb";window.MARCIA3D_URL=window.MARCIA3D_URL||"models/marcia.glb";window.WORKER3D_URL=window.WORKER3D_URL||"models/worker.glb";</script>
 <!-- world2.js (school lobby/hallway/rooftop, arcade worker + prize counter, street talk, Ticket Blaster, touch controls) is loaded after the main script -->
 <script>
 "use strict";if(/embed/.test(location.search))document.body.classList.add("emb");
@@ -121,9 +122,10 @@ const TAXIS=[{x:-40,z:-2,v:7},{x:10,z:-2,v:6},{x:30,z:2,v:-7.5},{x:-20,z:2,v:-6}
 /* ---------- characters (3D GLB) ---------- */
 const GL=new GLTFLoader();
 function b64buf(u){const b=atob(u.slice(u.indexOf(",")+1)),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a.buffer}
-function loadChar(url,targetH){return new Promise(res=>{if(!url)return res(null);let buf;try{buf=b64buf(url)}catch(e){return res(null)}GL.parse(buf,"",g=>{const m=g.scene;m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false}});
+function charBuf(url){if(/^data:/.test(url))return Promise.resolve(b64buf(url));return fetch(url).then(r=>{if(!r.ok)throw new Error(url+" "+r.status);return r.arrayBuffer()})}
+function loadChar(url,targetH){return new Promise(res=>{if(!url)return res(null);charBuf(url).then(buf=>GL.parse(buf,"",g=>{const m=g.scene;m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false}});
   const mix=new T.AnimationMixer(m),clip=g.animations[0],act=clip?mix.clipAction(clip):null;act&&act.play();mix.setTime(0);m.updateMatrixWorld(true);
-  const bb=new T.Box3().setFromObject(m,true),h=bb.max.y-bb.min.y||1.8;const s=targetH/h;const wrap=new T.Group();m.scale.setScalar(s);m.position.y=-bb.min.y*s;wrap.add(m);S.add(wrap);const o={g:wrap,mix,act,dur:clip?clip.duration:1,t:0,yaw:0};calibrate(o,m);mix.setTime(0);res(o)},e=>{console.error(e);res(null)})})}
+  const bb=new T.Box3().setFromObject(m,true),h=bb.max.y-bb.min.y||1.8;const s=targetH/h;const wrap=new T.Group();m.scale.setScalar(s);m.position.y=-bb.min.y*s;wrap.add(m);S.add(wrap);const o={g:wrap,mix,act,dur:clip?clip.duration:1,t:0,yaw:0};calibrate(o,m);mix.setTime(0);res(o)},e=>{console.error(e);res(null)})).catch(e=>{console.error(e);res(null)})})}
 const ACT={};
 /* ---------- input ---------- */
 const K={};addEventListener("keydown",e=>{if(window.OVERLAY_KEYS&&OVERLAY_KEYS(e))return;K[e.key.toLowerCase()]=true;if(e.key.startsWith("Arrow"))e.preventDefault();if(TOOL.style.display==="flex"&&e.key.toLowerCase()!=="t")return;if(e.key.toLowerCase()==="t"){toggleTool();return}if(e.key.toLowerCase()==="e")tryDoor();if(e.key.toLowerCase()==="m"&&nearDoor&&nearDoor.type==="station"&&!QG){try{parent.postMessage({lv3d:"door",id:nearDoor.id},"*")}catch(_){}}if(QG&&QG.phase==="ask"&&/^[1-4]$/.test(e.key)){const a=QG.ans[+e.key-1];if(a&&!a.used)answer(a)}if(e.key===" "){e.preventDefault();if(P.onG)P.vy=7.5}if(e.key.toLowerCase()==="i")camDist=Math.max(.6,camDist-1.5);if(e.key.toLowerCase()==="o")camDist=Math.min(20,camDist+1.5)});addEventListener("keyup",e=>K[e.key.toLowerCase()]=false);addEventListener("blur",()=>{for(const k in K)K[k]=false});
@@ -434,7 +436,8 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   }
   SKYDOME.position.copy(cam.position);sun.position.set(P.x-30,40,P.z+25);sun.target.position.set(P.x,0,P.z);sun.target.updateMatrixWorld();
   updateTeacher(dt,now);updateGame(dt,now);updateBubble(now);R.render(S,cam);requestAnimationFrame(frame)}
-Promise.all([loadChar(window.HERO03D_URL,2.0),loadChar(window.THEO3D_URL,1.95),loadChar(window.MARCIA3D_URL,2.35)]).then(([h,t,m])=>{ACT.hero=h;ACT.theo=t;ACT.marcia=m;const l=document.getElementById("load");l.style.opacity=0;setTimeout(()=>l.remove(),600)});
+/* open the street as soon as the player's own model is ready; Theo and Marcia stream in right after */
+loadChar(window.HERO03D_URL,2.0).then(h=>{ACT.hero=h;const l=document.getElementById("load");l.style.opacity=0;setTimeout(()=>l.remove(),600);loadChar(window.THEO3D_URL,1.95).then(t=>{ACT.theo=t});loadChar(window.MARCIA3D_URL,2.35).then(m=>{ACT.marcia=m;if(m)m.g.visible=AREA==="street"})});
 camYaw=Math.PI*.12;cam.position.set(P.x+3,4,P.z+7);requestAnimationFrame(frame);
 window.__dbg={P,ACT,K};
 {const hp=document.getElementById("help"),full=hp.innerHTML;let open=true;const close=()=>{open=false;hp.innerHTML="❓ <b>Controls</b>";hp.style.cursor="pointer"};hp.onclick=()=>{if(open)close();else{open=true;hp.innerHTML=full;setTimeout(()=>{if(open)close()},9000)}};setTimeout(close,12000);

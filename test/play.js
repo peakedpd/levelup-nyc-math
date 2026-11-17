@@ -13,7 +13,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const errs = [], fails = [];
   pg.on('console', m => { if (m.type() === 'error') errs.push('[console] ' + m.text() + ' @' + (m.location()&&m.location().url)); });
   pg.on('pageerror', e => errs.push('[pageerror] ' + e.message));
-  pg.on('requestfailed', r => fails.push(r.url()));
+  // a request cut off because the test itself reloaded the page (ERR_ABORTED) is not a broken asset; anything else is
+  pg.on('requestfailed', r => { const ft = r.failure() && r.failure().errorText; if (ft === 'net::ERR_ABORTED') return; fails.push(r.url() + ' ' + (ft || '')); });
   pg.on('response', r => { if (r.status() >= 400) fails.push(r.status() + ' ' + r.url()); });
   const t0 = Date.now();
   await pg.goto(URL, { waitUntil: 'load' });
