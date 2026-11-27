@@ -4,7 +4,7 @@ const AR=ROOMS.arcade,WK={x:AR.cx,z:AR.cz-5.9};
   const gc=new T.Mesh(new T.BoxGeometry(7.6,.9,1),new T.MeshStandardMaterial({color:0x99ddff,transparent:true,opacity:.18,roughness:.05}));gc.position.set(0,1.6,-4.6);AR.g.add(gc);
   sign(AR.g,"PRIZE CORNER · TRADE TICKETS",0,.62,-3.98,7.6,.5);sign(AR.g,"TICKET BLASTER",0,2.85,1.95,2.8,.55,"#22ff88","#14123a")}
 W2.loadWorker=function(){if(W2.wkLoading)return;W2.wkLoading=true;const go=()=>loadChar(window.WORKER3D_URL,1.9).then(a=>{if(!a)return;ACT.worker=a;a.g.position.set(WK.x,0,WK.z);a.g.visible=AREA==="arcade"});
-  if(window.WORKER3D_URL)go();else{const s=document.createElement("script");s.src="worker_data.js";s.onload=go;s.onerror=()=>console.warn("worker model missing");document.head.appendChild(s)}};
+  go()};
 const TIX={get n(){return +(localStorage.getItem("lu3d_tickets")||0)},set n(v){localStorage.setItem("lu3d_tickets",String(Math.max(0,v|0)))}};
 const TIXEL=document.createElement("div");TIXEL.style.cssText="position:fixed;right:12px;top:"+(/embed/.test(location.search)?"60px":"12px")+";background:#14123a;color:#ffd23f;font:900 16px 'Trebuchet MS',sans-serif;border:3px solid #ffd23f;border-radius:12px;padding:.25rem .6rem;z-index:9;display:none";document.body.appendChild(TIXEL);
 function tixHud(){const t="🎟️ "+TIX.n+" tickets";if(TIXEL.textContent!==t)TIXEL.textContent=t;TIXEL.style.display=(AREA==="arcade"&&!QG)?"block":"none"}
