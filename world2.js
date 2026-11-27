@@ -32,28 +32,43 @@ function doorFrame(g,x,z,ry,label,col=0x3a6fd8){const f=new T.Group();f.position
 /* camera-facing sprite character (used for Mr. Sal) */
 function spriteChar(texs,h,x,z){const ts={};for(const k in texs){const t=TL.load(texs[k]);t.colorSpace=T.SRGBColorSpace;ts[k]=t}const geo=new T.PlaneGeometry(1,1);geo.translate(0,.5,0);const mat=new T.MeshStandardMaterial({map:ts.idle,alphaTest:.5,side:T.DoubleSide,roughness:.9});const m=new T.Mesh(geo,mat);m.scale.set(h*.55,h,1);m.position.set(x,0,z);m.castShadow=true;S.add(m);
   return {m,mat,ts,h,x,z,aspect:{},set(k){const t=ts[k];if(!t||mat.map===t)return;mat.map=t;mat.needsUpdate=true;const im=t.image;if(im&&im.width)this.m.scale.set(h*im.width/im.height,h,1)}}}
+/* ---------- CANVA ROOM ART: a 16:9 Canva Dream Lab wall panel per room, the same way the arcade uses its Prize Corner art ---------- */
+function artWall(g,name,x,y,z,w,ry){const t=TL.load("tex/room_"+name+".webp");t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;const h=w*9/16;
+  const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:t,toneMapped:false}));m.position.set(x,Math.max(y,h/2+.02),z);m.rotation.y=ry;g.add(m);return m}
+/* ---------- OPENABLES: things students can open (lockers, trophy case, desk drawer, gym chest); some locked, a few hide XP ---------- */
+const OPEN=[],FRUIT=[];const FOUND=new Set(JSON.parse(localStorage.getItem("lu3d_found")||"[]"));
+function regOpen(o){o.cur=0;o.isOpen=false;o.shake=0;OPEN.push(o);
+  if(o.xp&&!FOUND.has(o.id)){const orb=new T.Mesh(new T.SphereGeometry(.13,20,16),M(0x7cf7ff,{emissive:0x2bd9ff,emissiveIntensity:2}));orb.position.copy(o.orbAt);o.parent.add(orb);o.orb=orb}return o}
 /* ---------- 1a. LOBBY ---------- */
 {const cz=480,w=18,d=16,h=5.6;const g=shell("lobby",cz,w,d,h,{wall:0xf1e2c2,floorMap:checkerTex("#e9e2d0","#2b3d8f",8),doors:[{wall:"front",at:0,w:2.6},{wall:"back",at:0,w:2.6}]});
   sign(g,"WELCOME TO LEVEL UP ACADEMY",0,4.4,-d/2+.22,10,1.1);
   box(g,5,1.1,1.2,M(0x7a4a2a),-4.5,.55,-1);box(g,5.2,.08,1.4,M(0xd8a86a),-4.5,1.14,-1,0);sign(g,"OFFICE",-4.5,.7,-.38,1.6,.45,"#24407a","#fff");
   box(g,.5,.35,.4,M(0x222222),-5.5,1.35,-1.1,0);box(g,.45,.3,.02,M(0x88ccff,{emissive:0x3388ff,emissiveIntensity:.8}),-5.5,1.5,-.88,0);
-  box(g,4,2.4,.8,M(0x5a3a22),5.5,1.2,-d/2+.6);const glass=new T.Mesh(new T.BoxGeometry(3.7,1.9,.05),new T.MeshStandardMaterial({color:0xbfe6ff,transparent:true,opacity:.25,roughness:.05}));glass.position.set(5.5,1.35,-d/2+1.02);g.add(glass);
+  box(g,4,2.4,.8,M(0x5a3a22),5.5,1.2,-d/2+.6);const glass=new T.Mesh(new T.BoxGeometry(3.7,1.9,.05),new T.MeshStandardMaterial({color:0xbfe6ff,transparent:true,opacity:.25,roughness:.05}));glass.position.set(5.5,1.35,-d/2+1.02);g.add(glass);{const pv=new T.Group();pv.position.set(5.5-1.85,0,-d/2+1.02);g.add(pv);g.remove(glass);glass.position.set(1.85,1.35,0);pv.add(glass);regOpen({id:"trophy",name:"trophy case",parent:g,pv,axis:"y",openTo:-1.5,ux:5.5,uz:cz-d/2+2,locked:false})}
   const gold=M(0xffc83d,{metalness:.9,roughness:.25,emissive:0x553300,emissiveIntensity:.3});
   for(let i=0;i<4;i++){const cup=new T.Group();const b=new T.Mesh(new T.CylinderGeometry(.18,.08,.3,16),gold);b.position.y=.35;const s=new T.Mesh(new T.CylinderGeometry(.03,.03,.2,8),gold);s.position.y=.12;cup.add(b,s,new T.Mesh(new T.BoxGeometry(.2,.06,.2),gold));cup.position.set(4.2+i*.85,.95+(i%2)*.7,-d/2+.65);g.add(cup)}
   [-6,6].forEach(x=>{box(g,2.6,.12,.7,M(0xc8915a),x,.5,4.5);box(g,.12,.5,.6,M(0x444444),x-1.1,.25,4.5);box(g,.12,.5,.6,M(0x444444),x+1.1,.25,4.5)});
   [[-8,-7],[8,6.8],[-8,6.8]].forEach(([x,z])=>{box(g,.8,.7,.8,M(0xb85c38),x,.35,z);const l=new T.Mesh(new T.SphereGeometry(.6,12,10),M(0x3f8f3a));l.position.set(x,1.2,z);g.add(l)});
   const crest=new T.Mesh(new T.CircleGeometry(1.1,40),new T.MeshStandardMaterial({map:canvasTex(256,256,c=>{c.fillStyle="#24407a";c.beginPath();c.arc(128,128,124,0,7);c.fill();c.fillStyle="#ffd23f";c.textAlign="center";c.font="900 92px Trebuchet MS";c.fillText("LU",128,140);c.font="800 24px Trebuchet MS";c.fillText("× ÷ ACADEMY",128,190)})}));crest.position.set(-4.5,3.3,-d/2+.22);g.add(crest);
-  doorFrame(g,0,-d/2+.25,0,"HALLWAY · CLASSROOM ↑");
+  doorFrame(g,0,-d/2+.25,0,"HALLWAY · CLASSROOM ↑");artWall(g,"lobby",-w/2+.23,2.8,0,9.9,Math.PI/2);
   Object.assign(ROOMS.lobby,{spawns:{front:{x:0,z:cz+d/2-2.6,yaw:Math.PI},back:{x:0,z:cz-d/2+2.2,yaw:0}},exits:[{x:0,z:cz+d/2-.9,to:"street",label:"Press E to go back outside"},{x:0,z:cz-d/2+.9,to:"hallway",spawn:"front",label:"Press E — walk down the hallway"}]});solidsOf(g)}
 /* ---------- 1b. HALLWAY ---------- */
-{const cz=530,w=9,d=30,h=4.6;const g=shell("hallway",cz,w,d,h,{wall:0xe8eef6,floorMap:checkerTex("#d6d0c0","#c8c0ae",10),doors:[{wall:"front",at:0,w:2.6},{wall:"back",at:0,w:2.6},{wall:"left",at:-4,w:2.6}],lightI:55});
+{const cz=530,w=9,d=30,h=4.6;const g=shell("hallway",cz,w,d,h,{wall:0xe8eef6,floorMap:checkerTex("#d6d0c0","#c8c0ae",10),doors:[{wall:"front",at:0,w:2.6},{wall:"back",at:0,w:2.6},{wall:"left",at:-4,w:2.6},{wall:"right",at:10,w:2.6},{wall:"right",at:-12,w:2.6}],lightI:55});
   const lockM=[0x2a6bd8,0xe23b3b,0x2a9d8f,0xffb52e].map(c=>M(c,{metalness:.3,roughness:.5}));
-  for(let i=0;i<22;i++){const z=-d/2+2+i*1.2;[-1,1].forEach(sd=>{if(sd<0&&Math.abs(z+4)<1.9)return;const x=sd*(w/2-.45);box(g,.5,2.1,1.1,lockM[(i+(sd>0?1:0))%4],x,1.05,z);for(let k=0;k<3;k++)box(g,.02,.04,.6,M(0x111111),x-sd*.26,1.75-k*.08,z,0)})}
+  for(let i=0;i<22;i++){const z=-d/2+2+i*1.2;[-1,1].forEach(sd=>{if(sd<0&&Math.abs(z+4)<1.9)return;if(sd>0&&(Math.abs(z-10)<1.9||Math.abs(z+12)<1.9))return;const x=sd*(w/2-.45),mat=lockM[(i+(sd>0?1:0))%4];box(g,.5,2.1,1.1,mat,x,1.05,z);const xf=x-sd*.25;
+    const ins=new T.Mesh(new T.PlaneGeometry(1,1.95),M(0x22252e));ins.position.set(xf-sd*.006,1.05,z);ins.rotation.y=-sd*Math.PI/2;g.add(ins);
+    const pv=new T.Group();pv.position.set(xf-sd*.03,0,z+.53);g.add(pv);box(pv,.04,2.02,1.05,mat,0,1.05,-.525,0);
+    for(let k=0;k<3;k++)box(pv,.02,.04,.6,M(0x111111),-sd*.025,1.75-k*.08,-.525,0);box(pv,.03,.18,.06,M(0xcccccc,{metalness:.8}),-sd*.03,1.05,-.95,0);
+    const id="lk"+(sd>0?"R":"L")+i,locked=(i*7+(sd>0?2:0))%3===0,xp=id==="lkR3"||id==="lkL16";
+    if(locked)box(pv,.05,.16,.14,M(0xffc83d,{metalness:.9,roughness:.25}),-sd*.05,1.25,-.95,0);
+    regOpen({id,name:"locker",parent:g,pv,axis:"y",openTo:sd*1.65,ux:xf-sd*.75,uz:cz+z,locked,xp:xp?25:0,orbAt:new T.Vector3(x-sd*.05,1.3,z)})})}
   sign(g,"MS. OKAFOR · ROOM 4B",-w/2+.25,3.6,-4,3,.6,"#24407a","#fff",Math.PI/2);doorFrame(g,-w/2+.25,-4,Math.PI/2,null,0x2a9d8f);
-  sign(g,"ROOFTOP GARDEN ↑",0,3.6,-d/2+.22,3.6,.6);doorFrame(g,0,-d/2+.25,0,null,0x7a2bd0);
+  sign(g,"GYM 🏀",w/2-.25,3.6,10,2.4,.6,"#c8102e","#fff",-Math.PI/2);doorFrame(g,w/2-.25,10,-Math.PI/2,null,0xc8102e);
+  sign(g,"CAFETERIA 🍎",w/2-.25,3.6,-12,2.8,.6,"#2a9d8f","#fff",-Math.PI/2);doorFrame(g,w/2-.25,-12,-Math.PI/2,null,0x2a9d8f);
+  artWall(g,"hallway",0,2.3,-d/2+.23,w-.5,0);
   [[w/2-.24,4,-Math.PI/2,"MATH STARS ⭐"],[w/2-.24,-9,-Math.PI/2,"4 × 6 = 24"],[-w/2+.24,8,Math.PI/2,"ARRAYS ROCK"]].forEach(([x,z,r,t])=>sign(g,t,x,2.8,z,2.6,1,"#c89b5a","#14123a",r));
-  Object.assign(ROOMS.hallway,{spawns:{front:{x:0,z:cz+d/2-2.4,yaw:Math.PI},classDoor:{x:-w/2+1.7,z:cz-4,yaw:Math.PI/2},roof:{x:0,z:cz-d/2+2.2,yaw:0}},
-    exits:[{x:0,z:cz+d/2-.9,to:"lobby",spawn:"back",label:"Press E — back to the lobby"},{x:-w/2+.9,z:cz-4,to:"school",spawn:"door",label:"Press E — go into Ms. Okafor's classroom"},{x:0,z:cz-d/2+.9,to:"rooftop",spawn:"stairs",label:"Press E — climb the stairs to the rooftop garden"}]});solidsOf(g)}
+  Object.assign(ROOMS.hallway,{spawns:{front:{x:0,z:cz+d/2-2.4,yaw:Math.PI},classDoor:{x:-w/2+1.7,z:cz-4,yaw:Math.PI/2},roof:{x:0,z:cz-d/2+2.2,yaw:0},gymDoor:{x:w/2-1.7,z:cz+10,yaw:-Math.PI/2},cafeDoor:{x:w/2-1.7,z:cz-12,yaw:-Math.PI/2}},
+    exits:[{x:0,z:cz+d/2-.9,to:"lobby",spawn:"back",label:"Press E — back to the lobby"},{x:-w/2+.9,z:cz-4,to:"school",spawn:"door",label:"Press E — go into Ms. Okafor's classroom"},{x:0,z:cz-d/2+.9,to:"rooftop",spawn:"stairs",label:"Press E — climb the stairs to the rooftop garden"},{x:w/2-.9,z:cz+10,to:"gym",spawn:"door",label:"Press E — go into the GYM 🏀"},{x:w/2-.9,z:cz-12,to:"cafeteria",spawn:"door",label:"Press E — go into the CAFETERIA 🍎"}]});solidsOf(g)}
 /* ---------- 1c. ROOFTOP (open air, skyline all around) ---------- */
 {const cz=600,w=22,d=20;const g=shell("rooftop",cz,w,d,1.1,{wall:0x9a5a44,floor:0x6b6f76,open:true,lightI:30});
   const sk=TL.load("tex/skyline.webp");sk.colorSpace=T.SRGBColorSpace;sk.wrapS=T.RepeatWrapping;sk.repeat.x=-2;const cyl=new T.Mesh(new T.CylinderGeometry(70,70,44,48,1,true),new T.MeshBasicMaterial({map:sk,side:T.BackSide,fog:false,toneMapped:false}));cyl.position.y=12;g.add(cyl);
@@ -64,6 +79,34 @@ function spriteChar(texs,h,x,z){const ts={};for(const k in texs){const t=TL.load
   [-10.4,10.4].forEach(x=>box(g,.12,3.3,.12,M(0x333333),x,1.65,0));
   box(g,8,.3,5,M(0x24407a),0,.15,1.5);sign(g,"FESTIVAL STAGE",0,.32,4.05,6,.5,"#24407a","#ffd23f");
   Object.assign(ROOMS.rooftop,{spawns:{stairs:{x:3.4,z:cz-d/2+3.6,yaw:0}},exits:[{x:0,z:cz-d/2+3.4,to:"hallway",spawn:"roof",label:"Press E — take the stairs back down"}],exit:{x:0,z:cz-d/2+3.4}});solidsOf(g)}
+/* ---------- 1d. GYM (off the hallway, right wall) ---------- */
+{const cz=660,w=22,d=20,h=7;const court=canvasTex(1024,1024,(c,W,H)=>{c.fillStyle="#d9a066";c.fillRect(0,0,W,H);for(let i=0;i<40;i++){c.fillStyle=i%2?"#d29a5f":"#dca76e";c.fillRect(i*W/40,0,W/40,H)}c.strokeStyle="#fff";c.lineWidth=10;c.strokeRect(40,40,W-80,H-80);c.beginPath();c.moveTo(40,H/2);c.lineTo(W-40,H/2);c.stroke();c.beginPath();c.arc(W/2,H/2,120,0,7);c.stroke();c.strokeStyle="#c8102e";c.beginPath();c.arc(W/2,40,230,0,Math.PI);c.stroke()});
+  const g=shell("gym",cz,w,d,h,{wall:0xf2e6cf,floor:0xd9a066,doors:[{wall:"front",at:0,w:2.6}],lightI:80});
+  {const fl=new T.Mesh(new T.PlaneGeometry(w-.5,d-.5),new T.MeshStandardMaterial({map:court,roughness:.45}));fl.rotation.x=-Math.PI/2;fl.position.y=.01;fl.receiveShadow=true;g.add(fl)}
+  artWall(g,"gym",0,3.5,-d/2+.23,w-1,0);
+  for(let i=0;i<3;i++)box(g,1.2,.5+i*.5,12,M([0x24407a,0x2a6bd8,0x3d7be0][i]),-w/2+.8+i*1.2,(.5+i*.5)/2,1);  // bleachers
+  const ball=M(0xe8742c,{roughness:.6});[[3,4],[5,2.5],[-2,5.5],[6.5,5]].forEach(([x,z])=>{const b=new T.Mesh(new T.SphereGeometry(.24,20,16),ball);b.position.set(x,.24,z);b.castShadow=true;g.add(b)});
+  {box(g,2.2,.8,1,M(0x7a4a2a),8.5,.4,-6);const pv=new T.Group();pv.position.set(8.5,.8,-6.5);g.add(pv);box(pv,2.26,.1,1.06,M(0x8a5a32),0,.05,.5,0);sign(g,"GYM GEAR",8.5,.5,-5.48,1.4,.3,"#c8102e","#fff");
+   regOpen({id:"gymchest",name:"gym equipment chest",parent:g,pv,axis:"x",openTo:-1.9,ux:8.5,uz:cz-4.9,locked:false,xp:25,orbAt:new T.Vector3(8.5,.75,-6)})}
+  doorFrame(g,0,d/2-.25,Math.PI,"HALLWAY",0xc8102e);
+  Object.assign(ROOMS.gym,{spawns:{door:{x:0,z:cz+d/2-2.4,yaw:Math.PI}},exits:[{x:0,z:cz+d/2-.9,to:"hallway",spawn:"gymDoor",label:"Press E — back to the hallway"}],exit:{x:0,z:cz+d/2-.9}});
+  ROOMS.gym.ST.push({x:5,z:cz-2,label:"play Gym Math with Theo (counting balls & teams)",id:"gym"});solidsOf(g)}
+/* ---------- 1e. CAFETERIA ---------- */
+{const cz=720,w=22,d=20,h=5.6;const g=shell("cafeteria",cz,w,d,h,{wall:0xfff1d6,floorMap:checkerTex("#f4efe3","#e3d6bf",10),doors:[{wall:"front",at:0,w:2.6}],lightI:60});
+  artWall(g,"cafeteria",0,3,-d/2+.23,w-2.2,0);
+  const top=M(0x3d7be0),bench=M(0xffb52e),leg=M(0x555555),tray=M(0xff6b8a);
+  for(let r=0;r<2;r++)for(let c=0;c<3;c++){const x=-6+c*6,z=-1.5+r*5;box(g,4,.1,1.2,top,x,.78,z);box(g,.15,.74,.9,leg,x-1.6,.37,z);box(g,.15,.74,.9,leg,x+1.6,.37,z);[-1,1].forEach(sd=>box(g,4,.08,.4,bench,x,.45,z+sd*.95));
+    for(let k=0;k<3;k++){box(g,.45,.03,.32,tray,x-1.2+k*1.2,.85,z,0);const ap=new T.Mesh(new T.SphereGeometry(.07,10,8),M([0xd92b2b,0x6dff6b,0xffd23f][(r+c+k)%3]));ap.position.set(x-1.2+k*1.2,.93,z);g.add(ap);FRUIT.push({m:ap,g,cz,home:ap.position.clone(),at:ap.position.clone(),state:"tray",pen:false})}}
+  doorFrame(g,0,d/2-.25,Math.PI,"HALLWAY",0x2a9d8f);
+  Object.assign(ROOMS.cafeteria,{spawns:{door:{x:0,z:cz+d/2-2.4,yaw:Math.PI}},exits:[{x:0,z:cz+d/2-.9,to:"hallway",spawn:"cafeDoor",label:"Press E — back to the hallway"}],exit:{x:0,z:cz+d/2-.9}});
+  ROOMS.cafeteria.ST.push({x:0,z:cz-6,label:"play Lunch Line Math with Theo (trays, apples & snacks)",id:"cafe"});solidsOf(g)}
+/* ---------- Canva art panels on the original rooms (classroom, clothing store, Theo's apartment) ---------- */
+artWall(ROOMS.school.g,"classroom",0,2.8,-RD/2+.42,9.9,0);
+{const g=ROOMS.school.g,pv=new T.Group();pv.position.set(0,0,0);g.add(pv);box(pv,1.4,.28,.9,M(0x8a5a32),0,.72,-4.95,0);box(pv,.4,.06,.04,M(0xcccccc,{metalness:.8}),0,.72,-4.48,0);
+  for(let k=0;k<3;k++){const pc=new T.Mesh(new T.CylinderGeometry(.02,.02,.32,8),M([0xffc81e,0x3d7be0,0xe23b3b][k]));pc.rotation.z=Math.PI/2;pc.position.set(-.3+k*.3,.88,-4.95);pv.add(pc)}
+  regOpen({id:"desk",name:"Ms. Okafor's desk drawer",parent:g,pv,axis:"slide",openTo:.7,ux:0,uz:ROOMS.school.cz-3.8,locked:false})}
+artWall(ROOMS.clothing.g,"clothing",0,2.8,-RD/2+.27,9.9,0);
+artWall(ROOMS.apartment.g,"apartment",0,2.8,-RD/2+.27,9.9,0);
 ROOMS.school.spawns={door:{x:ROOMS.school.cx,z:ROOMS.school.cz+RD/2-2.6,yaw:Math.PI}};
 ROOMS.school.exits=[{x:ROOMS.school.exit.x,z:ROOMS.school.exit.z,to:"hallway",spawn:"classDoor",label:"Press E — back to the hallway"}];
 ["arcade","clothing","apartment"].forEach(k=>{ROOMS[k].exits=[{x:ROOMS[k].exit.x,z:ROOMS[k].exit.z,to:"street",label:"Press E to go back outside"}]});
@@ -448,3 +491,101 @@ function goto3d(id){const kind={school:"school",arcade:"arcade",shop:"clothing",
   for(let k=0;k<8&&blocked(x,z,.12);k++)x+=.7;
   P.x=x;P.z=z;P.fy=.12;P.vy=0;P.yaw=face;camYaw=face+Math.PI;camPitch=.32;camDist=7;camSnap=true;TH.x=x+1.2;TH.z=z+(z>0?-.8:.8);target=null;for(const k in K)K[k]=false}
 Object.assign(window,{goto3d});
+
+/* =====================================================================
+   12. OPENABLES: lockers, trophy case, desk drawer, gym chest (registry in w2b: OPEN, regOpen, FOUND)
+   ===================================================================== */
+function nearOpen(){if(QG||W2.blaster||W2.ui)return null;let best=null,bd=1.05;for(const o of OPEN){if(o.area&&o.area!==AREA)continue;if(o.area){const dd=Math.hypot(P.x-o.ux,P.z-o.uz);if(dd<1.3&&dd<bd){bd=dd;best=o}continue}if((AREA==="hallway"&&o.id[0]!=="l")||(o.id==="trophy"&&AREA!=="lobby")||(o.id==="gymchest"&&AREA!=="gym")||(o.id==="desk"&&AREA!=="school")||(o.id[0]==="l"&&o.id!=="lobby"&&o.name==="locker"&&AREA!=="hallway"))continue;
+    const dd=Math.hypot(P.x-o.ux,P.z-o.uz);if(dd<bd){bd=dd;best=o}}return best}
+function useOpen(o){if(o.locked){o.shake=.45;say("🔒","This "+o.name+" is locked.",o.ux,2.4,o.uz);BUBW.t=performance.now();return}
+  o.isOpen=!o.isOpen;if(o.isOpen&&o.orb&&!FOUND.has(o.id)){FOUND.add(o.id);localStorage.setItem("lu3d_found",JSON.stringify([...FOUND]));o.pay=performance.now()+450}}
+const _int12=interactions;interactions=function(){const L=_int12();const o=nearOpen();if(!o)return L;
+  const lab=o.locked?"🔒 Locked "+o.name+" (press E to try it)":"Press E to "+(o.isOpen?"close":"open")+" the "+o.name;
+  return [{type:"openable",o,x:P.x,z:P.z,r:9,label:lab}].concat(L.filter(d=>d.type==="exit2"&&Math.hypot(d.x-P.x,d.z-P.z)<d.r?false:true))};
+const _try12=tryDoor;tryDoor=function(){const d=nearDoor;if(d&&d.type==="openable")return useOpen(d.o);_try12()};
+const _ug12=updateGame;updateGame=function(dt,now){_ug12(dt,now);
+  for(const o of OPEN){const want=o.isOpen?o.openTo:0;o.cur+=(want-o.cur)*Math.min(1,dt*8);let v=o.cur;if(o.shake>0){o.shake-=dt;v+=Math.sin(now/25)*.06}
+    if(o.axis==="y")o.pv.rotation.y=v;else if(o.axis==="x")o.pv.rotation.x=v;else o.pv.position.z=v;
+    if(o.orb){o.orb.rotation.y+=dt*3;o.orb.position.y=o.orbAt.y+Math.sin(now/300)*.04;
+      if(o.pay&&now>o.pay){o.pay=0;o.parent.remove(o.orb);o.orb=null;POP.textContent="🔍 Hidden XP! +"+o.xp+" XP ⭐";POP.style.opacity=1;POP.style.transform="translate(-50%,-50%) scale(1.1)";
+        try{confetti(P.x,P.fy+1.6,P.z)}catch(_){}try{speak("You found hidden XP!")}catch(_){}try{parent.postMessage({lv3d:"mres",review:true,id:0,idx:0,tries:1,xp:o.xp,coins:0},"*")}catch(_){}
+        setTimeout(()=>{POP.style.opacity=0;POP.style.transform="translate(-50%,-50%) scale(.6)"},1800)}}}};
+Object.assign(window,{OPEN,useOpen});
+
+/* 13. CAFETERIA FRUIT: E picks up / puts back / drops, F eats (+3 XP). Dropped fruit left behind costs 5 XP; tidy it back onto a tray to earn it back. */
+let HELD=null;const xpMsg=(t,xp)=>{POP.textContent=t;POP.style.opacity=1;setTimeout(()=>POP.style.opacity=0,1600);try{parent.postMessage({lv3d:"mres",review:true,id:0,idx:0,tries:1,xp,coins:0},"*")}catch(_){}};
+const fw=f=>({x:f.at.x,z:f.at.z+f.cz});
+function freeHome(){let b=null,bd=1.3;for(const f of FRUIT){const h={x:f.home.x,z:f.home.z+f.cz};if(FRUIT.some(o=>o.state==="tray"&&o.at.distanceTo(f.home)<.05))continue;const d=Math.hypot(P.x-h.x,P.z-h.z);if(d<bd){bd=d;b=f.home}}return b}
+function nearFruit(){if(AREA!=="cafeteria"||QG)return null;let b=null,bd=1.2;for(const f of FRUIT){if(f.state==="held"||f.state==="eaten")continue;const w=fw(f),d=Math.hypot(P.x-w.x,P.z-w.z);if(d<bd){bd=d;b=f}}return b}
+function fruitE(){if(HELD){const h=freeHome(),f=HELD;HELD=null;
+    if(h){f.at.copy(h);f.state="tray";if(f.pen){f.pen=false;xpMsg("🍎 Thanks for cleaning up! +5 XP back",5)}else say("🍎","Back on the tray.",P.x,2.4,P.z)}
+    else{f.at.set(P.x,.07,P.z-f.cz);f.state="floor";say("🍎","Oops, it's on the floor! Pick it up before you walk away.",P.x,2.4,P.z)}
+    f.m.position.copy(f.at);try{BUBW.t=performance.now()}catch(_){}return}
+  const f=nearFruit();if(f){HELD=f;f.state="held"}}
+addEventListener("keydown",e=>{if(e.key.toLowerCase()==="f"&&HELD){const f=HELD;HELD=null;f.state="eaten";f.g.remove(f.m);xpMsg("😋 Yum! Healthy snack +3 XP",3)}});
+const _int13=interactions;interactions=function(){const L=_int13();if(AREA!=="cafeteria")return L;
+  if(HELD)return [{type:"fruit",x:P.x,z:P.z,r:9,label:freeHome()?"E: put the fruit back on the tray · F: eat it":"E: drop the fruit · F: eat it (find an empty tray spot to put it back)"}].concat(L);
+  const f=nearFruit();return f?[{type:"fruit",x:P.x,z:P.z,r:9,label:"Press E to pick up the "+(f.state==="floor"?"fruit on the floor":"fruit")}].concat(L):L};
+const _try13=tryDoor;tryDoor=function(){const d=nearDoor;if(d&&d.type==="fruit")return fruitE();_try13()};
+const _ug13=updateGame;updateGame=function(dt,now){_ug13(dt,now);
+  if(HELD){if(AREA!=="cafeteria"){HELD.at.set(P.x,.07,0);HELD.state="floor";HELD.m.position.copy(HELD.at);HELD=null}else HELD.m.position.set(P.x+.35,P.fy+1.1,P.z-HELD.cz)}
+  for(const f of FRUIT)if(f.state==="floor"&&!f.pen){const w=fw(f);if(AREA!=="cafeteria"||Math.hypot(P.x-w.x,P.z-w.z)>4){f.pen=true;xpMsg("🗑️ You left fruit on the floor! -5 XP",-5)}}};
+/* 14. MS. OKAFOR'S DESK: items can be picked up, but you never touch a teacher's desk. Put it back within 4 s = no penalty; keep it longer = -10 XP. */
+const DESKI=[];{const g=ROOMS.school.g;[["mug",0xffffff,-1.1,new T.CylinderGeometry(.09,.08,.18,14)],["apple",0xd92b2b,-.5,new T.SphereGeometry(.09,12,10)],["stapler",0x222222,.9,new T.BoxGeometry(.32,.08,.1)],["grade book",0x3d7be0,1.4,new T.BoxGeometry(.4,.05,.3)]].forEach(([n,c,x,geo])=>{const m=new T.Mesh(geo,M(c));m.position.set(x,1.06,-5.2);g.add(m);DESKI.push({n,m,home:m.position.clone()})})}
+let DH=null;const dskD=()=>Math.hypot(P.x,P.z-(ROOMS.school.cz-5.2));
+function deskE(){if(DH){if(dskD()<2.4){DH.it.m.position.copy(DH.it.home);if(!DH.pen)say("👍","Good choice, you put it right back. No XP lost.",P.x,2.4,P.z);DH=null}else say("✋","Put it back on Ms. Okafor's desk!",P.x,2.4,P.z);try{BUBW.t=performance.now()}catch(_){}return}
+  let b=null,bd=1.6;for(const it of DESKI){const d=Math.hypot(P.x-it.home.x,P.z-(it.home.z+ROOMS.school.cz));if(d<bd){bd=d;b=it}}if(b){DH={it:b,t:performance.now(),pen:false};say("😬","That's Ms. Okafor's "+b.n+"! Put it back right away.",P.x,2.4,P.z);try{BUBW.t=performance.now()}catch(_){}}}
+const _int14=interactions;interactions=function(){const L=_int14();if(AREA!=="school"||QG)return L;
+  if(DH)return [{type:"deskitem",x:P.x,z:P.z,r:9,label:"Press E to put Ms. Okafor's "+DH.it.n+" back"}].concat(L);
+  for(const it of DESKI)if(Math.hypot(P.x-it.home.x,P.z-(it.home.z+ROOMS.school.cz))<1.6)return [{type:"deskitem",x:P.x,z:P.z,r:9,label:"Press E to pick up the "+it.n+" on Ms. Okafor's desk"}].concat(L);return L};
+const _try14=tryDoor;tryDoor=function(){const d=nearDoor;if(d&&d.type==="deskitem")return deskE();_try14()};
+const _ug14=updateGame;updateGame=function(dt,now){_ug14(dt,now);if(!DH)return;
+  if(AREA!=="school"){DH.it.m.position.copy(DH.it.home);if(!DH.pen)xpMsg("🚫 You walked off with a teacher's things! -10 XP",-10);DH=null;return}
+  DH.it.m.position.set(P.x+.35,P.fy+1.1,P.z-ROOMS.school.cz);if(!DH.pen&&now-DH.t>4000){DH.pen=true;xpMsg("🚫 Never take things from a teacher's desk! -10 XP",-10)}};
+/* 15. MORE INTERACTIVES across the Universe.
+   CARRY: pick up with E, bring to the right spot, E again. TAP: press E for a reaction (some pay a one-time XP find). */
+const CARRY=[],TAPS=[];let CH=null;const ONCE=new Set(JSON.parse(localStorage.getItem("lu3d_once")||"[]"));
+const roomOf=a=>a==="street"?{g:S,cx:0,cz:0}:{g:ROOMS[a].g,cx:ROOMS[a].cx||0,cz:ROOMS[a].cz};
+function mkCarry(area,mesh,x,y,z,o){const R=roomOf(area);mesh.position.set(x,y,z);R.g.add(mesh);CARRY.push(Object.assign({area,m:mesh,R,home:new T.Vector3(x,y,z),state:"home"},o))}
+function mkTap(area,x,z,label,fn,r=1.5){const R=roomOf(area);TAPS.push({area,x:R.cx+x,z:R.cz+z,label,fn,r})}
+function onceXP(id,xp,msg){if(ONCE.has(id))return false;ONCE.add(id);localStorage.setItem("lu3d_once",JSON.stringify([...ONCE]));xpMsg(msg,xp);try{confetti(P.x,P.fy+1.6,P.z)}catch(_){}return true}
+const bub=(e,t)=>{say(e,t,P.x,2.4,P.z);try{BUBW.t=performance.now()}catch(_){}};
+/* --- STREET: litter clean-up (+5 XP each into a trash can), mailbox, hydrant, hidden coin under a bench --- */
+const CANS=[[-12,6.4],[12,-6.4],[34,6.4],[-34,-6.4]];CANS.forEach(([x,z])=>{box(S,.8,1.1,.8,M(0x2f6b3a),x,.55,z);box(S,.9,.08,.9,M(0x1f4a28),x,1.12,z,0);sign(S,"♻ TRASH",x,1.35,z+(z>0?-.46:.46),.8,.22,"#1f4a28","#fff",z>0?Math.PI:0)});
+[[-20,5.8],[-5,-6],[6,6.1],[22,-5.9],[40,5.9],[-40,-6.1]].forEach(([x,z],k)=>{const m=k%2?new T.Mesh(new T.CylinderGeometry(.07,.07,.22,10),M(0xc0392b,{metalness:.6})):new T.Mesh(new T.BoxGeometry(.28,.04,.2),M(0xf1c40f));if(k%2)m.rotation.z=Math.PI/2;
+  mkCarry("street",m,x,.1,z,{name:k%2?"soda can":"snack wrapper",targets:CANS.map(([a,b])=>({x:a,z:b,r:1.7})),tlabel:"trash can",done:c=>{c.R.g.remove(c.m);c.state="gone";xpMsg("♻ Great citizen! You cleaned up the street. +5 XP",5)}})});
+box(S,.7,1.2,.6,M(0x1f4aa8),-26,.6,-6.6);sign(S,"US MAIL",-26,1.05,-6.28,.6,.18,"#1f4aa8","#fff");
+mkTap("street",-26,-5.8,"Press E to mail a letter",()=>bub("📬","Letter mailed to Grandma! Fun fact: a stamp costs about 78¢."));
+mkTap("street",-12,-6.2,"Press E to check under the bench",()=>{if(!onceXP("bench",10,"🪙 You found a lucky coin under the bench! +10 XP"))bub("🪑","Nothing else under here.")});
+/* --- ARCADE: every cabinet reacts; one has a token stuck in the coin return (+10 XP once) --- */
+for(let i=0;i<6;i++)[-1,1].forEach(sd=>{const id="cab"+i+(sd>0?"R":"L"),x=sd*(RW/2-2),z=-5+i*1.9;
+  mkTap("arcade",x,z,"Press E to play this arcade game",()=>{if(id==="cab3L"&&onceXP(id,10,"🎟️ A token was stuck in the coin return! +10 XP"))return;const g=["Beep boop! High score: 4 × 25 = 100","Game over! Try again: 7 × 8 = 56","You got 3 times as many points as last time!","Insert token... the screen shows 12 ÷ 4 = 3"];bub("🕹️",g[(i+(sd>0?2:0))%4])},1.3)});
+/* --- APARTMENT (home): pick up toys into the toy box (+5 XP each), fridge with a snack, lamp switch, couch cushion coin --- */
+{const A=ROOMS.apartment,g=A.g;box(g,1.4,.7,.9,M(0xffb52e),-6.5,.35,1.8);sign(g,"TOYS",-6.5,.55,2.26,.8,.25,"#c8102e","#fff");
+ [[-2,.5],[-4.2,-.2],[-1.5,-1.8],[1,0.6]].forEach(([x,z],k)=>{const m=k%2?new T.Mesh(new T.SphereGeometry(.15,14,10),M([0xe23b3b,0x3d7be0][k>>1])):new T.Mesh(new T.BoxGeometry(.25,.25,.25),M([0x6dff6b,0xffd23f][k>>1]));
+   mkCarry("apartment",m,x,.15,z,{name:k%2?"toy ball":"toy block",targets:[{x:-6.5,z:A.cz+1.8,r:1.8}],tlabel:"toy box",done:c=>{c.R.g.remove(c.m);c.state="gone";xpMsg("🧸 Room cleaned! Chores done. +5 XP",5)}})});
+ box(g,1.3,2.4,1.1,M(0xe8eef2),6.6,1.2,2.5);const pv=new T.Group();pv.position.set(6.6-.65,0,2.5+.56);g.add(pv);box(pv,1.3,2.38,.06,M(0xf5f8fa),.65,1.2,0,0);box(pv,.06,.5,.06,M(0x999999),1.15,1.4,.05,0);
+ const milk=new T.Mesh(new T.BoxGeometry(.2,.35,.2),M(0xffffff));milk.position.set(6.6,1.2,2.5);g.add(milk);
+ regOpen({id:"fridge",name:"fridge",parent:g,pv,axis:"y",openTo:-1.7,ux:6.6,uz:A.cz+3.9,locked:false,area:"apartment"});
+ const lampL=new T.PointLight(0xffd59a,0,9);lampL.position.set(-6,2,-5);g.add(lampL);box(g,.1,1.8,.1,M(0x333333),-6.5,.9,-5.5);const shade=box(g,.7,.5,.7,M(0xfff3c4,{emissive:0xffd59a,emissiveIntensity:0}),-6.5,2,-5.5,0);
+ mkTap("apartment",-6.5,-4.6,"Press E to switch the lamp on/off",()=>{const on=lampL.intensity===0;lampL.intensity=on?25:0;shade.material.emissiveIntensity=on?1.2:0;bub("💡",on?"Lamp on!":"Lamp off. Saving energy!")});
+ mkTap("apartment",-3,-2.4,"Press E to look under the couch cushions",()=>{if(!onceXP("couch",10,"🛋️ You found coins in the couch! +10 XP"))bub("🛋️","Just crumbs now.")})}
+/* --- CLOTHING STORE: try on clothes, but walking out with a shirt you didn't buy costs 10 XP --- */
+{const C=ROOMS.clothing;for(let rk=0;rk<4;rk++){const x=-6+rk*4,m=new T.Mesh(new T.BoxGeometry(.4,1,.12),M([0xe23b3b,0xffd23f,0x2a9d8f,0x3d5af1][rk]));
+  mkCarry("clothing",m,x+1.6,1.15,-.9,{name:"shirt",targets:[{x:x+1.6,z:C.cz-.9,r:1.8}],tlabel:"rack",steal:true,done:c=>{c.m.position.copy(c.home);c.state="home";bub("👕","Back on the rack. Nice and neat!")}})}
+ mkTap("clothing",-6,2.2,"Press E to look in the mirror",()=>bub("🪞","Looking sharp! Keep leveling up."),1.4)}
+/* --- GYM: shoot a basketball (E) --- */
+if(ROOMS.gym)mkTap("gym",0,2,"Press E to shoot a free throw",()=>{const ok=Math.random()<.6;bub("🏀",ok?"Swish! 2 points. Shoot 3 more and you'll have 4 × 2 = 8!":"Clank! Off the rim. Try again!")},3);
+/* shared logic */
+function nearCarry(){let b=null,bd=1.3;for(const c of CARRY){if(c.area!==AREA||c.state==="gone"||c.state==="held")continue;const p=c.m.position,d=Math.hypot(P.x-(c.R.cx+p.x),P.z-(c.R.cz+p.z));if(d<bd){bd=d;b=c}}return b}
+const atTarget=c=>c.targets.find(t=>Math.hypot(P.x-t.x,P.z-t.z)<t.r);
+function nearTap(){let b=null,bd=9;for(const t of TAPS){if(t.area!==AREA)continue;const d=Math.hypot(P.x-t.x,P.z-t.z);if(d<t.r&&d<bd){bd=d;b=t}}return b}
+const _int15=interactions;interactions=function(){const L=_int15();if(QG||HELD||DH)return L;
+  if(CH)return [{type:"carry",x:P.x,z:P.z,r:9,label:atTarget(CH)?"Press E to put the "+CH.name+" in the "+CH.tlabel:"Carrying a "+CH.name+" — find the "+CH.tlabel+" (E to set it down)"}].concat(L);
+  const c=nearCarry();if(c)return [{type:"carry",c,x:P.x,z:P.z,r:9,label:"Press E to pick up the "+c.name}].concat(L);
+  const t=nearTap();if(t)return [{type:"tap",t,x:P.x,z:P.z,r:9,label:t.label}].concat(L);return L};
+const _try15=tryDoor;tryDoor=function(){const d=nearDoor;if(d&&d.type==="tap")return d.t.fn();
+  if(d&&d.type==="carry"){if(CH){const c=CH;CH=null;if(atTarget(c))return c.done(c);c.m.position.set(P.x-c.R.cx,.12,P.z-c.R.cz);c.state="down";return}CH=d.c;CH.state="held";if(CH.steal)bub("👕","Trying it on? Put it back on the rack before you leave!");return}_try15()};
+const _ug15=updateGame;updateGame=function(dt,now){_ug15(dt,now);if(!CH)return;
+  if(AREA!==CH.area){const c=CH;CH=null;c.m.position.copy(c.home);c.state="home";if(c.steal)xpMsg("🚫 You left the store with a shirt you didn't pay for! -10 XP",-10);else c.m.position.copy(c.home);return}
+  CH.m.position.set(P.x+.35-CH.R.cx,P.fy+1.1,P.z-CH.R.cz)};

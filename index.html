@@ -1101,7 +1101,7 @@ function v2init(){S.log=S.log||[];S.badges=S.badges||{};S.cards=S.cards||{};S.ar
 function logA(o){S.log.push(Object.assign({d:today(),t:Date.now()},o));if(S.log.length>600)S.log.splice(0,S.log.length-600)}
 function award(xp,coins,src){const d=today();if(S.cap.d!==d)S.cap={d,xp:0,coins:0};
  const capped=src!=="mission";let gx=xp,gc=coins;if(capped){gx=Math.max(0,Math.min(xp,90-S.cap.xp));gc=Math.max(0,Math.min(coins,30-S.cap.coins));S.cap.xp+=gx;S.cap.coins+=gc}
- const lb=levelOf(S.xp);S.xp+=gx;S.coins+=gc;const la=levelOf(S.xp);save();if(la>lb){sfx("level");toast(`🎉 Level up! You're now Level ${la}.`)}
+ const lb=levelOf(S.xp);S.xp=Math.max(0,S.xp+gx);S.coins+=gc;const la=levelOf(S.xp);save();if(la>lb){sfx("level");toast(`🎉 Level up! You're now Level ${la}.`)}
  if($("#s-map").classList.contains("active"))hud();return{xp:gx,coins:gc,lvUp:la>lb}}
 
 /* ---- skills / mastery ---- */

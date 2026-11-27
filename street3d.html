@@ -139,7 +139,7 @@ document.addEventListener("pointerlockchange",()=>{locked=document.pointerLockEl
 document.addEventListener("mousemove",e=>{if(!locked)return;camYaw-=e.movementX*.0032;camPitch=Math.max(-1.25,Math.min(1.45,camPitch+e.movementY*.0032))});
 /* ---------- doors ---------- */
 const PR=document.getElementById("prompt");let nearDoor=null;
-function tryDoor(){if(!nearDoor)return;const d=nearDoor;if(d.type==="door")enterRoom(d.kind);else if(d.type==="exit")leaveRoom();else if(d.type==="game")startGame(d.npc,d.indoor,d.kinds,d.src);else if(d.type==="pad")answer(QG.nearPad);else if(d.type==="none"){}else if(d.type==="station"&&d.id==="school"){startGame("Ms. Okafor",true,["books","apples","pencils","marbles"],[1,2,4])}else if(d.type==="station"&&(d.id==="shop"||d.id==="apt")){startGame("Theo",true,d.id==="shop"?["coins","tickets"]:["marbles","books"],"review")}else{try{parent.postMessage({lv3d:"door",id:d.id},"*")}catch(_){}}}
+function tryDoor(){if(!nearDoor)return;const d=nearDoor;if(d.type==="door")enterRoom(d.kind);else if(d.type==="exit")leaveRoom();else if(d.type==="game")startGame(d.npc,d.indoor,d.kinds,d.src);else if(d.type==="pad")answer(QG.nearPad);else if(d.type==="none"){}else if(d.type==="station"&&d.id==="school"){startGame("Ms. Okafor",true,["books","apples","pencils","marbles"],[1,2,4])}else if(d.type==="station"&&(d.id==="shop"||d.id==="apt"||d.id==="gym"||d.id==="cafe")){startGame("Theo",true,{shop:["coins","tickets"],apt:["marbles","books"],gym:["marbles"],cafe:["apples","hotdogs","pretzels"]}[d.id],"review")}else{try{parent.postMessage({lv3d:"door",id:d.id},"*")}catch(_){}}}
 function interactions(){if(QG){if(QG.phase==="ask"&&QG.nearPad)return [{type:"pad",x:P.x,z:P.z,r:9,label:"Press E to answer "+QG.nearPad.v}];if(QG.phase==="ask")return [{type:"none",x:P.x,z:P.z,r:9,label:QG.indoor?"Jump (Space) under the right answer block!":"Walk onto the right number pad, then press E"}];return []}
   const npcI=[];const mlab=ids=>{const pk=pickItem(ids);return pk?(pk.review?"Review round":"Mission "+pk.m.id+" · "+pk.m.title+" ("+(pk.idx+1)+"/"+pk.m.items.length+")"):""};
   if(AREA==="street"&&Math.hypot(P.x-MA.x,P.z-MA.z)<2.8)npcI.push({type:"game",npc:"Ms. Marcia",indoor:false,kinds:["coins","marbles"],src:[3,5],x:MA.x,z:MA.z,r:2.8,label:"Press E — Ms. Marcia needs help! "+mlab([3,5])});
@@ -160,7 +160,7 @@ function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(
   box(g,RW,RH,.4,wm,0,RH/2,-RD/2);box(g,.4,RH,RD,wm,-RW/2,RH/2,0);box(g,.4,RH,RD,wm,RW/2,RH/2,0);
   box(g,(RW-2.6)/2,RH,.4,wm,-(RW+2.6)/4,RH/2,RD/2);box(g,(RW-2.6)/2,RH,.4,wm,(RW+2.6)/4,RH/2,RD/2);box(g,2.6,RH-3,.4,wm,0,3+(RH-3)/2,RD/2);
   box(g,2.6,3,.1,M(0x3a6fd8,{emissive:0x1d3f8a,emissiveIntensity:.4}),0,1.5,RD/2+.3,0); // exit door glow
-  const mural={school:"img/lua_classroom.webp",arcade:"img/settings_arcade_bg_arcade_wide_interior.webp",clothing:"img/ls_ts_loc_clothing.webp",apartment:null}[kind];
+  const mural={arcade:"img/settings_arcade_bg_arcade_wide_interior.webp"}[kind]||null;
   if(mural){const t=TL.load(mural);t.colorSpace=T.SRGBColorSpace;const mp=new T.Mesh(new T.PlaneGeometry(RW-1,(RW-1)*.5625),new T.MeshBasicMaterial({map:t}));mp.position.set(0,RH/2,-RD/2+.22);if(kind!=="school"){mp.scale.set(.7,.7,1)}g.add(mp)}
   const L=new T.PointLight(kind==="arcade"?0xc28bff:0xfff1d8,kind==="arcade"?60:45,30);L.position.set(0,RH-.4,0);g.add(L);
   const ST=[];const st=(x,z,label,id)=>ST.push({x:cx+x,z:cz+z,label,id});
@@ -179,7 +179,7 @@ function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(
     box(g,4,1.1,1.2,M(0x1f7a72),0,.55,-5.3);[-6,6].forEach(x=>{box(g,.9,.15,.9,M(0xdddddd),x,1.6,3,0);box(g,.6,1.4,.6,M(0xf0d0b0),x,.7,3)});
     st(0,-4.2,"shop: spend City Coins","shop")}
   if(kind==="apartment"){box(g,4,.9,1.6,M(0x3d6fb0),-3,.45,-3);box(g,4,1,.5,M(0x3d6fb0),-3,1,-3.8);box(g,2.4,.5,1.2,M(0x7a4a2a),-3,.25,-.8);
-    box(g,3.6,2,.15,M(0x111111),-3,2.2,-RD/2+.35,0);box(g,3.4,1.8,.05,M(0x2a6bff,{emissive:0x2a6bff,emissiveIntensity:.5}),-3,2.2,-RD/2+.45,0);
+    
     box(g,2.6,.6,4,M(0xe8e0d0),5.5,.3,-4.5);box(g,2.6,1.2,.3,M(0x7a4a2a),5.5,.6,-6.6);const rug=new T.Mesh(new T.CircleGeometry(2.2,32),M(0xd96a3b));rug.rotation.x=-Math.PI/2;rug.position.set(-3,.01,-1);g.add(rug);
     st(-3,0,"check your outfit & progress","apt")}
   ROOMS[kind]={cx,cz,ST,g,light:L,exit:{x:cx,z:cz+RD/2-.9}}}
