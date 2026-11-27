@@ -283,6 +283,7 @@ const CAT=[
  {id:"hoodie",name:"Classic NYC Hoodie",price:50,lvl:1,slot:"top",kind:"wear"},
  {id:"jacket",name:"NYC Varsity Jacket",price:150,lvl:3,slot:"top",kind:"wear"},
  {id:"sneak",name:"Red Sneakers",price:75,lvl:1,slot:"shoes",kind:"wear"},
+ {id:"timbs",name:"Timberland Boots (XP upgrade)",price:150,cur:"xp",lvl:2,slot:"shoes",kind:"wear"},
  {id:"cap",name:"Baseball Cap",price:60,lvl:2,slot:"hat",kind:"wear"},
  {id:"glasses",name:"Star Glasses",price:75,lvl:2,slot:"glasses",kind:"wear"},
  {id:"pack1",name:"School Backpack",price:50,lvl:1,slot:"pack",kind:"wear"},
@@ -312,6 +313,7 @@ function lookFor(av,eq){
   if(eq.top==="hoodie"){L.top="#1d2b64";L.topStyle="hoodie"}
   if(eq.top==="jacket"){L.top="#6a2fb0";L.topStyle="jacket"}
   if(eq.shoes==="sneak")L.shoes="#e8452c";
+  if(eq.shoes==="timbs")L.shoes="#c8923c";
   if(eq.hat==="cap")L.hat="#e8452c";
   if(eq.glasses==="glasses")L.glasses=true;
   if(eq.pack==="pack1")L.pack="#1fb6a6";
@@ -824,22 +826,23 @@ function drawDecor(c,id,s){
   if(id==="lamp"){c.fillStyle="#444";c.fillRect(-4,-10,8,70);c.fillRect(-26,58,52,8);c.fillStyle="#ff3df2";c.shadowColor="#ff3df2";c.shadowBlur=18;c.beginPath();c.moveTo(-36,-10);c.lineTo(36,-10);c.lineTo(20,-60);c.lineTo(-20,-60);c.closePath();c.fill();c.shadowBlur=0}
   if(id==="chair"){c.fillStyle="#222";rr(c,-34,-70,68,70,14);c.fill();c.fillStyle="#e8452c";rr(c,-26,-62,52,54,10);c.fill();c.fillStyle="#222";rr(c,-40,-10,80,24,8);c.fill();c.fillRect(-4,14,8,36);c.fillRect(-34,48,68,8)}
 }
+const isXP=it=>it.cur==="xp",bal=it=>isXP(it)?S.xp:S.coins,cur=it=>isXP(it)?"⭐":"🪙";
 function openShop(sel){BANNER="ls_ts_loc_clothing";
   const L=levelOf(S.xp);
   const list=CAT.map(it=>{
     const own=S.owned.includes(it.id),lock=L<it.lvl,eqd=S.eq[it.slot]===it.id;
-    const st=own?(eqd?"Equipped":"Owned"):lock?`🔒 Level ${it.lvl}`:S.coins>=it.price?"Ready to buy":"Need more coins";
-    return `<div class="item ${sel===it.id?"sel":""}"><canvas width="110" height="120" data-icon="${it.id}"></canvas><b>${it.name}</b><span class="small">${own?"":`🪙 ${it.price} · `}${st}</span><button class="btn alt sm" data-act="preview" data-id="${it.id}">👀 Preview</button></div>`}).join("");
+    const st=own?(eqd?"Equipped":"Owned"):lock?`🔒 Level ${it.lvl}`:bal(it)>=it.price?"Ready to buy":(isXP(it)?"Need more XP":"Need more coins");
+    return `<div class="item ${sel===it.id?"sel":""}"><canvas width="110" height="120" data-icon="${it.id}"></canvas><b>${it.name}</b><span class="small">${own?"":`${cur(it)} ${it.price}${isXP(it)?" XP":""} · `}${st}</span><button class="btn alt sm" data-act="preview" data-id="${it.id}">👀 Preview</button></div>`}).join("");
   const it=sel?cat(sel):null;
   let side=`<div class="small">Tap Preview on any item to try it on.</div>`;
   if(it){
     const own=S.owned.includes(it.id),lock=L<it.lvl,eqd=S.eq[it.slot]===it.id;
     let btns="";
-    if(CONF===it.id)btns=`<div class="fb try">Spend 🪙 ${it.price} on <b>${it.name}</b>?</div><div class="ans"><button class="btn good" data-act="buyyes" data-id="${it.id}">Yes, buy it</button><button class="btn alt" data-act="buyno" data-id="${it.id}">Not now</button></div>`;
+    if(CONF===it.id)btns=`<div class="fb try">Spend ${cur(it)} ${it.price}${isXP(it)?" XP":""} on <b>${it.name}</b>?</div><div class="ans"><button class="btn good" data-act="buyyes" data-id="${it.id}">Yes, buy it</button><button class="btn alt" data-act="buyno" data-id="${it.id}">Not now</button></div>`;
     else if(own)btns=`<button class="btn" data-act="equip" data-id="${it.id}">${eqd?"Take off":(it.kind==="wear"?"Wear it":"Put in my room")}</button>`;
     else if(lock)btns=`<div class="fb show">🔒 Reach Level ${it.lvl} to unlock. You're Level ${L}.</div>`;
-    else if(S.coins<it.price)btns=`<div class="fb show">You need ${it.price-S.coins} more City Coins. Missions earn coins!</div>`;
-    else btns=`<button class="btn good" data-act="buy" data-id="${it.id}">Buy for 🪙 ${it.price}</button>`;
+    else if(bal(it)<it.price)btns=`<div class="fb show">You need ${it.price-bal(it)} more ${isXP(it)?"XP. Missions and good deeds earn XP!":"City Coins. Missions earn coins!"}</div>`;
+    else btns=`<button class="btn good" data-act="buy" data-id="${it.id}">${isXP(it)?"Trade":"Buy for"} ${cur(it)} ${it.price}${isXP(it)?" XP":""}</button>`;
     side=`<b>${it.name}</b><div class="small">${it.kind==="decor"?"Room decoration":"Avatar item"} · Level ${it.lvl}</div>${btns}`;
   }
   openModal(`<div class="phead"><h2>🛍️ Mr. Sal's Clothing Store</h2><button class="btn alt sm" data-act="closem">✕ Back to the city</button></div>
@@ -1035,8 +1038,8 @@ const ACT={
  preview(d){PV=d.id;CONF=null;openShop(PV)},
  buy(d){CONF=d.id;openShop(d.id)},
  buyno(d){CONF=null;openShop(d.id)},
- buyyes(d){const it=cat(d.id);if(S.coins<it.price||levelOf(S.xp)<it.lvl||S.owned.includes(it.id)){CONF=null;openShop(d.id);return}
-  S.coins-=it.price;S.owned.push(it.id);S.eq[it.slot]=it.id;save();CONF=null;toast(`You bought ${it.name}! 🎉`);openShop(d.id)},
+ buyyes(d){const it=cat(d.id);if(bal(it)<it.price||levelOf(S.xp)<it.lvl||S.owned.includes(it.id)){CONF=null;openShop(d.id);return}
+  if(isXP(it))S.xp-=it.price;else S.coins-=it.price;S.owned.push(it.id);S.eq[it.slot]=it.id;save();CONF=null;toast(`You bought ${it.name}! 🎉`);openShop(d.id)},
  equip(d){equipItem(d.id);openShop(d.id)},
  equip2(d){equipItem(d.id);openApt()}
 };
