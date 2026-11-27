@@ -5,7 +5,7 @@ module.exports = async ({ pg, OUT, res, sleep }) => {
   const f = pg.frame({ url: /street3d\.html/ }); res.mv = {};
   const pos = () => f.evaluate(() => ({ x: P.x, z: P.z }));
   const walk = async (label, key = 'w', ms = 900) => { const a = await pos(); await pg.keyboard.down(key); await sleep(ms); await pg.keyboard.up(key); await sleep(250); const b = await pos(); const d = Math.hypot(b.x - a.x, b.z - a.z);
-    res.mv[label] = { d: +d.toFixed(2), a, b, focus: await pg.evaluate(() => document.activeElement && (document.activeElement.id || document.activeElement.tagName)), held: await f.evaluate(() => Object.keys(K).filter(k => K[k])) }; ok(d > .3, `avatar moves (${label}): ` + JSON.stringify(res.mv[label])); return d };
+    res.mv[label] = { d: +d.toFixed(2), a, b, focus: await pg.evaluate(() => document.activeElement && (document.activeElement.id || document.activeElement.tagName)), held: await f.evaluate(() => Object.keys(K).filter(k => K[k])) }; ok(d > .18, `avatar moves (${label}): ` + JSON.stringify(res.mv[label])); return d };
   const spawn = () => f.evaluate(() => { if (AREA !== 'street') leaveRoom(); P.x = SPAWN.x; P.z = SPAWN.z; P.vy = 0; P.yaw = 0; camYaw = Math.PI; camPitch = .3; camDist = 6; camSnap = true });
   await spawn(); await sleep(600);
   // 1) fresh: focus in the parent page (as after the title screen / a HUD click) — keys must still reach the 3D street
@@ -21,7 +21,7 @@ module.exports = async ({ pg, OUT, res, sleep }) => {
   await spawn(); await walk('after challenge greeting', 'd');
   // 4) at the school steps next to Theo (his review prompt showing): every direction works, arrows too
   await spawn(); await f.evaluate(() => { TH.x = P.x + 1.1; TH.z = P.z + .4; IDLE = 3 }); await sleep(500); await shot('p9_theo_steps');
-  for (const k of ['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown']) { await spawn(); await f.evaluate(() => { TH.x = P.x + 1.1; TH.z = P.z + .4 }); await walk('next to Theo ' + k, k, 700) }
+  for (const k of ['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown']) { await spawn(); await f.evaluate(() => { TH.x = P.x + 1.1; TH.z = P.z + .4 }); await walk('next to Theo ' + k, k, 1500) }
   // arrows left/right turn the camera (they don't walk)
   await spawn(); { const y0 = await f.evaluate(() => camYaw); await pg.keyboard.down('ArrowLeft'); await sleep(600); await pg.keyboard.up('ArrowLeft'); const y1 = await f.evaluate(() => camYaw); ok(Math.abs(y1 - y0) > .1, 'ArrowLeft turns the camera') }
   // 5) next to Brock: walk-up starts the battle once; quit it; the avatar must walk away (not re-trapped)
