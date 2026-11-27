@@ -553,10 +553,10 @@ function onceXP(id,xp,msg){if(ONCE.has(id))return false;objShot(new T.Vector3(P.
 const bub=(e,t)=>{say(e,t,P.x,2.4,P.z);try{BUBW.t=performance.now()}catch(_){}};
 /* --- STREET: litter clean-up (+5 XP each into a trash can), mailbox, hydrant, hidden coin under a bench --- */
 const CANS=[[-12,6.4],[12,-6.4],[34,6.4],[-34,-6.4]];CANS.forEach(([x,z])=>{box(S,.8,1.1,.8,M(0x2f6b3a),x,.55,z);box(S,.9,.08,.9,M(0x1f4a28),x,1.12,z,0);sign(S,"♻ TRASH",x,1.35,z+(z>0?-.46:.46),.8,.22,"#1f4a28","#fff",z>0?Math.PI:0)});
-[[-20,5.8],[-5,-6],[6,6.1],[22,-5.9],[40,5.9],[-40,-6.1]].forEach(([x,z],k)=>{const m=k%2?new T.Mesh(new T.CylinderGeometry(.07,.07,.22,10),M(0xc0392b,{metalness:.6})):new T.Mesh(new T.BoxGeometry(.28,.04,.2),M(0xf1c40f));if(k%2)m.rotation.z=Math.PI/2;
+[[-20,5.8],[-8,-6],[6,6.1],[22,5.9],[40,5.9],[-40,6.1]].forEach(([x,z],k)=>{const m=k%2?new T.Mesh(new T.CylinderGeometry(.07,.07,.22,10),M(0xc0392b,{metalness:.6})):new T.Mesh(new T.BoxGeometry(.28,.04,.2),M(0xf1c40f));if(k%2)m.rotation.z=Math.PI/2;
   mkCarry("street",m,x,.1,z,{name:k%2?"soda can":"snack wrapper",targets:CANS.map(([a,b])=>({x:a,z:b,r:1.7})),tlabel:"trash can",done:c=>{c.R.g.remove(c.m);c.state="gone";if(!window._lit){window._lit=1;theoSays("You picked up trash? That's what real heroes do!")}xpMsg("♻ Great citizen! You cleaned up the street. +5 XP",5)}})});
-box(S,.7,1.2,.6,M(0x1f4aa8),-26,.6,-6.6);sign(S,"US MAIL",-26,1.05,-6.28,.6,.18,"#1f4aa8","#fff");
-mkTap("street",-26,-5.8,"Press E to mail a letter",()=>bub("📬","Letter mailed to Grandma! Fun fact: a stamp costs about 78¢."));
+box(S,.7,1.2,.6,M(0x1f4aa8),-26,.6,6.6);sign(S,"US MAIL",-26,1.05,6.28,.6,.18,"#1f4aa8","#fff",Math.PI);
+mkTap("street",-26,5.8,"Press E to mail a letter",()=>bub("📬","Letter mailed to Grandma! Fun fact: a stamp costs about 78¢."));
 mkTap("street",-12,-6.2,"Press E to check under the bench",()=>{if(!onceXP("bench",10,"🪙 You found a lucky coin under the bench! +10 XP"))bub("🪑","Nothing else under here.")});
 /* --- ARCADE: every cabinet reacts; one has a token stuck in the coin return (+10 XP once) --- */
 for(let i=0;i<6;i++)[-1,1].forEach(sd=>{const id="cab"+i+(sd>0?"R":"L"),x=sd*(RW/2-2),z=-5+i*1.9;
@@ -583,6 +583,8 @@ const atTarget=c=>c.targets.find(t=>Math.hypot(P.x-t.x,P.z-t.z)<t.r);
 function nearTap(){let b=null,bd=9;for(const t of TAPS){if(t.area!==AREA)continue;const d=Math.hypot(P.x-t.x,P.z-t.z);if(d<t.r&&d<bd){bd=d;b=t}}return b}
 const _int15=interactions;interactions=function(){const L=_int15();if(QG||HELD||DH)return L;
   if(CH)return [{type:"carry",x:P.x,z:P.z,r:9,label:atTarget(CH)?"Press E to put the "+CH.name+" in the "+CH.tlabel:"Carrying a "+CH.name+" — find the "+CH.tlabel+" (E to set it down)"}].concat(L);
+  // Don't let street/room props (mailbox, litter, cabinets) steal E from Brock, NPCs, or doors already in range.
+  if(L.some(d=>d.type==="brock"||d.type==="talk"||d.type==="game"||d.type==="station"||d.type==="door"||d.type==="boss"))return L;
   const c=nearCarry();if(c)return [{type:"carry",c,x:P.x,z:P.z,r:9,label:"Press E to pick up the "+c.name}].concat(L);
   const t=nearTap();if(t)return [{type:"tap",t,x:P.x,z:P.z,r:9,label:t.label}].concat(L);return L};
 const _try15=tryDoor;tryDoor=function(){const d=nearDoor;if(d&&d.type==="tap")return d.t.fn();
