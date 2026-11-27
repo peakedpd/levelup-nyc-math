@@ -146,7 +146,7 @@ function interactions(){if(QG){if(QG.phase==="ask"&&QG.nearPad)return [{type:"pa
   const npcI=[];const mlab=ids=>{const pk=pickItem(ids);return pk?(pk.review?"Review round":"Mission "+pk.m.id+" · "+pk.m.title+" ("+(pk.idx+1)+"/"+pk.m.items.length+")"):""};
   if(AREA==="street"&&Math.hypot(P.x-MA.x,P.z-MA.z)<2.8)npcI.push({type:"game",npc:"Ms. Marcia",indoor:false,kinds:["coins","marbles"],src:[3,5],x:MA.x,z:MA.z,r:2.8,label:"Press E — Ms. Marcia needs help! "+mlab([3,5])});
   if(AREA==="street"&&IDLE>1.2&&Math.hypot(P.x-TH.x,P.z-TH.z)<2.6)npcI.push({type:"game",npc:"Theo",indoor:false,kinds:["marbles","coins"],src:"review",x:TH.x,z:TH.z,r:2.6,label:"Press E — Theo has a review challenge for you!"});
-  if(AREA==="arcade"&&Math.hypot(P.x-ROOMS.arcade.cx,P.z-(ROOMS.arcade.cz+1.2))<2.6)npcI.push({type:"game",npc:"Theo",indoor:true,kinds:["tickets","tokens"],src:"review",x:ROOMS.arcade.cx,z:ROOMS.arcade.cz+1.2,r:2.6,label:"Press E to play Ticket Blaster!"});
+  if(AREA==="arcade"&&Math.hypot(P.x-(ROOMS.arcade.cx+3.9),P.z-(ROOMS.arcade.cz+5.25))<2.6)npcI.push({type:"game",npc:"Theo",indoor:true,kinds:["tickets","tokens"],src:"review",x:ROOMS.arcade.cx+3.9,z:ROOMS.arcade.cz+5.25,r:2.6,label:"Press E to play Ticket Blaster!"});
   if(npcI.length&&AREA!=="street")return npcI;
   if(AREA==="street")return [].concat(DOORS.map(d=>({type:"door",kind:d.kind,x:d.x,z:d.z,r:2.2,label:"Press E to go inside "+d.name})),npcI);const R0=ROOMS[AREA];return [{type:"exit",x:R0.exit.x,z:R0.exit.z,r:1.8,label:"Press E to go back outside"}].concat(R0.ST.map(s=>({type:"station",id:s.id,x:AREA==="school"?TCH.x:s.x,z:AREA==="school"?TCH.z:s.z,r:2.6,label:s.id==="school"?"Press E — Ms. Okafor: "+(pickItem([1,2,4])&&!pickItem([1,2,4]).review?"Mission "+pickItem([1,2,4]).m.id+" · "+pickItem([1,2,4]).m.title:"review round")+" · M for the mission list":s.id==="shop"||s.id==="apt"?"Press E for Theo's math game · M to "+s.label:"Press E to "+s.label+" · or walk to the green machine to play Ticket Blaster"})))}
 
@@ -155,26 +155,40 @@ const ROOMS={},RW=18,RD=16,RH=5.6;
 function M(c,o={}){return new T.MeshStandardMaterial(Object.assign({color:c,roughness:.8},o))}
 function box(g,w,h,d,mat,x,y,z,solid=1){const o=new T.Mesh(new T.BoxGeometry(w,h,d),mat);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;if(solid)o.userData.solid=1;g.add(o);return o}
 function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(cx,0,cz);S.add(g);
-  const wallC={school:0xf4e3b5,arcade:0x241640,clothing:0xf2efe8,apartment:0xe9c9a0}[kind],floorC={school:0xc8915a,arcade:0x2b1d52,clothing:0xd9d2c5,apartment:0x9b6a43}[kind];
+  const wallC={school:0xf4e3b5,arcade:0x14081e,clothing:0xf2efe8,apartment:0xe9c9a0}[kind],floorC={school:0xc8915a,arcade:0x1a1228,clothing:0xd9d2c5,apartment:0x9b6a43}[kind];
   const wm=M(wallC),fm=M(floorC,{roughness:.6});
   const fl=new T.Mesh(new T.PlaneGeometry(RW,RD),fm);fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;g.add(fl);
-  const ce=new T.Mesh(new T.PlaneGeometry(RW,RD),M(0xf8f4ec));ce.rotation.x=Math.PI/2;ce.position.y=RH;g.add(ce);
+  const ce=new T.Mesh(new T.PlaneGeometry(RW,RD),M(kind==="arcade"?0x0d0818:0xf8f4ec));ce.rotation.x=Math.PI/2;ce.position.y=RH;g.add(ce);
   box(g,RW,RH,.4,wm,0,RH/2,-RD/2);box(g,.4,RH,RD,wm,-RW/2,RH/2,0);box(g,.4,RH,RD,wm,RW/2,RH/2,0);
   box(g,(RW-2.6)/2,RH,.4,wm,-(RW+2.6)/4,RH/2,RD/2);box(g,(RW-2.6)/2,RH,.4,wm,(RW+2.6)/4,RH/2,RD/2);box(g,2.6,RH-3,.4,wm,0,3+(RH-3)/2,RD/2);
   box(g,2.6,3,.1,M(0x3a6fd8,{emissive:0x1d3f8a,emissiveIntensity:.4}),0,1.5,RD/2+.3,0); // exit door glow
-  const mural={arcade:"img/settings_arcade_bg_arcade_wide_interior.webp"}[kind]||null;
-  if(mural){const t=TL.load(mural);t.colorSpace=T.SRGBColorSpace;const mp=new T.Mesh(new T.PlaneGeometry(RW-1,(RW-1)*.5625),new T.MeshBasicMaterial({map:t}));mp.position.set(0,RH/2,-RD/2+.22);if(kind!=="school"){mp.scale.set(.7,.7,1)}g.add(mp)}
+  if(kind==="arcade"){const t=TL.load("tex/room_arcade.webp");t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;
+    const mw=RW-.3,mh=mw*1190/2560,mp=new T.Mesh(new T.PlaneGeometry(mw,mh),new T.MeshBasicMaterial({map:t,toneMapped:false}));
+    mp.position.set(0,RH-mh/2+.08,-RD/2+.24);g.add(mp);
+    /* purple neon cove lights, like John's Canva interior */
+    const nm=M(0xff2bc0,{emissive:0xc84bff,emissiveIntensity:2.4});
+    box(g,RW-.6,.07,.07,nm,0,RH-.06,-RD/2+.35,0);box(g,.07,.07,RD-.6,nm,-RW/2+.28,RH-.06,0,0);box(g,.07,.07,RD-.6,nm,RW/2-.28,RH-.06,0,0)}
   const L=new T.PointLight(kind==="arcade"?0xc28bff:0xfff1d8,kind==="arcade"?60:45,30);L.position.set(0,RH-.4,0);g.add(L);
   const ST=[];const st=(x,z,label,id)=>ST.push({x:cx+x,z:cz+z,label,id});
   if(kind==="school"){const desk=M(0xd8a86a),leg=M(0x555555),chair=M(0x3d7be0);
     for(let rr=0;rr<3;rr++)for(let c=0;c<4;c++){const x=-5.4+c*3.6,z=-1.5+rr*2.8;box(g,1.6,.08,1,desk,x,.78,z);box(g,1.5,.74,.9,M(0x8a6a44),x,.37,z);box(g,.6,.5,.6,chair,x,.25,z+.85);box(g,.6,.6,.08,chair,x,.8,z+1.12)}
     box(g,3.4,1,1.4,M(0x7a4a2a),0,.5,-5.2);box(g,6,2.4,.1,M(0xffffff),0,2.6,-RD/2+.3,0);
     st(3,-4.2,"talk to Ms. Okafor: today's missions","school")}
-  if(kind==="arcade"){const cab=[0xff3bd4,0x2bd9ff,0xffd23f,0x6dff6b,0xff6b3b];
-    for(let i=0;i<6;i++)[-1,1].forEach(sd=>{const x=sd*(RW/2-1.1),z=-5+i*1.9,cl=cab[(i+(sd>0?2:0))%5];const c=box(g,1.1,2.3,1,M(0x1a1030),x,1.15,z);box(g,.05,.8,.8,M(cl,{emissive:cl,emissiveIntensity:1.4}),x-sd*.56,1.6,z,0)});
-    box(g,8,1.1,1.2,M(0xffd23f),0,.55,-4.6);[-3.4,-2.7,2.7,3.4].forEach((x,k)=>box(g,.42,.42,.42,M(cab[k%5],{emissive:cab[k%5],emissiveIntensity:.3}),x,1.31,-4.6,0));
-    box(g,3,2.2,1.4,M(0x5b2bd0),0,1.1,1.2);box(g,2.6,.05,1.1,M(0x22ff88,{emissive:0x22ff88,emissiveIntensity:.8}),0,2.25,1.2,0);
-    st(0,-3.5,"Prize Counter & Ticket Rush","arcade")}
+  if(kind==="arcade"){
+    /* John's Canva redesign (DAHbrDGkWtg): named cabinets, air hockey, foosball, pinball. Prize counter moves to the entrance so the back wall can show his art. */
+    const cabBody=M(0x2a1838,{roughness:.55}),marq=(c)=>M(c,{emissive:c,emissiveIntensity:1.4});
+    const cabAt=(x,z,face,color,h=2.25)=>{const s=Math.sign(face||1);box(g,1.05,h,1.15,cabBody,x,h/2,z);box(g,.08,.22,.95,marq(color),x+s*.55,h-.16,z,0);box(g,.04,.72,.62,M(0x0a0812,{emissive:color,emissiveIntensity:.28}),x+s*.54,h*.58,z,0);box(g,.38,.08,.95,M(0x1a1024),x+s*.32,.82,z);return {x,z}};
+    cabAt(-7.55,-4.2,1,0xff2bd4);cabAt(-7.55,-2.35,1,0xff9a1a);cabAt(-7.55,-.5,1,0x3d9bff);
+    cabAt(7.55,-3.4,-1,0xff5d1a,2.45);cabAt(7.55,-1.35,-1,0xff7ad9,2.55);
+    /* Galaxy Pins pinball — lower and longer, front right */
+    box(g,1.15,1.15,1.85,M(0x1a0a08),6.35,.58,3.15);box(g,1.05,.08,1.5,M(0xffc83d,{emissive:0xff7a00,emissiveIntensity:.8}),6.35,1.18,3.05,0);
+    /* foosball — front left */ box(g,1.9,.72,1.15,M(0x6b3a1f),-5.6,.36,3.35);[-.35,.35].forEach(z=>[-.6,0,.6].forEach(x=>box(g,.06,.28,.06,M(x<.0?0xc0392b:0x3d7be0),-5.6+x,.86,3.35+z,0)));
+    /* air hockey — mid floor, low so the back-wall mural stays visible */ box(g,1.55,.72,2.3,M(0x0d1a33),0,.36,-2.35);box(g,1.4,.04,2.1,M(0x2bd9ff,{emissive:0x2bd9ff,emissiveIntensity:.55}),0,.74,-2.35,0);
+    /* Ticket Blaster stays, moved to the entrance so it does not cover the new room art */
+    box(g,3,2.2,1.4,M(0x5b2bd0),3.9,1.1,5.25);box(g,2.6,.05,1.1,M(0x22ff88,{emissive:0x22ff88,emissiveIntensity:.8}),3.9,2.25,5.25,0);
+    /* prize counter body (art + worker are placed in w2c) */
+    box(g,1.3,1.05,3.4,M(0x5a3a22),-6.5,.52,5.15);
+    st(-6.5,5.15,"Prize Counter & Ticket Rush","arcade")}
   if(kind==="clothing"){const cl=[0xe23b3b,0xffd23f,0x2a9d8f,0x3d5af1,0xff8fb1];
     for(let rk=0;rk<4;rk++){const x=-6+rk*4;box(g,.08,1.8,.08,M(0x333333),x-1.3,.9,-1);box(g,.08,1.8,.08,M(0x333333),x+1.3,.9,-1);box(g,2.7,.06,.06,M(0x333333),x,1.75,-1);
       for(let k=0;k<5;k++)box(g,.4,1,.12,M(cl[(k+rk)%5]),x-1+k*.5,1.15,-1,0)}

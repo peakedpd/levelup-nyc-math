@@ -1,8 +1,8 @@
 /* ---------- 2. ARCADE WORKER + PRIZE CORNER (art from John's 03_Assets: Arcade Worker.png, bg_arcade_prize_counter.jpg) ---------- */
-const AR=ROOMS.arcade,WK={x:AR.cx,z:AR.cz-5.9};
-{const pt=TL.load("tex/prize_counter.webp");pt.colorSpace=T.SRGBColorSpace;const pm=new T.Mesh(new T.PlaneGeometry(11.6,6.5),new T.MeshBasicMaterial({map:pt,toneMapped:false}));pm.position.set(0,3.1,-RD/2+.26);AR.g.add(pm);
-  const gc=new T.Mesh(new T.BoxGeometry(7.6,.9,1),new T.MeshStandardMaterial({color:0x99ddff,transparent:true,opacity:.18,roughness:.05}));gc.position.set(0,1.6,-4.6);AR.g.add(gc);
-  sign(AR.g,"PRIZE CORNER · TRADE TICKETS",0,.62,-3.98,7.6,.5);sign(AR.g,"TICKET BLASTER",0,2.85,1.95,2.8,.55,"#22ff88","#14123a")}
+const AR=ROOMS.arcade,WK={x:AR.cx-6.2,z:AR.cz+5.15};
+{const pt=TL.load("tex/prize_counter.webp");pt.colorSpace=T.SRGBColorSpace;const pm=new T.Mesh(new T.PlaneGeometry(5.4,3.05),new T.MeshBasicMaterial({map:pt,toneMapped:false}));
+  pm.position.set(-RW/2+.24,1.85,5.15);pm.rotation.y=Math.PI/2;AR.g.add(pm);
+  sign(AR.g,"PRIZE CORNER · TRADE TICKETS",-6.5,1.25,3.35,3.2,.4);sign(AR.g,"TICKET BLASTER",3.9,2.85,5.95,2.8,.55,"#22ff88","#14123a")}
 W2.loadWorker=function(){if(W2.wkLoading)return;W2.wkLoading=true;const go=()=>loadChar(window.WORKER3D_URL,1.9).then(a=>{if(!a)return;ACT.worker=a;a.g.position.set(WK.x,0,WK.z);a.g.visible=AREA==="arcade"});
   go()};
 const TIX={get n(){return +(localStorage.getItem("lu3d_tickets")||0)},set n(v){localStorage.setItem("lu3d_tickets",String(Math.max(0,v|0)))}};
