@@ -93,7 +93,7 @@ jobs:
         run: TAG=ci_classroom HOOK=./p13classroom.js node test/play.js
       - name: Classroom 3D on a phone (390x844, touch)
         run: TAG=ci_classroom_phone W=390 H=844 TOUCH=1 HOOK=./p13classroom.js node test/play.js
-      - name: Meshy 3D characters e2e (12 heroes + Theo, Marcia, Okafor x2, Arcade Worker: rigged models, idle/talk/wave/cheer clips, feet on ground, no flat cards, close-ups frame the face)
+      - name: Meshy 3D characters e2e (12 heroes + Theo, Marcia, Okafor x2, Arcade Worker; rigged models, idle/talk/wave/cheer clips, feet on ground, no flat cards, close-ups frame the face)
         run: TAG=ci_chars3d HOOK=./p14chars.js node test/play.js
       - name: Meshy 3D characters on a phone (390x844, touch)
         run: TAG=ci_chars3d_phone W=390 H=844 TOUCH=1 HOOK=./p14chars.js node test/play.js
