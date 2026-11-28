@@ -21,3 +21,7 @@ To re-record: `node tools/voice_lines.js && /workspace/tts/venv/bin/python tools
 ## 3D characters (Meshy)
 
 `models/characters/*.glb` — 18 rigged characters generated with **Meshy AI** (Meshy Pro subscription, account peakedpd@gmail.com; Pro-tier generations are privately licensed to the account owner) from the Canva AI renders in `img/characters_3d/` (Mr. Sal from `img/characters_mr_sal_mrsal_hands_on_hips_full.webp`, Brock from `tex/brock_friend.webp`): Image to 3D (meshy-7.1, PBR textures, ~25k triangles, A-pose) → Meshy auto-rigging (meshyrig skeleton) → Meshy animation library (Idle, Talk with Hands Open, Wave One Hand, Victory Cheer) + the rig's walking cycle. Optimized with glTF-Transform (1K WebP textures, quantized geometry). Raw Meshy downloads are kept outside the repo. Voices are unchanged.
+
+## 3D props (Meshy)
+
+`models/props/*.glb` — 30 props generated with **Meshy AI** text-to-3D (smart topology meshy-t2.5; Meshy Pro, privately licensed to the account owner), optimized with glTF-Transform (512 px WebP, quantized geometry). Placed and made interactive by `env3d_props.js`.

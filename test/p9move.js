@@ -23,7 +23,7 @@ module.exports = async ({ pg, OUT, res, sleep }) => {
   await spawn(); await f.evaluate(() => { TH.x = P.x + 1.1; TH.z = P.z + .4; IDLE = 3 }); await sleep(500); await shot('p9_theo_steps');
   for (const k of ['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown']) { await spawn(); await f.evaluate(() => { TH.x = P.x + 1.1; TH.z = P.z + .4 }); await walk('next to Theo ' + k, k, 1500) }
   // arrows left/right turn the camera (they don't walk)
-  await spawn(); { const y0 = await f.evaluate(() => camYaw); await pg.keyboard.down('ArrowLeft'); await sleep(600); await pg.keyboard.up('ArrowLeft'); const y1 = await f.evaluate(() => camYaw); ok(Math.abs(y1 - y0) > .1, 'ArrowLeft turns the camera') }
+  await spawn(); { const y0 = await f.evaluate(() => camYaw); await pg.keyboard.down('ArrowLeft'); /* hold until it turns (CI's software renderer runs ~2 fps) */ for (let t = 0; t < 10; t++) { await sleep(300); if (t >= 1 && Math.abs(await f.evaluate(() => camYaw) - y0) > .1) break } await pg.keyboard.up('ArrowLeft'); const y1 = await f.evaluate(() => camYaw); ok(Math.abs(y1 - y0) > .1, 'ArrowLeft turns the camera') }
   // 5) next to Brock: walk-up starts the battle once; quit it; the avatar must walk away (not re-trapped)
   await f.evaluate(() => { P.x = BRK.x + 3; P.z = BRK.z; P.yaw = -Math.PI / 2; camYaw = P.yaw + Math.PI; camSnap = true }); await sleep(400);
   await pg.keyboard.down('w'); for (let i = 0; i < 25 && !(await pg.evaluate(() => !!CHALLENGEUI.battle)); i++) await sleep(200); await pg.keyboard.up('w');

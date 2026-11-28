@@ -10,6 +10,9 @@ Start balance 1,297 (after the 16-character job). Budget ≤1,000, keep ≥250 i
 | Mr. Sal + Brock image-to-3D (2 × 30) | 60 | 1,237 |
 | rigging (2 × 5) | 10 | ~1,227 |
 | animations Idle/Talk/Wave/Cheer (2 × 12) + Idle 3 (2 × 3) | 30 | 1,197 |
+| 21 text-to-3D props, batch 1 (preview 5 + refine 10 each) | 315 | 882 |
+| 9 text-to-3D props, batch 2 | 135 | 747 |
+| **pass total** | **550** | **747** |
 
 Full per-task ledger: /workspace/meshy_raw/ledger.jsonl (outside the repo).
 
@@ -36,3 +39,33 @@ Full per-task ledger: /workspace/meshy_raw/ledger.jsonl (outside the repo).
 - **Screenshots**:
   - shots/env3d/before/{desktop,phone}/
   - shots/env3d/after1/{desktop,phone}/ (s_wide, s_north, s_apt, s_up …)
+
+## Step 2: Meshy hero props in every area + arcade neon (env3d_props.js, env3d_rooms.js)
+- **Models**: 30 Meshy text-to-3D props (smart topology meshy-t2.5, 2–6k triangles, 512 px WebP, 3.6 MB total) in models/props/. Room props load the first time you enter that room.
+- **Placement**: each prop is scaled to a real height and set on the floor or counter. A placement finder keeps props clear of colliders, other taps and door lanes, and big props get colliders.
+- **Every prop is interactive** (E / tap): a small animation (spin, wobble, pop or pulse) plus a sound. Most also offer an optional math moment. There are 16 new answer-checked generators (hotdog, icecream, meter, phone, gumball, popcorn, skee, jukebox, lockers, globe, change, tv, claw, hoop, trophy, shoes).
+  - **Street**:
+    - hot-dog cart (price ×), ice-cream cart (bell jingle, scoops)
+    - newspaper boxes (headline rounding), payphone (dial tone, calls per $)
+    - 3 parking meters (quarters × 15 min)
+  - **Arcade**:
+    - gumball crank (gumball pops out, fraction), popcorn machine (popping particles)
+    - skee-ball (score sum), jukebox (plays a tune)
+    - claw machine (random win, tokens ÷), basketball hoop game (2s and 3s), photo booth (camera flash shot)
+    - Decor: neon wall/floor strips, lightning bolts, 6 hanging neon rings, 2 colored fill lights, and a NEON switch by the door that cycles 4 color themes.
+  - **Classroom**:
+    - The plain box teacher's desk is replaced by a real 3D desk (apple, books, lamp; clock quiz).
+    - globe (spins; ÷), bookcase (books ×), backpack (share ÷)
+  - **Hallway**: water fountain (water puff), backpack.
+  - **Lobby**: couch, trophy case (trophies ×), plant.
+  - **Gym**: 2 locker banks (count-by pattern).
+  - **Cafeteria**: milk fridge (cold puff, share), lunch-menu TV.
+  - **Clothing store**:
+    - 2 mannequins (spin, shop +), rolling rack (shirts ×)
+    - folded-shirt table, sneaker wall (pairs × 2), plant
+    - register on Mr. Sal's counter (change from $20)
+    - fitting room: try-on opens the shop
+    - mirror (camera shot of you)
+  - **Apartment**: plant.
+- **Test**: test/p16props.js (in CI): every prop loads, sits on its surface, is visible, its tap runs, and its quiz contains the answer. Generators are checked over 400 seeds each.
+- **Screenshots**: shots/env3d/after2/{desktop,phone}/ (arcade_a/b, clothing_a/b, lobby_a, hallway_a, cafeteria_a, gym_a …)

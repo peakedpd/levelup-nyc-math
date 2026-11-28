@@ -101,6 +101,8 @@ jobs:
         run: TAG=ci_env_street HOOK=./p15env.js node test/play.js
       - name: Street 3D environment on a phone (390x844, touch)
         run: TAG=ci_env_street_phone W=390 H=844 TOUCH=1 HOOK=./p15env.js node test/play.js
+      - name: Meshy 3D props e2e (30 hero props load in street, arcade, school, hallway, lobby, gym, cafeteria, clothing, apartment; on the floor; every prop interactive; math moments answer-checked)
+        run: TAG=ci_props HOOK=./p16props.js node test/play.js
       - name: Educator review page e2e
         run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)
