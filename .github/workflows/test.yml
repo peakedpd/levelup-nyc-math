@@ -75,6 +75,10 @@ jobs:
         run: TAG=ci_vr HOOK=./p12vr.js node test/play.js
       - name: Ticket Blaster VR on a phone (390x844, touch taps)
         run: TAG=ci_vr_phone W=390 H=844 TOUCH=1 HOOK=./p12vr.js node test/play.js
+      - name: Cinematic conversations e2e (letterbox, face-framing camera, subtitles, character voices for Theo, Marcia, Okafor, Arcade Worker, Mr. Sal, Brock)
+        run: TAG=ci_cine HOOK=./p13cine.js node test/play.js
+      - name: Cinematic conversations on a phone (390x844, touch taps)
+        run: TAG=ci_cine_phone W=390 H=844 TOUCH=1 HOOK=./p13cine.js node test/play.js
       - name: Educator review page e2e
         run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)
