@@ -171,6 +171,73 @@ function exitDoor(g,x,z,ry=0){
   const tex=new T.CanvasTexture(c);if(T.SRGBColorSpace)tex.colorSpace=T.SRGBColorSpace;
   const sm=new T.Mesh(new T.PlaneGeometry(1.36,.34),new T.MeshBasicMaterial({map:tex,toneMapped:false}));sm.position.set(0,3.52,.17);grp.add(sm);
   return grp}
+
+function loadTex(src){const t=TL.load(src);t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;return t}
+function artMat(src,emit=.4,opts={}){const t=loadTex(src);return new T.MeshBasicMaterial(Object.assign({map:t,toneMapped:false,alphaTest:.12},opts))}
+function artPl(g,w,h,mat,x,y,z,rx=0,ry=0){const o=new T.Mesh(new T.PlaneGeometry(w,h),mat);o.position.set(x,y,z);o.rotation.set(rx,ry,0);g.add(o);return o}
+/* Upright arcade cabinet with real depth. Canva art goes on the front, screen and sides. Front is local +z. */
+function arcadeCab(g,x,z,yaw,opt){
+  const w=opt.w||1.14,h=opt.h||2.32,d=opt.d||1.12,col=opt.col||0x241028,neon=opt.neon||0xff2bd4,waist=opt.waist||h*.42;
+  const grp=new T.Group();grp.position.set(x,0,z);grp.rotation.y=yaw;g.add(grp);
+  const body=M(col,{roughness:.5,metalness:.18});
+  box(grp,w,waist,d,body,0,waist/2,0);
+  box(grp,w,h-waist,d*.72,body,0,waist+(h-waist)/2,-d*.14);
+  box(grp,w+.02,.12,d*.22,body,0,h-.04,-d*.14);
+  const sh=new T.Mesh(new T.BoxGeometry(w*.98,.1,.42),M(0x140a18,{roughness:.35,metalness:.25}));
+  sh.position.set(0,waist+.02,d*.38);sh.rotation.x=-.5;sh.castShadow=true;grp.add(sh);
+  if(opt.stick!==false){
+    const sx=opt.stickX||-.22,scol=opt.stick||0xff2a2a;
+    const shaft=new T.Mesh(new T.CylinderGeometry(.025,.025,.24,8),M(0x1a1a1a,{metalness:.6}));shaft.position.set(w*sx,waist+.22,d*.42);grp.add(shaft);
+    const ball=new T.Mesh(new T.SphereGeometry(.055,12,10),M(scol,{emissive:scol,emissiveIntensity:.5}));ball.position.set(w*sx,waist+.36,d*.42);grp.add(ball);
+    (opt.btns||[0xffd23f,0x22c55e,0x3d9bff]).forEach((c,i)=>{const bt=new T.Mesh(new T.CylinderGeometry(.032,.032,.028,10),M(c,{emissive:c,emissiveIntensity:.45}));bt.position.set(w*(.1+i*.12),waist+.16,d*.48);grp.add(bt)})}
+  const nm=M(neon,{emissive:neon,emissiveIntensity:1.85,roughness:.25});
+  box(grp,.04,h*.9,.04,nm,-w/2+.02,h*.5,d/2-.02,0);box(grp,.04,h*.9,.04,nm,w/2-.02,h*.5,d/2-.02,0);box(grp,w,.04,.04,nm,0,h-.02,d/2-.16,0);
+  const upperZ=-d*.14+(d*.72)/2+.012,frontZ=d/2+.012;
+  if(opt.front){const fh=opt.upper?(h-waist)*.98:h*.98,fy=opt.upper?waist+(h-waist)*.5:h*.51;artPl(grp,w*1.02,fh,artMat(opt.front,.38),0,fy,opt.upper?upperZ:frontZ)}
+  if(opt.screen){const sm=artMat(opt.screen,1.15,{roughness:.18,metalness:0,alphaTest:0,toneMapped:false});artPl(grp,w*(opt.sw||.62),h*(opt.sh||.32),sm,0,opt.sy||(waist+(h-waist)*.52),(opt.upper?upperZ:frontZ)+.008);const gl=new T.PointLight(neon,2.8,2.8);gl.position.set(0,opt.sy||(waist+(h-waist)*.52),d*.2);grp.add(gl)}
+  if(opt.banner){const c=document.createElement("canvas");c.width=1024;c.height=160;const ctx=c.getContext("2d");ctx.fillStyle="#14123a";ctx.fillRect(0,0,1024,160);ctx.fillStyle=opt.bannerColor||"#ffd23f";ctx.font="900 86px Trebuchet MS,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(opt.banner,512,88);const t=new T.CanvasTexture(c);if(T.SRGBColorSpace)t.colorSpace=T.SRGBColorSpace;artPl(grp,w*.98,.26,new T.MeshBasicMaterial({map:t,toneMapped:false}),0,h-.16,upperZ+.004)}
+  if(opt.side){const sm=artMat(opt.side,.22);artPl(grp,d*.85,h*.8,sm,-w/2-.01,h*.5,0,0,Math.PI/2);artPl(grp,d*.85,h*.8,sm,w/2+.01,h*.5,0,0,-Math.PI/2)}
+  if(!opt.front||opt.upper){box(grp,.28,.32,.04,M(0x1a1020,{metalness:.4,roughness:.4}),w*.18,.38,d/2+.01,0);box(grp,.16,.04,.02,M(0x111,{metalness:.7}),w*.18,.42,d/2+.03,0)}
+  return grp}
+function clawCab(g,x,z,yaw,opt){
+  const w=1.2,h=2.55,d=1.2,neon=opt.neon||0x2bd9ff;
+  const grp=new T.Group();grp.position.set(x,0,z);grp.rotation.y=yaw;g.add(grp);
+  const body=M(0x1a1030,{roughness:.45,metalness:.2}),fr=M(0x0e0a18,{metalness:.55,roughness:.3});
+  box(grp,w,.95,d,body,0,.475,0);
+  const caseH=1.45,caseY=.95+caseH/2;
+  box(grp,w,.08,d,fr,0,.95+caseH,0);
+  box(grp,.07,caseH,.07,fr,-w/2+.04,caseY,-d/2+.04);box(grp,.07,caseH,.07,fr,w/2-.04,caseY,-d/2+.04);
+  box(grp,.07,caseH,.07,fr,-w/2+.04,caseY,d/2-.04);box(grp,.07,caseH,.07,fr,w/2-.04,caseY,d/2-.04);
+  const glass=new T.MeshStandardMaterial({color:0x9ad8ff,transparent:true,opacity:.16,roughness:.05,metalness:.25,emissive:0x226688,emissiveIntensity:.12,side:T.DoubleSide,depthWrite:false});
+  artPl(grp,w-.12,caseH-.04,glass,0,caseY,d/2-.02);artPl(grp,w-.12,caseH-.04,glass,0,caseY,-d/2+.02,0,Math.PI);
+  artPl(grp,d-.12,caseH-.04,glass,-w/2+.02,caseY,0,0,Math.PI/2);artPl(grp,d-.12,caseH-.04,glass,w/2-.02,caseY,0,0,-Math.PI/2);
+  [[0xff5a8c,.12],[0xffe14d,.1],[0x7ad9ff,.11],[0xb47aff,.13],[0x6dff6b,.1],[0xff8a3d,.12],[0xff6eb3,.11],[0xffd23f,.1],[0x3d9bff,.12]].forEach((p,i)=>{
+    const ang=i*.7,r=.28+(i%3)*.1,m=new T.Mesh(new T.SphereGeometry(p[1],10,8),M(p[0],{roughness:.55,emissive:p[0],emissiveIntensity:.2}));
+    m.position.set(Math.cos(ang)*r,.98+p[1],Math.sin(ang)*r*.8);m.castShadow=true;grp.add(m)});
+  const claw=new T.Group();claw.position.set(.08,2.28,0);grp.add(claw);
+  const arm=new T.Mesh(new T.CylinderGeometry(.015,.015,.28,8),M(0xccccdd,{metalness:.7,roughness:.25}));arm.position.y=-.14;claw.add(arm);
+  const hub=new T.Mesh(new T.CylinderGeometry(.06,.05,.07,10),M(0x8899aa,{metalness:.7}));hub.position.y=-.3;claw.add(hub);
+  [-.4,.4,1.2,2.4].forEach(a=>{const f=new T.Mesh(new T.BoxGeometry(.03,.16,.06),M(0xc0c8d0,{metalness:.6,roughness:.3}));f.position.set(Math.sin(a)*.07,-.4,Math.cos(a)*.07);f.rotation.z=Math.sin(a)*.5;f.rotation.x=Math.cos(a)*.5;claw.add(f)});
+  box(grp,w+.04,.28,.22,M(0x120824,{emissive:0x2a1060,emissiveIntensity:.4}),0,h-.16,0,0);
+  if(opt.marquee)artPl(grp,w*.92,.22,artMat(opt.marquee,.7,{toneMapped:false}),0,h-.16,d/2+.02);
+  const nm=M(neon,{emissive:neon,emissiveIntensity:2});box(grp,.04,h,.04,nm,-w/2,h/2,d/2,0);box(grp,.04,h,.04,nm,w/2,h/2,d/2,0);
+  box(grp,w*.8,.12,.28,M(0x1a1028),0,.72,d/2+.05,0);
+  [-.2,0,.2].forEach((x,i)=>{const c=[0xff2bd4,0xffd23f,0x2bd9ff][i],b=new T.Mesh(new T.CylinderGeometry(.04,.04,.03,10),M(c,{emissive:c,emissiveIntensity:.6}));b.position.set(x,.8,d/2+.12);grp.add(b)});
+  const gl=new T.PointLight(0xffc878,4,2.8);gl.position.set(0,1.7,0);grp.add(gl);return grp}
+function pinballCab(g,x,z,yaw){
+  const grp=new T.Group();grp.position.set(x,0,z);grp.rotation.y=yaw;g.add(grp);
+  const body=M(0x1a0a08,{roughness:.45,metalness:.2});
+  box(grp,1.15,.55,1.9,body,0,.35,-.05);
+  [[-.45,-.8],[.45,-.8],[-.45,.8],[.45,.8]].forEach(([lx,lz])=>box(grp,.08,.28,.08,M(0x111),lx,.14,lz,0));
+  const pf=new T.Mesh(new T.BoxGeometry(1.02,.04,1.55),M(0x140808,{emissive:0x3a1208,emissiveIntensity:.35,roughness:.3}));
+  pf.position.set(0,.78,-.05);pf.rotation.x=-.28;grp.add(pf);
+  for(let i=0;i<8;i++){const c=[0xff2bd4,0xffd23f,0x2bd9ff][i%3],m=new T.Mesh(new T.SphereGeometry(.035,8,6),M(c,{emissive:c,emissiveIntensity:1.6}));m.position.set(-.3+(i%3)*.3,.86,-.55+Math.floor(i/3)*.35);grp.add(m)}
+  [-.28,.28].forEach((lx,i)=>{const f=new T.Mesh(new T.BoxGeometry(.32,.04,.08),M(0xffd23f,{emissive:0xff9a1a,emissiveIntensity:.6,metalness:.4}));f.position.set(lx,.62,.7);f.rotation.set(-.28,0,i?-.4:.4);grp.add(f)});
+  box(grp,1.18,1.05,.28,body,0,1.45,-.95);
+  artPl(grp,1.1,.95,artMat("tex/cab_pins_side.webp",.55),0,1.45,-.8);
+  artPl(grp,1.7,.7,artMat("tex/cab_pins_side.webp",.45),-1.15/2-.01,.7,0,0,Math.PI/2);
+  artPl(grp,1.7,.7,artMat("tex/cab_pins_side.webp",.45),1.15/2+.01,.7,0,0,-Math.PI/2);
+  const gl=new T.PointLight(0xff7a00,3.5,3);gl.position.set(0,1.6,-.6);grp.add(gl);return grp}
 function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(cx,0,cz);S.add(g);
   const wallC={school:0xf4e3b5,arcade:0x14081e,clothing:0xf2efe8,apartment:0xe9c9a0}[kind],floorC={school:0xc8915a,arcade:0x1a1228,clothing:0xd9d2c5,apartment:0x9b6a43}[kind];
   const wm=M(wallC),fm=M(floorC,{roughness:.6});
@@ -179,29 +246,61 @@ function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(
   box(g,RW,RH,.4,wm,0,RH/2,-RD/2);box(g,.4,RH,RD,wm,-RW/2,RH/2,0);box(g,.4,RH,RD,wm,RW/2,RH/2,0);
   box(g,(RW-2.6)/2,RH,.4,wm,-(RW+2.6)/4,RH/2,RD/2);box(g,(RW-2.6)/2,RH,.4,wm,(RW+2.6)/4,RH/2,RD/2);box(g,2.6,RH-3.8,.4,wm,0,3.8+(RH-3.8)/2,RD/2);
   exitDoor(g,0,RD/2+.12,Math.PI); // real EXIT door back to the street (was a plain blue panel)
-  if(kind==="arcade"){const t=TL.load("tex/room_arcade.webp");t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;
-    const mw=RW-.3,mh=mw*1190/2560,mp=new T.Mesh(new T.PlaneGeometry(mw,mh),new T.MeshBasicMaterial({map:t,toneMapped:false}));
-    mp.position.set(0,RH-mh/2+.08,-RD/2+.24);g.add(mp);
+  if(kind==="arcade"){
+    /* Canva confetti carpet from the interior (DAHbrDGkWtg). The painted whole-room mural is gone — cabinets are real 3D. */
+    const ct=loadTex("tex/arcade_carpet.webp");ct.wrapS=ct.wrapT=T.RepeatWrapping;ct.repeat.set(7,6);
+    fl.material=new T.MeshStandardMaterial({map:ct,roughness:.85,color:0xffffff});
     /* purple neon cove lights, like John's Canva interior */
     const nm=M(0xff2bc0,{emissive:0xc84bff,emissiveIntensity:2.4});
-    box(g,RW-.6,.07,.07,nm,0,RH-.06,-RD/2+.35,0);box(g,.07,.07,RD-.6,nm,-RW/2+.28,RH-.06,0,0);box(g,.07,.07,RD-.6,nm,RW/2-.28,RH-.06,0,0)}
-  const L=new T.PointLight(kind==="arcade"?0xc28bff:0xfff1d8,kind==="arcade"?60:45,30);L.position.set(0,RH-.4,0);g.add(L);
+    box(g,RW-.6,.07,.07,nm,0,RH-.06,-RD/2+.35,0);box(g,.07,.07,RD-.6,nm,-RW/2+.28,RH-.06,0,0);box(g,.07,.07,RD-.6,nm,RW/2-.28,RH-.06,0,0);
+    /* Back wall: 3D alcove + neon ARCADE sign + framed posters (flat art is OK for posters). Decorative only — street EXIT is at +z. */
+    const bz=-RD/2,wood=M(0x2a1810,{roughness:.7});
+    box(g,.22,3.4,.28,wood,-1.45,1.7,bz+.32,0);box(g,.22,3.4,.28,wood,1.45,1.7,bz+.32,0);box(g,3.12,.22,.28,wood,0,3.42,bz+.32,0);
+    box(g,2.7,3.15,.18,M(0x1a0830,{emissive:0x3a0a60,emissiveIntensity:.35}),0,1.6,bz+.16,0);
+    box(g,2.2,.05,.05,M(0xc84bff,{emissive:0xc84bff,emissiveIntensity:2.2}),0,3.15,bz+.28,0);
+    box(g,3.2,.55,.16,M(0x12081c,{metalness:.4,roughness:.35}),0,4.15,bz+.36,0);
+    artPl(g,3.05,.46,artMat("tex/arcade_neon.webp",1.2,{toneMapped:false,alphaTest:.08}),0,4.15,bz+.45);
+    const sl=new T.PointLight(0xff2bd4,8,7);sl.position.set(0,4.1,bz+.8);g.add(sl);
+    const framed=(x,src)=>{box(g,1.2,1.7,.08,M(0x1a0a18,{roughness:.5}),x,2.25,bz+.26,0);box(g,1.28,1.78,.04,M(0x3a1830,{metalness:.3}),x,2.25,bz+.24,0);artPl(g,1.1,1.58,artMat(src,.3),x,2.25,bz+.31)};
+    framed(-3.35,"tex/poster_arcade_l.webp");framed(3.35,"tex/poster_arcade_r.webp")}
+  const L=new T.PointLight(kind==="arcade"?0xc28bff:0xfff1d8,kind==="arcade"?80:45,kind==="arcade"?34:30);L.position.set(0,RH-.4,0);g.add(L);if(kind==="arcade"){const L2=new T.PointLight(0xff7ad9,28,16);L2.position.set(-5,3.2,0);g.add(L2);const L3=new T.PointLight(0x7ad9ff,28,16);L3.position.set(5,3.2,0);g.add(L3)}
   const ST=[];const st=(x,z,label,id)=>ST.push({x:cx+x,z:cz+z,label,id});
   if(kind==="school"){const desk=M(0xd8a86a),leg=M(0x555555),chair=M(0x3d7be0);
     for(let rr=0;rr<3;rr++)for(let c=0;c<4;c++){const x=-5.4+c*3.6,z=-1.5+rr*2.8;box(g,1.6,.08,1,desk,x,.78,z);box(g,1.5,.74,.9,M(0x8a6a44),x,.37,z);box(g,.6,.5,.6,chair,x,.25,z+.85);box(g,.6,.6,.08,chair,x,.8,z+1.12)}
     box(g,3.4,1,1.4,M(0x7a4a2a),0,.5,-5.2);box(g,6,2.4,.1,M(0xffffff),0,2.6,-RD/2+.3,0);
     st(3,-4.2,"talk to Ms. Okafor: today's missions","school")}
   if(kind==="arcade"){
-    /* John's Canva redesign (DAHbrDGkWtg): named cabinets, air hockey, foosball, pinball. Prize counter moves to the entrance so the back wall can show his art. */
-    const cabBody=M(0x2a1838,{roughness:.55}),marq=(c)=>M(c,{emissive:c,emissiveIntensity:1.4});
-    const cabAt=(x,z,face,color,h=2.25)=>{const s=Math.sign(face||1);box(g,1.05,h,1.15,cabBody,x,h/2,z);box(g,.08,.22,.95,marq(color),x+s*.55,h-.16,z,0);box(g,.04,.72,.62,M(0x0a0812,{emissive:color,emissiveIntensity:.28}),x+s*.54,h*.58,z,0);box(g,.38,.08,.95,M(0x1a1024),x+s*.32,.82,z);return {x,z}};
-    cabAt(-7.55,-4.2,1,0xff2bd4);cabAt(-7.55,-2.35,1,0xff9a1a);cabAt(-7.55,-.5,1,0x3d9bff);
-    cabAt(7.55,-3.4,-1,0xff5d1a,2.45);cabAt(7.55,-1.35,-1,0xff7ad9,2.55);
-    /* Galaxy Pins pinball — lower and longer, front right */
-    box(g,1.15,1.15,1.85,M(0x1a0a08),6.35,.58,3.15);box(g,1.05,.08,1.5,M(0xffc83d,{emissive:0xff7a00,emissiveIntensity:.8}),6.35,1.18,3.05,0);
-    /* foosball — front left */ box(g,1.9,.72,1.15,M(0x6b3a1f),-5.6,.36,3.35);[-.35,.35].forEach(z=>[-.6,0,.6].forEach(x=>box(g,.06,.28,.06,M(x<.0?0xc0392b:0x3d7be0),-5.6+x,.86,3.35+z,0)));
-    /* air hockey — mid floor, low so the back-wall mural stays visible */ box(g,1.55,.72,2.3,M(0x0d1a33),0,.36,-2.35);box(g,1.4,.04,2.1,M(0x2bd9ff,{emissive:0x2bd9ff,emissiveIntensity:.55}),0,.74,-2.35,0);
-    /* Ticket Blaster stays, moved to the entrance so it does not cover the new room art */
+    /* Real 3D cabinets along the side walls, with John's Canva art (DAHbrDGkWtg, DAHbq31X4qY) on screens, marquees and sides.
+       Positions match ARCADE_GAMES in w2i.js. The Ticket Blaster box stays so w2k can swap in the VR pod. */
+    const Lface=Math.PI/2,Rface=-Math.PI/2;
+    arcadeCab(g,-7.55,-4.2,Lface,{front:"tex/cab_space.webp",screen:"tex/cab_space_screen.webp",col:0x2a1030,neon:0xff2bd4});
+    arcadeCab(g,-7.55,-2.35,Lface,{front:"tex/cab_racer.webp",screen:"tex/cab_racer_screen.webp",col:0x1a1008,neon:0xff9a1a});
+    arcadeCab(g,-7.55,-.5,Lface,{front:"tex/cab_jump.webp",screen:"tex/cab_jump_screen.webp",col:0x102030,neon:0x3d9bff,upper:true,stick:0xffd23f});
+    arcadeCab(g,-7.55,1.4,Lface,{screen:"tex/neon_coin_rush.webp",col:0x140a1c,neon:0xffd23f,sw:.85,sh:.28,sy:1.55,banner:"NEON COIN RUSH",bannerColor:"#ffd23f"});
+    arcadeCab(g,7.55,-3.4,Rface,{front:"tex/cab_hoop.webp",screen:"tex/cab_hoop_screen.webp",col:0x2a1808,neon:0xff5d1a,h:2.45,upper:true});
+    clawCab(g,7.55,-1.35,Rface,{marquee:"tex/cab_claw_marquee.webp"});
+    pinballCab(g,6.35,3.15,-.35);
+    /* foosball — front left, 3D table with rods and figures */
+    {const fx=-5.6,fz=3.35;
+      box(g,2.05,.12,1.2,M(0x6b3a1f,{roughness:.5}),fx,.72,fz);
+      box(g,1.9,.08,1.05,M(0x1a6b3a,{roughness:.4}),fx,.68,fz,0);
+      [[-.85,-.45],[.85,-.45],[-.85,.45],[.85,.45]].forEach(([x,z])=>box(g,.08,.64,.08,M(0x3a2010),fx+x,.32,fz+z));
+      box(g,2.05,.03,1.2,M(0xffd23f,{emissive:0xff9a1a,emissiveIntensity:.4}),fx,.79,fz,0);
+      [-.38,-.13,.13,.38].forEach((zoff,ri)=>{box(g,2.15,.025,.025,M(0x888,{metalness:.7,roughness:.25}),fx,.9,fz+zoff,0);[-.6,0,.6].forEach(xoff=>box(g,.07,.22,.05,M(ri%2?0xc0392b:0x3d7be0),fx+xoff,.8,fz+zoff,0))})}
+    /* air hockey — mid floor, glowing rails, strikers and a puck */
+    {const hx=0,hz=-2.35,rail=M(0x2bd9ff,{emissive:0x2bd9ff,emissiveIntensity:1.6});
+      box(g,1.7,.14,2.45,M(0x0d1a33,{metalness:.4,roughness:.35}),hx,.7,hz);
+      box(g,1.5,.04,2.2,M(0x1a4a8a,{emissive:0x0a2040,emissiveIntensity:.4,roughness:.25,metalness:.3}),hx,.78,hz,0);
+      box(g,1.7,.04,.04,rail,hx,.8,hz+1.22,0);box(g,1.7,.04,.04,rail,hx,.8,hz-1.22,0);
+      box(g,.04,.04,2.45,rail,hx+.85,.8,hz,0);box(g,.04,.04,2.45,rail,hx-.85,.8,hz,0);
+      box(g,.5,.08,.06,M(0x0a1020),hx,.78,hz+1.18,0);box(g,.5,.08,.06,M(0x0a1020),hx,.78,hz-1.18,0);
+      [[-.7,-1],[.7,-1],[-.7,1],[.7,1]].forEach(([x,z])=>{box(g,.1,.7,.1,M(0x0a1220,{metalness:.5}),hx+x,.35,hz+z);box(g,.04,.7,.04,rail,hx+x,.35,hz+z,0)});
+      const mal=M(0xd22a2a,{emissive:0x800010,emissiveIntensity:.3,metalness:.3});
+      const mk=(x,z)=>{const m=new T.Mesh(new T.CylinderGeometry(.14,.14,.06,20),mal);m.position.set(hx+x,.84,hz+z);g.add(m);const hdl=new T.Mesh(new T.CylinderGeometry(.05,.05,.1,10),mal);hdl.position.set(hx+x,.92,hz+z);g.add(hdl)};
+      mk(0,.7);mk(0,-.7);
+      const puck=new T.Mesh(new T.CylinderGeometry(.07,.07,.025,16),M(0xe8eef2,{metalness:.6,roughness:.2}));puck.position.set(hx,.83,hz);g.add(puck);
+      const hl=new T.PointLight(0x2bd9ff,4,4);hl.position.set(hx,1.4,hz);g.add(hl)}
+    /* Ticket Blaster placeholder — w2k swaps this for the VR pod */
     box(g,3,2.2,1.4,M(0x5b2bd0),3.9,1.1,5.25);box(g,2.6,.05,1.1,M(0x22ff88,{emissive:0x22ff88,emissiveIntensity:.8}),3.9,2.25,5.25,0);
     /* 3D Prize Corner (shelves, open-legged counter, worker) is built in w2c */
     st(-6.5,5.15,"Prize Counter & Ticket Rush","arcade")}
