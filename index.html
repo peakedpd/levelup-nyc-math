@@ -274,6 +274,7 @@ function badName(n){const l=String(n).toLowerCase(),flat=l.replace(/[^a-z]/g,"")
 /* ---------- state ---------- */
 function defState(){return{v:1,created:false,name:"",avatar:{hero:0,bg:0},owned:[],eq:{},xp:0,coins:0,missions:{},intro:false,bonusDay:"",finale:false,settings:{read:false,big:false,hc:false,easy:false,nomo:false,sfx:true,music:false}}}
 let S=defState();
+function lvXP(){return S.xp|0} /* read by the 3D arcade's claw XP wager (same-origin iframe) */
 let memSave=null;
 function save(){try{const j=JSON.stringify(S);memSave=j;localStorage.setItem(KEY,j)}catch(e){}}
 function load(){let j=null;try{j=localStorage.getItem(KEY)}catch(e){}

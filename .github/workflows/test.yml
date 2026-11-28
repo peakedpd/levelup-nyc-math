@@ -32,6 +32,8 @@ jobs:
         run: node tools/verify_scenes.js
       - name: Ticket Blaster VR answer key (4.NF.A.1, independent)
         run: node tools/verify_tbvr.js
+      - name: Arcade cabinet math answer keys (9 grade-4 standards + XP wager rules, independent)
+        run: node tools/verify_cabinets.js
       - name: Shipped build consistency
         run: node tools/check_dist.js
   e2e:
@@ -75,6 +77,10 @@ jobs:
         run: TAG=ci_vr HOOK=./p12vr.js node test/play.js
       - name: Ticket Blaster VR on a phone (390x844, touch taps)
         run: TAG=ci_vr_phone W=390 H=844 TOUCH=1 HOOK=./p12vr.js node test/play.js
+      - name: Arcade cabinet math e2e (E opens each machine, standard shown, wrong -> hint + retry, round pays tickets, Prize Claw XP wager win/loss/cap, XP never below 0)
+        run: TAG=ci_cab HOOK=./p13cabinets.js node test/play.js
+      - name: Arcade cabinet math on a phone (390x844, touch E + taps)
+        run: TAG=ci_cab_phone W=390 H=844 TOUCH=1 HOOK=./p13cabinets.js node test/play.js
       - name: Cinematic conversations e2e (letterbox, face-framing camera, subtitles, character voices for Theo, Marcia, Okafor, Arcade Worker, Mr. Sal, Brock)
         run: TAG=ci_cine HOOK=./p13cine.js node test/play.js
       - name: Cinematic conversations on a phone (390x844, touch taps)
