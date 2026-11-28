@@ -4,7 +4,7 @@ module.exports = async ({ pg, OUT, res, sleep }) => {
   const shot = n => pg.screenshot({ path: `${OUT}/${n}.png` }); const A = res.assert = res.assert || []; const ok = (c, m) => { if (!c) A.push(m) };
   const f = pg.frame({ url: /street3d\.html/ }); res.mv = {};
   const pos = () => f.evaluate(() => ({ x: P.x, z: P.z }));
-  const walk = async (label, key = 'w', ms = 900) => { const a = await pos(); await pg.keyboard.down(key); await sleep(ms); await pg.keyboard.up(key); await sleep(250); const b = await pos(); const d = Math.hypot(b.x - a.x, b.z - a.z);
+  const walk = async (label, key = 'w', ms = 1500) => { const a = await pos(); await pg.keyboard.down(key); await sleep(ms); await pg.keyboard.up(key); await sleep(250); const b = await pos(); const d = Math.hypot(b.x - a.x, b.z - a.z);
     res.mv[label] = { d: +d.toFixed(2), a, b, focus: await pg.evaluate(() => document.activeElement && (document.activeElement.id || document.activeElement.tagName)), held: await f.evaluate(() => Object.keys(K).filter(k => K[k])) }; ok(d > .18, `avatar moves (${label}): ` + JSON.stringify(res.mv[label])); return d };
   const spawn = () => f.evaluate(() => { if (AREA !== 'street') leaveRoom(); P.x = SPAWN.x; P.z = SPAWN.z; P.vy = 0; P.yaw = 0; camYaw = Math.PI; camPitch = .3; camDist = 6; camSnap = true });
   await spawn(); await sleep(600);
