@@ -15,3 +15,5 @@ Every pre-recorded character line was generated on our own machine with **Kokoro
 
 Lines that include the player's name or changing numbers (hints, "Yes! 42 is right!") are read by the device's built-in browser voice (Web Speech API), with a different pitch and speed for each character.
 To re-record: `node tools/voice_lines.js && /workspace/tts/venv/bin/python tools/voice_render.py` (writes voice/manifest.js).
+
+- Universe detail pass (w2u–w2x): all props are procedural Three.js geometry made for this project; no third-party models or textures added.

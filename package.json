@@ -3,7 +3,7 @@
   "private": true,
   "description": "LevelUp NYC \u2014 4th-grade math adventure (static site). Tests: math/answer-key verification, adaptive diagnostic simulation, headless browser play-tests.",
   "scripts": {
-    "verify": "node tools/verify_assess.js && node tools/verify_mastery.js && node tools/verify_learn.js && node tools/verify_itembank.js && node tools/verify_depth.js && node tools/verify_classroom.js && node tools/verify_reteach.js && node tools/verify_challenge.js && node tools/verify_tbvr.js && node tools/check_dist.js",
+    "verify": "node tools/verify_assess.js && node tools/verify_mastery.js && node tools/verify_learn.js && node tools/verify_itembank.js && node tools/verify_depth.js && node tools/verify_classroom.js && node tools/verify_reteach.js && node tools/verify_challenge.js && node tools/verify_tbvr.js && node tools/verify_universe.js && node tools/check_dist.js",
     "verify:math": "node tools/verify_math.js",
     "e2e": "TAG=ci node test/play.js",
     "e2e:diag": "TAG=ci_diag HOOK=./p1diag.js node test/play.js",

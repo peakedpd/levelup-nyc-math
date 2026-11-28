@@ -1244,3 +1244,548 @@ const _intL=interactions;interactions=function(){const L=_intL();if(AREA!=="arca
   return [{type:"tap",t,x:P.x,z:P.z,r:9,label:t.label}].concat(L.filter(d=>d.type!=="tap"))};
 window.CABG={nearCab,open,close,st,CABS,SPOT,answer};
 })();
+
+/* =====================================================================
+   17. LEVEL UP UNIVERSE — fine 3D detail + "interact with everything"
+   Core: merged-geometry kit (few draw calls), rounded/bevelled parts, shared materials, colliders,
+   per-frame animations, a light quiz card for optional grade-4 math moments, and a flat-panel audit.
+   ===================================================================== */
+const U={anims:[],taps:[],flatOK:new WeakSet(),built:{}};window.U=U;
+/*UQ-BEGIN — pure question generators (checked by tools/verify_universe.js: 0 math errors) */
+const UQ=(()=>{
+  const rng=s=>()=>{s=(s*1103515245+12345)%2147483648;return s/2147483648};
+  const ri=(r,a,b)=>a+Math.floor(r()*(b-a+1));
+  const money=c=>"$"+Math.floor(c/100)+"."+String(c%100).padStart(2,"0");
+  const fmt=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  const pack=(r,id,std,text,ans,wrong,explain,p)=>{const ch=[String(ans)];for(const w of wrong){const s=String(w);if(!ch.includes(s)&&ch.length<4)ch.push(s)}
+    let k=1;while(ch.length<4){const s=typeof ans==="number"?String(ans+k*(k%2?1:-1)*(1+Math.floor(k/2))):String(ans)+" ";if(!ch.includes(s)&&!(typeof ans==="number"&&+s<0))ch.push(s);k++}
+    for(let i=ch.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ch[i],ch[j]]=[ch[j],ch[i]]}return {id,std,text,ans:String(ans),choices:ch,explain,p}};
+  const G={
+    mult(s){const r=rng(s),a=ri(r,3,9),b=ri(r,3,9),x=a*b;return pack(r,"mult","4.NBT.B.5",`The crumpled worksheet says ${a} × ${b} = ?`,x,[a+b,x+a,x-b],`${a} groups of ${b} make ${x}.`,{a,b})},
+    hydrant(s){const r=rng(s),g=ri(r,2,9),t=ri(r,4,9),x=g*t;return pack(r,"hydrant","4.OA.A.2",`The hydrant sprays ${g} gallons every second. How many gallons in ${t} seconds?`,x,[g+t,x+g,x-t],`${t} seconds × ${g} gallons = ${x} gallons.`,{g,t})},
+    fruit(s){const r=rng(s),c=5*ri(r,5,19),n=ri(r,2,4),x=c*n;return pack(r,"fruit","4.MD.A.2",`Apples cost ${c}¢ each. How much for ${n} apples?`,money(x),[money(c+n),money(x+c),money(x-5)],`${n} × ${c}¢ = ${x}¢ = ${money(x)}.`,{c,n})},
+    round(s){const r=rng(s),v=ri(r,1101,9899),h=Math.round(v/100)*100;return pack(r,"round","4.NBT.A.3",`HEADLINE: ${fmt(v)} kids rode the subway today! Round ${fmt(v)} to the nearest hundred.`,fmt(h),[fmt(h+100),fmt(h-100),fmt(Math.round(v/10)*10),fmt(Math.round(v/1000)*1000),fmt(h+200)],`Look at the tens digit: ${fmt(v)} is closer to ${fmt(h)} than to any other hundred.`,{v})},
+    train(s){const r=rng(s),m=[4,5,6,10,12,15][ri(r,0,5)],x=60/m;return pack(r,"train","4.OA.A.2",`A train comes every ${m} minutes. How many trains come in 1 hour (60 minutes)?`,x,[60-m,x+1,m],`60 ÷ ${m} = ${x} trains.`,{m})},
+    shop(s){const r=rng(s),a=ri(r,21,59),b=ri(r,8,19),x=a+b;return pack(r,"shop","4.NBT.B.4",`A jacket costs $${a} and a hat costs $${b}. How much for both?`,"$"+x,["$"+(x+10),"$"+(x-10),"$"+(a-b)],`$${a} + $${b} = $${x}.`,{a,b})},
+    pizza(s){const r=rng(s),k=ri(r,1,7),x=(8-k)+"/8";return pack(r,"pizza","4.NF.A.1",`A pizza has 8 equal slices. ${k} slice${k>1?"s are":" is"} eaten. What fraction is left?`,x,[k+"/8",(8-k)+"/"+k,"8/"+(8-k),(9-k)+"/8",(7-k)+"/8"],`8 − ${k} = ${8-k} slices are left out of 8, so ${x}.`,{k})},
+    clock(s){const r=rng(s),h=ri(r,1,11),m=5*ri(r,0,11),add=[15,20,30,45][ri(r,0,3)],t=h*60+m+add,H=Math.floor(t/60)>12?Math.floor(t/60)-12:Math.floor(t/60),M=t%60;const f=(a,b)=>a+":"+String(b).padStart(2,"0");
+      return pack(r,"clock","4.MD.A.2",`The clock says ${f(h,m)}. Recess starts in ${add} minutes. What time is recess?`,f(H,M),[f(h,(m+add)%60),f(H,(M+10)%60),f(H,(M+50)%60),f(h===12?1:h+1,m),f(H===12?1:H+1,M)],`${f(h,m)} + ${add} minutes = ${f(H,M)}.`,{h,m,add})},
+    meters(s){const r=rng(s),m=ri(r,2,9),x=m*100;return pack(r,"meters","4.MD.A.1",`This bench is ${m} meters long. How many centimeters is that?`,x,[m*10,m*1000,m+100],`1 meter = 100 cm, so ${m} × 100 = ${x} cm.`,{m})},
+    lamps(s){const r=rng(s),n=ri(r,6,12),sides=2,x=n*sides;return pack(r,"lamps","4.OA.A.1",`There are ${n} street lamps on each side of the street. How many lamps in all?`,x,[n+sides,n,x+2],`${n} × 2 sides = ${x} lamps.`,{n})},
+    shirts(s){const r=rng(s),st=ri(r,3,6),per=ri(r,4,8),x=st*per;return pack(r,"shirts","4.NBT.B.5",`Mr. Sal folds ${st} stacks with ${per} shirts in each. How many shirts?`,x,[st+per,x+per,x-st],`${st} × ${per} = ${x} shirts.`,{st,per})},
+    books(s){const r=rng(s),sh=ri(r,3,5),per=ri(r,6,12),x=sh*per;return pack(r,"books","4.NBT.B.5",`The bookshelf has ${sh} shelves with ${per} books on each. How many books?`,x,[sh+per,x-per,x+sh],`${sh} × ${per} = ${x} books.`,{sh,per})},
+    share(s){const r=rng(s),k=ri(r,2,6),each=ri(r,3,9),x=k*each;return pack(r,"share","4.NBT.B.6",`${x} grapes are shared equally by ${k} friends. How many does each friend get?`,each,[x-k,each+1,k],`${x} ÷ ${k} = ${each}.`,{k,each})}
+  };return {G,money,fmt}})();
+/*UQ-END*/
+window.UQ=UQ;
+/* ---------- shared materials (one material per look = fewer shader switches) ---------- */
+const UMC={};function UM(c,o){const k=c+"|"+(o?JSON.stringify(o):"");return UMC[k]||(UMC[k]=M(c,o||{}))}
+const GLASS=new T.MeshStandardMaterial({color:0xcfe9ff,transparent:true,opacity:.22,roughness:.05,metalness:.2,depthWrite:false});
+/* rounded / bevelled box (extruded rounded rectangle), cached by size */
+const RBC={};function rbox(w,h,d,r){r=Math.min(r,w/2-.001,h/2-.001,d/2-.001);const k=[w,h,d,r].map(v=>v.toFixed(3)).join();if(RBC[k])return RBC[k];
+  const s=new T.Shape(),x=-w/2+r,y=-h/2+r,W=w-2*r,H=h-2*r;s.moveTo(x,y-r);s.lineTo(x+W,y-r);s.quadraticCurveTo(x+W+r,y-r,x+W+r,y);s.lineTo(x+W+r,y+H);s.quadraticCurveTo(x+W+r,y+H+r,x+W,y+H+r);s.lineTo(x,y+H+r);s.quadraticCurveTo(x-r,y+H+r,x-r,y+H);s.lineTo(x-r,y);s.quadraticCurveTo(x-r,y-r,x,y-r);
+  const g=new T.ExtrudeGeometry(s,{depth:Math.max(.001,d-2*r),bevelEnabled:true,bevelThickness:r,bevelSize:r*.999,bevelSegments:2,curveSegments:3});g.translate(0,0,-(d-2*r)/2);return RBC[k]=g}
+const GC={};const bx=(w,h,d)=>GC["b"+w+","+h+","+d]||(GC["b"+w+","+h+","+d]=new T.BoxGeometry(w,h,d));
+const cy=(a,b,h,s=16,open=false)=>{const k="c"+[a,b,h,s,open];return GC[k]||(GC[k]=new T.CylinderGeometry(a,b,h,s,1,open))};
+const sp=(r,s=12)=>GC["s"+r+","+s]||(GC["s"+r+","+s]=new T.SphereGeometry(r,s,Math.max(6,s*.75|0)));
+const ico=(r,d=1)=>GC["i"+r+","+d]||(GC["i"+r+","+d]=new T.IcosahedronGeometry(r,d));
+const tor=(R,r,a=8,b=20)=>GC["t"+[R,r,a,b]]||(GC["t"+[R,r,a,b]]=new T.TorusGeometry(R,r,a,b));
+/* merge kit: add many parts in local space (optionally under a parent transform), build = one mesh per material */
+function Kit(){const by=new Map();let base=new T.Matrix4();const tmp=new T.Matrix4(),q=new T.Quaternion(),e=new T.Euler(),v=new T.Vector3(),sc=new T.Vector3();
+  const K2={base(m){base=m||new T.Matrix4();return K2},
+    add(geo,mat,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1){q.setFromEuler(e.set(rx,ry,rz));tmp.compose(v.set(x,y,z),q,sc.set(sx,sy,sz));const g=geo.index?geo.toNonIndexed():geo.clone();if(!g.attributes.uv)g.setAttribute("uv",new T.BufferAttribute(new Float32Array(g.attributes.position.count*2),2));
+      g.applyMatrix4(new T.Matrix4().multiplyMatrices(base,tmp));if(!by.has(mat))by.set(mat,[]);by.get(mat).push(g);return K2},
+    build(parent,opt={}){const out=[];for(const [mat,gs] of by){let n=0;gs.forEach(g=>n+=g.attributes.position.count);const P2=new Float32Array(n*3),N2=new Float32Array(n*3),UV=new Float32Array(n*2);let o=0;
+      for(const g of gs){P2.set(g.attributes.position.array,o*3);N2.set(g.attributes.normal.array,o*3);UV.set(g.attributes.uv.array,o*2);o+=g.attributes.position.count;g.dispose()}
+      const geo=new T.BufferGeometry();geo.setAttribute("position",new T.BufferAttribute(P2,3));geo.setAttribute("normal",new T.BufferAttribute(N2,3));geo.setAttribute("uv",new T.BufferAttribute(UV,2));geo.computeBoundingSphere();
+      const me=new T.Mesh(geo,mat);me.castShadow=opt.shadow!==false&&!mat.transparent;me.receiveShadow=true;if(opt.name)me.name=opt.name;parent.add(me);out.push(me)}by.clear();return out}};return K2}
+const mat4=(x,y,z,ry=0)=>new T.Matrix4().compose(new T.Vector3(x,y,z),new T.Quaternion().setFromEuler(new T.Euler(0,ry,0)),new T.Vector3(1,1,1));
+/* world-space collider box (x0..x1, z0..z1, y0..top) */
+function usolid(x0,x1,z0,z1,top,y0=0){SOL.push({x0:Math.min(x0,x1),x1:Math.max(x0,x1),z0:Math.min(z0,z1),z1:Math.max(z0,z1),y0,top})}
+/* a tap that can change its label later; area-relative coords like mkTap */
+function utap(area,x,z,label,fn,r=1.3){mkTap(area,x,z,label,fn,r);const t=TAPS[TAPS.length-1];U.taps.push(t);return t}
+/* remove meshes from a parent that match a test (used to swap old boxy placeholders for detailed ones) */
+function uremove(parent,test){const rm=[];parent.children.forEach(o=>{if(o.isMesh&&test(o))rm.push(o)});rm.forEach(o=>parent.remove(o));return rm.length}
+const near2=(o,x,y,z,t=.05)=>Math.abs(o.position.x-x)<t&&Math.abs(o.position.y-y)<t&&Math.abs(o.position.z-z)<t;
+/* tiny sound effects (WebAudio, created on first use) */
+let UAC=null;function ubeep(f=440,d=.15,type="square",vol=.05,slide=0){try{UAC=UAC||new (window.AudioContext||window.webkitAudioContext)();const o=UAC.createOscillator(),g=UAC.createGain(),t=UAC.currentTime;o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.linearRampToValueAtTime(f+slide,t+d);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(UAC.destination);o.start(t);o.stop(t+d+.02)}catch(_){}}
+/* particles (water, leaves, sparkles): one shared pool of tiny meshes */
+const UPART=[];function upuff(parent,x,y,z,n,col,spd=2,up=3,life=1.2,size=.05,grav=9){const m=UM(col,{emissive:col,emissiveIntensity:.25});for(let i=0;i<n;i++){const p=new T.Mesh(sp(size,6),m);p.position.set(x,y,z);parent.add(p);UPART.push({p,parent,vx:(Math.random()-.5)*spd,vy:up*(.6+Math.random()*.6),vz:(Math.random()-.5)*spd,t:life*(.6+Math.random()*.6),grav})}}
+U.anims.push((dt)=>{for(let i=UPART.length-1;i>=0;i--){const q=UPART[i];q.t-=dt;q.vy-=q.grav*dt;q.p.position.x+=q.vx*dt;q.p.position.y+=q.vy*dt;q.p.position.z+=q.vz*dt;if(q.p.position.y<.02){q.p.position.y=.02;q.vy=0;q.vx*=.5;q.vz*=.5}if(q.t<=0){q.parent.remove(q.p);UPART.splice(i,1)}}});
+/* ---------- QUIZ CARD: optional, never costs XP; first-try right = +3 XP (max 3 per object per day) ---------- */
+const UQZ=document.createElement("div");UQZ.id="uquiz";UQZ.style.cssText="position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483002;display:none;width:min(560px,94vw);background:rgba(20,18,58,.96);color:#fff;border:3px solid #ffd23f;border-radius:18px;padding:14px 16px;font:600 17px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.4)";document.body.appendChild(UQZ);
+U.quiz=null;
+function uquiz(kind,id,emoji){if(U.quiz)return;const q=UQ.G[kind](Math.floor(Math.random()*1e9));U.quiz={q,id,tries:0};
+  UQZ.innerHTML=`<div style="font:800 13px system-ui;color:#ffd23f;letter-spacing:.5px">${emoji||"🧮"} MATH MOMENT · ${q.std} · optional</div><div id="uqT" style="margin:6px 0 10px">${q.text}</div><div id="uqC" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div><div id="uqF" style="min-height:22px;margin-top:8px;font-weight:700"></div><div style="text-align:right"><button id="uqX" style="border:0;border-radius:10px;padding:.4rem .9rem;background:#2a2448;color:#fff;font:700 14px system-ui;cursor:pointer">Close (Esc)</button></div>`;
+  q.choices.forEach((c,i)=>{const b=document.createElement("button");b.textContent=(i+1)+") "+c;b.dataset.v=c;b.style.cssText="border:0;border-radius:12px;padding:.6rem;background:#ffd23f;color:#14123a;font:800 17px system-ui;cursor:pointer";b.onclick=()=>uanswer(c,b);UQZ.querySelector("#uqC").appendChild(b)});
+  UQZ.querySelector("#uqX").onclick=uclose;UQZ.style.display="block";for(const k in K)K[k]=false}
+function uanswer(c,b){const Z=U.quiz;if(!Z||Z.done)return;Z.tries++;const F=UQZ.querySelector("#uqF");
+  if(c===Z.q.ans){Z.done=1;b.style.background="#6dff6b";const key="lu3d_uq_"+new Date().toDateString()+"_"+Z.id,n=+(localStorage.getItem(key)||0);
+    if(Z.tries===1&&n<3){localStorage.setItem(key,n+1);F.textContent="✅ Correct! "+Z.q.explain+" +3 XP";xpMsg("🧮 Math moment! +3 XP",3)}else F.textContent="✅ Correct! "+Z.q.explain;ubeep(880,.12,"triangle",.06,300);setTimeout(uclose,2600)}
+  else{b.style.background="#ff8f8f";b.disabled=true;F.textContent=Z.tries>=2?"💡 "+Z.q.explain:"Not quite — try again!";ubeep(200,.15,"sawtooth",.04)}}
+function uclose(){UQZ.style.display="none";U.quiz=null}
+window.uquiz=uquiz;window.uclose=uclose;
+{const _bU=BLOCKIN;BLOCKIN=()=>_bU()||!!U.quiz}
+{const _okU=OVERLAY_KEYS;OVERLAY_KEYS=e=>{if(U.quiz){if(e.key==="Escape")uclose();else if(/^[1-4]$/.test(e.key)){const b=UQZ.querySelectorAll("#uqC button")[+e.key-1];if(b&&!b.disabled)b.click()}return true}return _okU?_okU(e):false}}
+/* a reaction bubble + an offer to do the math moment (press M or tap the card) */
+function uoffer(emoji,text,kind,id){bub(emoji,text);if(!kind)return;U.offer={kind,id,emoji,t:performance.now()};UOF.innerHTML=`${emoji} ${text.length>70?"":"" }<b>Math moment?</b> Press <b>M</b> or tap here`;UOF.style.display="block";clearTimeout(UOF._t);UOF._t=setTimeout(()=>{UOF.style.display="none";U.offer=null},6000)}
+const UOF=document.createElement("div");UOF.id="uoffer";UOF.style.cssText="position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:2147483001;display:none;background:#ffd23f;color:#14123a;border-radius:999px;padding:.45rem 1rem;font:700 15px system-ui;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)";document.body.appendChild(UOF);
+UOF.onclick=()=>{const o=U.offer;UOF.style.display="none";U.offer=null;if(o)uquiz(o.kind,o.id,o.emoji)};
+addEventListener("keydown",e=>{if(e.key.toLowerCase()==="m"&&U.offer&&!U.quiz&&!QG){const o=U.offer;U.offer=null;UOF.style.display="none";uquiz(o.kind,o.id,o.emoji)}});
+/* per-frame hook */
+{const _ugU=updateGame;updateGame=function(dt,now){_ugU(dt,now);for(const f of U.anims){try{f(dt,now)}catch(e){}}}}
+/* ---------- FLAT-PANEL AUDIT: textured image planes/faces that stand in for 3D objects inside walkable space ---------- */
+function flatAudit(){const out=[],bb=new T.Box3(),sz=new T.Vector3();S.updateMatrixWorld(true);
+  S.traverse(o=>{if(!o.isMesh||!o.visible&&false)return;const mats=Array.isArray(o.material)?o.material:[o.material];
+    const img=mats.find(m=>m&&m.map&&m.map.image&&!(m.map.image instanceof HTMLCanvasElement)&&!(m.alphaTest>0)&&!m.map.isVideoTexture);if(!img)return;
+    if(U.flatOK.has(o)||o.userData.flatOK)return;if(o.geometry&&o.geometry.type==="CylinderGeometry")return;/* skyline drums */
+    bb.setFromObject(o);bb.getSize(sz);if(sz.y<.05)return;/* floors / ceilings */
+    const big=Math.max(sz.x,sz.z)>=1.4&&sz.y>=1;if(!big||bb.min.y>2.2)return;
+    const cz=(bb.min.z+bb.max.z)/2;let area="street";for(const k in ROOMS){const R=ROOMS[k];const d=(R.d||RD)/2+1;if(cz>R.cz-d&&cz<R.cz+d){area=k;break}}
+    const src=(img.map.image.currentSrc||img.map.image.src||"").split("/").pop();out.push({area,src,w:+Math.max(sz.x,sz.z).toFixed(2),h:+sz.y.toFixed(2),x:+((bb.min.x+bb.max.x)/2).toFixed(1),z:+cz.toFixed(1)})});return out}
+window.flatAudit=flatAudit;
+
+/* =====================================================================
+   18. UNIVERSE · STREET: detailed NYC street furniture, every piece interactive (press E / tap)
+   trash cans (lid lifts, see what's inside) · hydrants (spray) · lamps (switch) · trees (shake) · benches ·
+   USPS mailbox · newsstand (math headlines) · subway entrance · fruit stand · taxis (wave one down) ·
+   3D display windows on every clothing store · school planters + notice case
+   ===================================================================== */
+const ST3={cans:[],lamps:[],trees:[],hyd:[]};U.street=ST3;
+const iron=UM(0x1d2a24,{metalness:.6,roughness:.45}),canG=UM(0x2f6b3a,{metalness:.35,roughness:.55}),canD=UM(0x1f4a28,{metalness:.4,roughness:.5}),bagM=UM(0x161616,{roughness:.9}),
+  silver=UM(0xc9ced4,{metalness:.8,roughness:.3}),wood=UM(0x9a6234,{roughness:.75}),woodD=UM(0x6b4123,{roughness:.8}),stoneM=UM(0xd9cdb8,{roughness:.9}),concrete=UM(0x9a968e,{roughness:.95});
+/* ---------- TRASH CANS (same spots the litter clean-up uses) ---------- */
+{const n0=CANS.length;CANS.forEach(([x,z])=>uremove(S,o=>Math.abs(o.position.x-x)<.6&&Math.abs(o.position.z-z)<.6&&o.position.y>.3&&o.position.y<1.5));
+ const kit=Kit(),R0=.38;
+ CANS.forEach(([x,z],i)=>{kit.base(mat4(x,.12,z));kit.add(cy(.34,.31,.08,20),canD,0,.04,0);kit.add(cy(.355,.32,.9,20,true),bagM,0,.5,0);
+   for(let k=0;k<18;k++){const a=k/18*Math.PI*2;kit.add(bx(.055,.92,.022),canG,Math.cos(a)*R0,.51,Math.sin(a)*R0,0,-a+Math.PI/2,0)}
+   [.12,.5,.88].forEach(y=>kit.add(tor(R0,.024,6,28),canD,0,y,0,Math.PI/2));kit.add(tor(R0+.01,.035,8,28),canD,0,.97,0,Math.PI/2);
+   usolid(x-.42,x+.42,z-.42,z+.42,1.1)});
+ kit.build(S,{name:"u_cans"});
+ const items=[["banana peel",(g)=>{const y=UM(0xffd23f,{roughness:.6});for(let k=0;k<4;k++){const m=new T.Mesh(bx(.05,.012,.2),y);m.rotation.set(-.4,k*Math.PI/2,0);m.position.set(Math.sin(k*Math.PI/2)*.07,.02,Math.cos(k*Math.PI/2)*.07);g.add(m)}const c=new T.Mesh(sp(.035,8),UM(0x6b4a1f));c.position.y=.04;g.add(c)}],
+   ["crumpled worksheet",(g)=>{const m=new T.Mesh(ico(.09,0),UM(0xf4f1e8,{flatShading:true}));m.scale.set(1.2,.8,1);m.position.y=.06;g.add(m);const m2=new T.Mesh(ico(.06,0),UM(0xe6e9ff,{flatShading:true}));m2.position.set(.12,.04,.05);g.add(m2)}],
+   ["soda can and a pizza crust",(g)=>{const c=new T.Mesh(cy(.035,.035,.12,12),UM(0xc0392b,{metalness:.6}));c.rotation.z=Math.PI/2;c.position.set(-.06,.04,0);g.add(c);const cr=new T.Mesh(tor(.09,.025,6,12,Math.PI),UM(0xc98a3c));cr.rotation.x=-Math.PI/2;cr.position.set(.08,.03,.04);g.add(cr)}],
+   ["apple core",(g)=>{const a=new T.Mesh(cy(.03,.03,.08,10),UM(0xf5e6c8));a.position.y=.05;g.add(a);[-1,1].forEach(s=>{const e=new T.Mesh(sp(.045,10),UM(0xd92b2b));e.scale.y=.5;e.position.y=.05+s*.05;g.add(e)})}]];
+ CANS.forEach(([x,z],i)=>{const grp=new T.Group();grp.position.set(x,.12,z);S.add(grp);
+   const cont=new T.Group();cont.position.y=.9;grp.add(cont);const kind=i%items.length;items[kind][1](cont);
+   const coin=(i===1||i===3)?new T.Mesh(cy(.06,.06,.015,18),UM(0xffc83d,{metalness:.9,roughness:.25,emissive:0x664400,emissiveIntensity:.4})):null;if(coin){coin.position.set(.1,.07,-.08);coin.rotation.x=.3;cont.add(coin)}
+   /* lid on a back hinge: dome + rim + handle */
+   const hinge=new T.Group();hinge.position.set(0,.99,(R0+.02)*Math.sign(z));grp.add(hinge);const lid=new T.Group();lid.position.set(0,0,-(R0+.02)*Math.sign(z));hinge.add(lid);
+   const dome=new T.Mesh(new T.SphereGeometry(.42,22,8,0,Math.PI*2,0,Math.PI/2.4),canD);dome.scale.y=.35;dome.castShadow=true;lid.add(dome);
+   const rim=new T.Mesh(tor(.41,.03,6,28),canG);rim.rotation.x=Math.PI/2;lid.add(rim);const hd=new T.Mesh(tor(.08,.018,6,14,Math.PI),silver);hd.position.y=.13;lid.add(hd);
+   const C={i,x,z,grp,hinge,cont,coin,item:items[kind][0],open:0,cur:0};ST3.cans.push(C);
+   C.tap=utap("street",x,z,"Press E to lift the trash can lid 🗑️",()=>{C.open=!C.open;ubeep(C.open?520:330,.12,"square",.03,C.open?200:-120);C.tap.label=C.open?"Press E to put the lid back on":"Press E to lift the trash can lid 🗑️";
+     if(!C.open)return;const what=C.coin&&C.coin.parent?"a "+C.item+"… and a shiny coin!":"a "+C.item+".";
+     setTimeout(()=>{if(C.coin&&C.coin.parent&&onceXP("canCoin"+i,10,"🪙 A coin was hiding in the trash can! +10 XP")){C.cont.remove(C.coin);return}
+       if(C.item==="crumpled worksheet")uoffer("📄","Inside: a crumpled math worksheet! Can you solve it?","mult","can"+i);else uoffer("🗑️","Inside: "+what+(C.item==="banana peel"?" Ew!":" Yuck."),i%2?"meters":null,"can"+i)},420)},1.25)});
+ if(ONCE.has("canCoin1"))ST3.cans[1].cont.remove(ST3.cans[1].coin);if(ONCE.has("canCoin3"))ST3.cans[3].cont.remove(ST3.cans[3].coin);
+ U.anims.push((dt)=>{for(const C of ST3.cans){const w=C.open?1:0;C.cur+=(w-C.cur)*Math.min(1,dt*7);C.hinge.rotation.x=C.cur*1.95*Math.sign(C.z);C.hinge.position.y=.99+C.cur*.08}})}
+/* ---------- FIRE HYDRANTS ---------- */
+{const red=UM(0xc8202a,{metalness:.3,roughness:.45}),kit=Kit();const HY=[[-33.5,4.95],[8.5,4.95],[-24.6,-4.95],[45,-4.95]];
+ HY.forEach(([x,z])=>{const f=z>0?Math.PI:0;kit.base(mat4(x,.12,z,f));kit.add(cy(.2,.23,.08,16),red,0,.04,0);kit.add(cy(.13,.15,.58,16),red,0,.37,0);kit.add(cy(.17,.17,.06,16),red,0,.68,0);
+   kit.add(new T.SphereGeometry(.14,16,8,0,Math.PI*2,0,Math.PI/2),silver,0,.71,0);kit.add(cy(.04,.05,.08,5),silver,0,.88,0);
+   [-1,1].forEach(s=>{kit.add(cy(.055,.06,.14,12),red,s*.18,.48,0,0,0,Math.PI/2);kit.add(cy(.07,.07,.04,6),silver,s*.26,.48,0,0,0,Math.PI/2)});
+   kit.add(cy(.075,.08,.13,12),red,0,.46,.17,Math.PI/2);kit.add(cy(.09,.09,.04,6),silver,0,.46,.25,Math.PI/2);for(let k=0;k<4;k++)kit.add(tor(.022,.006,4,8),silver,.08+k*.03,.4-k*.012,.2,0,k%2*Math.PI/2);
+   usolid(x-.26,x+.26,z-.26,z+.26,.95)});
+ kit.build(S,{name:"u_hydrants"});
+ HY.forEach(([x,z],i)=>{const H={x,z,on:0,pud:null};ST3.hyd.push(H);const dirz=z>0?-1:1;
+   const pud=new T.Mesh(new T.CircleGeometry(1,28),new T.MeshStandardMaterial({color:0x6fb6ff,transparent:true,opacity:0,roughness:.05,metalness:.3,depthWrite:false}));pud.rotation.x=-Math.PI/2;pud.position.set(x,.125,z+dirz*1.5);pud.scale.setScalar(.01);S.add(pud);H.pud=pud;
+   H.tap=utap("street",x,z+dirz*.5,"Press E to open the fire hydrant 💦",()=>{if(H.on>0)return;H.on=4;ubeep(160,.5,"sawtooth",.03,-60);uoffer("💦","Summer splash! The hydrant is spraying.","hydrant","hyd"+i)},1.3)});
+ U.anims.push((dt)=>{for(const H of ST3.hyd){const dz=H.z>0?-1:1;if(H.on>0){H.on-=dt;if(AREA==="street")for(let k=0;k<3;k++){const p=new T.Mesh(sp(.04,5),UM(0x9fd4ff,{emissive:0x4aa0ff,emissiveIntensity:.3}));p.position.set(H.x,.58,H.z+dz*.3);S.add(p);UPART.push({p,parent:S,vx:(Math.random()-.5)*.8,vy:2.4+Math.random(),vz:dz*(3+Math.random()*1.2),t:.9,grav:9})}
+   H.pud.material.opacity=Math.min(.55,H.pud.material.opacity+dt*.3);H.pud.scale.setScalar(Math.min(1.3,H.pud.scale.x+dt*.4))}else if(H.pud.material.opacity>0){H.pud.material.opacity=Math.max(0,H.pud.material.opacity-dt*.05);if(H.pud.material.opacity===0)H.pud.scale.setScalar(.01)}}})}
+/* ---------- STREET LAMPS: cast-iron base, fluted pole, crook arm, lantern; each has a switch ---------- */
+{uremove(S,o=>o.geometry&&o.geometry.type==="CylinderGeometry"&&o.geometry.parameters.radiusTop===.09&&Math.abs(Math.abs(o.position.z)-4.6)<.01);
+ uremove(S,o=>o.geometry&&o.geometry.type==="SphereGeometry"&&o.geometry.parameters.radius===.28&&Math.abs(o.position.y-4.7)<.01);
+ const lampG=UM(0x2f4f3a,{metalness:.55,roughness:.4}),kit=Kit(),on=UM(0xfff2c0,{emissive:0xffd77a,emissiveIntensity:1.6}),off=UM(0x8a8574,{roughness:.3,metalness:.2});ST3.lampOn=on;ST3.lampOff=off;
+ const arm=new T.TorusGeometry(.42,.04,8,18,Math.PI);
+ for(let x=-54;x<=54;x+=12)[-4.6,4.6].forEach(z=>{const f=z>0?Math.PI:0;kit.base(mat4(x,.12,z,f));
+   kit.add(cy(.2,.26,.5,8),lampG,0,.25,0);kit.add(cy(.16,.2,.12,8),lampG,0,.56,0);kit.add(cy(.075,.1,4.1,10),lampG,0,2.6,0);[1.2,2.6,4.2].forEach(y=>kit.add(cy(.11,.11,.06,10),lampG,0,y,0));
+   kit.add(arm,lampG,0,4.65,.42,0,Math.PI/2,0);
+   kit.add(cy(.05,.22,.2,10),lampG,0,4.58,.84);kit.add(cy(.23,.23,.04,10),lampG,0,4.47,.84);kit.add(sp(.03,6),lampG,0,4.72,.84);
+   const b=new T.Mesh(sp(.17,14),on);b.position.set(x,.12+4.36,z+(z>0?-.84:.84));b.scale.y=1.2;S.add(b);const Lp={x,z,b,on:true};ST3.lamps.push(Lp);
+   Lp.tap=utap("street",x,z,"Press E to flip the street lamp switch 💡",()=>{Lp.on=!Lp.on;Lp.b.material=Lp.on?on:off;ubeep(Lp.on?700:300,.06,"square",.03);const n=ST3.lamps.filter(l=>l.on).length;uoffer("💡",Lp.on?"Lamp ON. "+n+" of "+ST3.lamps.length+" lamps are lit.":"Lamp OFF. "+n+" of "+ST3.lamps.length+" lamps are lit.","lamps","lamp")},1.05)});
+ kit.build(S,{name:"u_lamps"});
+ /* street-name blades on the lamp at x=-6 */
+ {const g=new T.Group();g.position.set(-6,3.4,-4.6);S.add(g);[["LEVEL UP AVE",0],["MULTIPLICATION ST",Math.PI/2]].forEach(([t,r],k)=>{const s=new T.Group();s.rotation.y=r;s.position.y=k*.28;g.add(s);sign(s,t,.75,0,0,1.5,.24,"#0b6b3a","#ffffff");sign(s,t,.75,0,-.012,1.5,.24,"#0b6b3a","#ffffff",Math.PI)})}}
+/* ---------- TREES: tree pit + iron guard, tapered trunk with branches, clustered low-poly canopy; shake them ---------- */
+{uremove(S,o=>o.geometry&&((o.geometry.type==="CylinderGeometry"&&o.geometry.parameters.height===2.4&&o.geometry.parameters.radiusTop===.15)||(o.geometry.type==="SphereGeometry"&&o.geometry.parameters.radius===1.3)));
+ const bark=UM(0x6b4a2f,{roughness:.95}),leaf1=UM(0x4f9a4a,{roughness:.9,flatShading:true}),leaf2=UM(0x3c7d3a,{roughness:.9,flatShading:true}),soil=UM(0x4a3526,{roughness:1}),kit=Kit();
+ let ti=0;for(let x=-48;x<=48;x+=24)[-8.2,8.2].forEach(z=>{const X=x+6;kit.base(mat4(X,.12,z));kit.add(bx(1.3,.03,1.3),soil,0,.015,0);[[0,.62],[0,-.62],[.62,0],[-.62,0]].forEach(([a,b])=>kit.add(bx(a?.06:1.3,.1,a?1.3:.06),stoneM,a,.05,b));
+   [[0,.6],[0,-.6],[.6,0],[-.6,0]].forEach(([a,b])=>{kit.add(bx(a?.03:1.2,.03,a?1.2:.03),iron,a,.45,b);for(let k=-2;k<=2;k++)kit.add(bx(.025,.45,.025),iron,a||k*.28,.23,b||k*.28)});
+   kit.add(cy(.13,.22,2.7,10),bark,0,1.35,0);kit.add(cy(.05,.09,1.1,7),bark,.32,2.5,.1,0,0,-.75);kit.add(cy(.05,.09,1,7),bark,-.28,2.6,-.12,0,0,.7);kit.add(cy(.04,.07,.9,7),bark,.05,2.7,-.35,.7,0,0);
+   const can=new T.Group();can.position.set(X,.12,z);S.add(can);const ck=Kit();[[0,3.35,0,1.05,leaf1],[.65,3.05,.2,.75,leaf2],[-.6,3.15,-.2,.8,leaf1],[.1,3.9,-.3,.7,leaf2],[-.2,3.0,.55,.7,leaf2],[.35,3.6,.5,.65,leaf1]].forEach(([a,b,c,r,m])=>ck.add(ico(r,1),m,a,b,c));
+   const piv=new T.Group();can.add(piv);ck.build(piv);usolid(X-.25,X+.25,z-.25,z+.25,2.6);
+   const Tr={x:X,z,piv,shake:0,i:ti++};ST3.trees.push(Tr);
+   Tr.tap=utap("street",X,z+(z>0?-.9:.9),"Press E to shake the tree 🌳",()=>{Tr.shake=1.2;upuff(S,X,3.2,z,18,0x5aa84f,2.4,.4,2.2,.06,2.2);
+     if(Tr.i===3&&onceXP("treeCoin",10,"🐿️ A squirrel dropped a coin! +10 XP"))return;bub("🍃",["Leaves everywhere! 🍃","A squirrel ran up the trunk! 🐿️","Whoa, the whole tree rustled.","An acorn bonked Theo on the head!"][Math.floor(Math.random()*4)])},1.1)});
+ kit.build(S,{name:"u_trees"});
+ U.anims.push((dt,now)=>{for(const Tr of ST3.trees){if(Tr.shake>0){Tr.shake-=dt;Tr.piv.rotation.z=Math.sin(now/45)*.05*Tr.shake;Tr.piv.rotation.x=Math.cos(now/60)*.03*Tr.shake}else if(Tr.piv.rotation.z){Tr.piv.rotation.z=Tr.piv.rotation.x=0}}})}
+/* ---------- BENCHES: slatted wood on cast-iron legs ---------- */
+{const kit=Kit(),BEN=[[-12.6,-7.95,0],[10,7.95,Math.PI],[-40.5,7.95,Math.PI]];
+ BEN.forEach(([x,z,r])=>{kit.base(mat4(x,.12,z,r));for(let k=0;k<4;k++)kit.add(rbox(2,.04,.1,.015),wood,0,.46,-.18+k*.12);for(let k=0;k<3;k++)kit.add(rbox(2,.1,.035,.012),wood,0,.66+k*.13,-.27,-.18);
+   [-.85,.85].forEach(sx=>{kit.add(bx(.06,.46,.06),iron,sx,.23,.15);kit.add(bx(.06,.46,.06),iron,sx,.23,-.22);kit.add(bx(.06,.06,.5),iron,sx,.44,-.03);kit.add(bx(.05,.5,.05),iron,sx,.75,-.29,-.18);kit.add(rbox(.06,.05,.5,.02),iron,sx,.63,-.03)});
+   const c=Math.abs(Math.cos(r))>.5;usolid(x-1.05,x+1.05,z-.35,z+.35,.5)});
+ kit.build(S,{name:"u_benches"});
+ /* the old 'check under the bench' coin now has a real bench; after the coin, measure the bench */
+ const bt=TAPS.find(t=>t.area==="street"&&/under the bench/.test(t.label));if(bt){const f0=bt.fn;bt.fn=()=>{if(ONCE.has("bench")){uoffer("🪑","Nothing under the bench. It's a nice long bench, though!","meters","bench");return}f0()}}
+ utap("street",10,7.2,"Press E to sit on the bench and rest 🪑",()=>uoffer("🪑","Ahh, nice break. Benches in NYC parks are about 2 meters long.","meters","bench2"),1.2);
+ utap("street",-40.5,7.2,"Press E to sit on the bench 🪑",()=>uoffer("🐦","A pigeon lands next to you and coos. 🐦",null),1.2)}
+/* ---------- USPS MAILBOX: rounded top, legs, pull-down chute that opens when you mail a letter ---------- */
+{const mx=-26,mz=6.6;uremove(S,o=>Math.abs(o.position.x-mx)<.5&&Math.abs(o.position.z-mz)<.5&&o.position.y>.3);
+ const blue=UM(0x1f4aa8,{metalness:.35,roughness:.45}),kit=Kit();kit.base(mat4(mx,.12,mz,Math.PI));
+ kit.add(rbox(.62,.72,.52,.04),blue,0,.98,0);kit.add(new T.CylinderGeometry(.31,.31,.52,20,1,false,-Math.PI/2,Math.PI),blue,0,1.34,0,Math.PI/2,0,0);
+ [[-.27,-.22],[.27,-.22],[-.27,.22],[.27,.22]].forEach(([a,b])=>kit.add(bx(.05,.62,.05),blue,a,.31,b));kit.add(bx(.66,.05,.56),UM(0x173a86),0,.6,0);
+ kit.build(S,{name:"u_mailbox"});
+ const g=new T.Group();g.position.set(mx,.12,mz);g.rotation.y=Math.PI;S.add(g);sign(g,"UNITED STATES POSTAL SERVICE",0,.78,.27,.56,.14,"#1f4aa8","#ffffff");
+ const chute=new T.Group();chute.position.set(0,1.3,.27);g.add(chute);const fl=new T.Mesh(rbox(.42,.16,.03,.01),UM(0x2a5cc8,{metalness:.5,roughness:.35}));fl.position.y=-.08;chute.add(fl);const hd=new T.Mesh(rbox(.22,.035,.04,.01),silver);hd.position.set(0,-.13,.025);chute.add(hd);
+ usolid(mx-.34,mx+.34,mz-.3,mz+.3,1.6);let op=0,cur=0;U.anims.push(dt=>{op=Math.max(0,op-dt);const w=op>0?1:0;cur+=(w-cur)*Math.min(1,dt*8);chute.rotation.x=cur*.9});
+ const mt=TAPS.find(t=>t.area==="street"&&/mail a letter/.test(t.label));if(mt){const f0=mt.fn;mt.fn=()=>{op=1.6;ubeep(260,.12,"square",.03);f0()}}}
+/* ---------- NEWSSTAND: kiosk with vendor window, magazine racks, newspaper stacks; read the math headline ---------- */
+{const nx=0,nz=7.65,g=new T.Group();g.position.set(nx,.12,nz);g.rotation.y=Math.PI;S.add(g);const kit=Kit(),grn=UM(0x0b6b3a,{metalness:.3,roughness:.5}),grnD=UM(0x084a28,{metalness:.3,roughness:.5});
+ kit.add(rbox(3.2,2.3,1.3,.05),grn,0,1.15,0);kit.add(rbox(3.6,.14,1.8,.04),grnD,0,2.37,.15);kit.add(bx(3.4,.18,.06),UM(0xffd23f),0,2.27,1.04);
+ kit.add(bx(1.5,.9,.06),UM(0x2a2418),0,1.45,.63);kit.add(bx(1.6,.06,.35),wood,0,.98,.78);[-.78,.78].forEach(x=>kit.add(bx(.06,1,.1),grnD,x,1.45,.66));
+ const cols=[0xe23b3b,0x3d7be0,0xffb52e,0x8a5cff,0x2a9d8f,0xff6b8a];
+ [-1,1].forEach(s=>{for(let r=0;r<3;r++){kit.add(bx(.62,.04,.22),grnD,s*1.22,.5+r*.45,.76,-.35);for(let k=0;k<3;k++)kit.add(bx(.17,.24,.02),UM(cols[(r*3+k+(s>0?2:0))%6]),s*1.22-.2+k*.2,.64+r*.45,.81,-.35)}});
+ for(let k=0;k<3;k++)kit.add(bx(.36,.08+k*.02,.26),UM(0xf2efe6),-.45+k*.45,1.05+k*.01,.82);
+ kit.build(g,{name:"u_newsstand"});sign(g,"NEWS · MAGAZINES · SNACKS",0,2.05,.67,2.6,.32,"#0b6b3a","#ffd23f");
+ const vend=new T.Mesh(new T.CapsuleGeometry(.16,.3,4,10),UM(0x7a4a2a));vend.position.set(.1,1.25,.35);g.add(vend);const vh=new T.Mesh(sp(.13,12),UM(0x8d5a3b));vh.position.set(.1,1.68,.35);g.add(vh);const cap=new T.Mesh(cy(.14,.14,.06,12),UM(0x1f4aa8));cap.position.set(.1,1.8,.35);g.add(cap);
+ usolid(nx-1.65,nx+1.65,nz-.85,nz+.7,2.4);
+ utap("street",nx,nz-1.4,"Press E to read today's newspaper 📰",()=>{const q=UQ.G.round(Math.floor(Math.random()*1e6));uoffer("📰",q.text.split("!")[0]+"!","round","news")},1.4)}
+/* ---------- SUBWAY ENTRANCE: stairs going down (hole in the sidewalk), green rails, globe lamps, MetroCard machine ---------- */
+{const sx=-30,X0=sx-.8,X1=sx+.8,Z0=6.15,Z1=8.6;
+ const cut=m=>{m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vUW;").replace("#include <begin_vertex>","#include <begin_vertex>\nvUW=(modelMatrix*vec4(transformed,1.0)).xyz;");
+   sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vUW;").replace("void main() {",`void main() {\nif(vUW.x>${X0.toFixed(2)}&&vUW.x<${X1.toFixed(2)}&&vUW.z>${Z0.toFixed(2)}&&vUW.z<${Z1.toFixed(2)})discard;`)};m.needsUpdate=true};
+ S.children.forEach(o=>{if(o.isMesh&&o.geometry&&o.geometry.type==="PlaneGeometry"&&((o.geometry.parameters.width===LEN&&o.geometry.parameters.height===5&&o.position.z>0)||o.geometry.parameters.width===900))cut(o.material)});
+ const kit=Kit(),tile=UM(0xe8e2d0,{roughness:.6}),step=UM(0x7c7a76,{roughness:.9}),nose=UM(0xb8a040,{metalness:.6,roughness:.4}),dark=UM(0x22201e);
+ const N=10,run=(Z1-Z0)/N,rise=.22;for(let k=0;k<N;k++){const y=.12-(k+1)*rise;kit.add(bx(1.6,rise,run+.02),step,sx,y+rise/2,Z0+run*(k+.5));kit.add(bx(1.6,.03,.04),nose,sx,y+rise,Z0+run*k+.02)}
+ kit.add(bx(1.6,.1,1.2),step,sx,.12-N*rise-.05,Z1+.6);[-1,1].forEach(s=>kit.add(bx(.08,N*rise+.3,Z1-Z0+1.4),tile,sx+s*.84,.12-(N*rise)/2+.1,(Z0+Z1)/2+.6));
+ kit.add(bx(1.7,N*rise+.3,.08),tile,sx,.12-(N*rise)/2+.1,Z1+1.2);kit.add(bx(1.6,.05,1.4),dark,sx,.12-.05,Z1+.6);
+ /* rails: front gate + sides + back */
+ [-1,1].forEach(s=>{const x=sx+s*.9;for(let k=0;k<=6;k++)kit.add(bx(.035,1,.035),iron,x,.62,Z0+k*(Z1-Z0+.1)/6);kit.add(bx(.06,.06,Z1-Z0+.2),iron,x,1.12,(Z0+Z1)/2);kit.add(bx(.05,.05,Z1-Z0+.2),iron,x,.35,(Z0+Z1)/2);
+   kit.add(cy(.05,.06,2,10),iron,x,1.12,Z0-.05);});
+ for(let k=0;k<=8;k++)kit.add(bx(.03,1,.03),iron,sx-.9+k*.225,.62,Z1+.1);kit.add(bx(1.85,.06,.06),iron,sx,1.12,Z1+.1);
+ kit.build(S,{name:"u_subway"});
+ const gate=new T.Group();gate.position.set(sx,.12,Z0-.05);S.add(gate);const gk=Kit();for(let k=0;k<9;k++)gk.add(bx(.025,.95,.025),iron,-.8+k*.2,.5,0);gk.add(bx(1.7,.04,.04),iron,0,.95,0);gk.add(bx(1.7,.04,.04),iron,0,.15,0);for(let k=0;k<8;k++)gk.add(bx(.02,.28,.02),iron,-.7+k*.2,.55,0,0,0,.6);gk.build(gate);
+ [-1,1].forEach(s=>{const gl=new T.Mesh(sp(.15,14),UM(0x6dff6b,{emissive:0x2bd94f,emissiveIntensity:1.4}));gl.position.set(sx+s*.9,.12+2.2,Z0-.05);S.add(gl)});
+ const bar=new T.Group();bar.position.set(sx,.12+1.82,Z0-.05);S.add(bar);sign(bar,"SUBWAY  ④ ⑤ ⑥",0,0,.04,1.75,.32,"#111111","#ffffff");sign(bar,"SUBWAY  ④ ⑤ ⑥",0,0,-.04,1.75,.32,"#111111","#ffffff",Math.PI);
+ usolid(X0-.15,X1+.15,Z0-.15,Z1+.3,1.2);
+ const mc=Kit();mc.add(rbox(.6,1.5,.45,.05),UM(0x2b2f36,{metalness:.4}),0,.75,0);mc.add(bx(.4,.3,.02),UM(0x6fd0ff,{emissive:0x2bb0ff,emissiveIntensity:.9}),0,1.15,.23);mc.add(bx(.3,.05,.03),UM(0xffd23f),0,.85,.23);mc.add(bx(.36,.12,.05),UM(0x111111),0,.5,.23);
+ const mg=new T.Group();mg.position.set(sx+1.6,.12,7.4);mg.rotation.y=Math.PI;S.add(mg);mc.build(mg);sign(mg,"MetroCard",0,1.4,.235,.5,.1,"#ffd23f","#14123a");usolid(sx+1.28,sx+1.92,7.15,7.65,1.5);
+ let gt=0;U.anims.push(dt=>{gt=Math.max(0,gt-dt);gate.position.y=.12+Math.sin(gt*20)*.01*gt});
+ utap("street",sx,Z0-.9,"Press E to check when the next train comes 🚇",()=>{gt=1;ubeep(90,.9,"sawtooth",.04,-30);uoffer("🚇","Rumble... a train passes under the street! The gate opens at 5 AM.","train","subway")},1.3);
+ utap("street",sx+1.6,6.6,"Press E to use the MetroCard machine 🎫",()=>{ubeep(900,.08,"square",.03);setTimeout(()=>ubeep(1200,.08,"square",.03),120);uoffer("🎫","Beep! One ride costs $2.90.","fruit","metro")},1.1)}
+/* ---------- FRUIT STAND: crates of apples, oranges, bananas, grapes; striped awning; hanging scale ---------- */
+{const fx=19.5,fz=7.75,g=new T.Group();g.position.set(fx,.12,fz);g.rotation.y=Math.PI;S.add(g);const kit=Kit();
+ kit.add(rbox(3,.08,1.2,.02),wood,0,.82,0);[[-1.4,-.5],[1.4,-.5],[-1.4,.5],[1.4,.5]].forEach(([a,b])=>kit.add(bx(.07,.82,.07),woodD,a,.41,b));kit.add(bx(2.9,.05,1.1),woodD,0,.25,0);
+ const crate=(x,z,tilt)=>{kit.add(bx(.85,.04,.6),woodD,x,.9,z,tilt);[-1,1].forEach(s=>{kit.add(bx(.85,.18,.03),wood,x,.98,z+s*.29,tilt);kit.add(bx(.03,.18,.6),wood,x+s*.41,.98,z,tilt)})};
+ const fr={apple:UM(0xd92b2b,{roughness:.45}),orange:UM(0xff8c1a,{roughness:.6}),lime:UM(0x7cc33a,{roughness:.5}),grape:UM(0x6b2a8a,{roughness:.4}),banana:UM(0xffd23f,{roughness:.6})};
+ [[-1,.18,"apple"],[0,.18,"orange"],[1,.18,"lime"]].forEach(([x,z,k])=>{crate(x,z,-.15);for(let i=0;i<5;i++)for(let j=0;j<3;j++)kit.add(sp(.075,7),fr[k],x-.32+i*.16,1.05+j*.02+(i+j)%2*.03,z-.16+j*.16)});
+ crate(-.6,-.3,0);for(let b=0;b<4;b++)for(let k=0;k<4;k++)kit.add(new T.TorusGeometry(.16,.03,6,10,Math.PI*.6),fr.banana,-.85+b*.17,1.02,-.3+k*.03-.05,Math.PI/2,0,b*.3);
+ crate(.6,-.3,0);for(let c=0;c<3;c++)for(let k=0;k<14;k++){const a=k*2.4,rr=.05+k*.004;kit.add(sp(.03,6),fr.grape,.35+c*.25+Math.cos(a)*rr,1.08-k*.008,-.3+Math.sin(a)*rr)}
+ [-1.45,1.45].forEach(x=>{kit.add(cy(.035,.035,2.2,8),woodD,x,1.1,.55)});
+ const aw=canvasTex(512,128,(c,W,H)=>{for(let i=0;i<8;i++){c.fillStyle=i%2?"#ffffff":"#d62828";c.fillRect(i*W/8,0,W/8,H)}});kit.build(g,{name:"u_fruit"});
+ const awn=new T.Mesh(new T.BoxGeometry(3.3,.05,1.5),[stoneM,stoneM,new T.MeshStandardMaterial({map:aw,roughness:.8}),stoneM,stoneM,stoneM]);awn.position.set(0,2.15,.1);awn.rotation.x=-.25;awn.castShadow=true;g.add(awn);U.flatOK.add(awn);
+ for(let i=0;i<10;i++){const fl=new T.Mesh(bx(.33,.14,.01),i%2?UM(0xffffff):UM(0xd62828));fl.position.set(-1.5+i*.33,1.98,.84);fl.rotation.x=-.25;g.add(fl)}
+ sign(g,"FRESH FRUIT · 45¢ ea",0,1.62,.58,1.8,.26,"#2e7d32","#ffffff");
+ const scale=new T.Group();scale.position.set(1.1,1.9,.45);g.add(scale);const sc=new T.Mesh(cy(.11,.11,.06,16),silver);sc.rotation.x=Math.PI/2;scale.add(sc);const dish=new T.Mesh(new T.SphereGeometry(.16,14,6,0,Math.PI*2,Math.PI/2,Math.PI/2),silver);dish.position.y=-.35;scale.add(dish);
+ const chn=new T.Mesh(cy(.006,.006,.25,4),silver);chn.position.y=-.2;scale.add(chn);let sw=0;U.anims.push((dt,now)=>{sw=Math.max(0,sw-dt);scale.rotation.z=Math.sin(now/120)*.18*sw});
+ usolid(fx-1.55,fx+1.55,fz-.65,fz+.65,1.1);
+ utap("street",fx-.7,fz-1.25,"Press E to buy some fruit 🍎",()=>{ubeep(1000,.06,"triangle",.04);uoffer("🍎","\"Fresh apples, get your apples!\"","fruit","fruitstand")},1.2);
+ utap("street",fx+1,fz-1.25,"Press E to weigh grapes on the scale ⚖️",()=>{sw=1.5;uoffer("🍇","The scale swings… a bunch of grapes!","share","grapes")},1.1)}
+/* ---------- TAXIS: rounded body, cabin glass, chrome bumpers, lights, checker stripe, roof sign; wave one down ---------- */
+{const yel=UM(0xffc81e,{roughness:.35,metalness:.2}),glassD=UM(0x1d2a38,{roughness:.15,metalness:.5}),tire=UM(0x161616,{roughness:.9}),hub=UM(0xbfc5cc,{metalness:.85,roughness:.3}),
+   chk=new T.MeshStandardMaterial({map:canvasTex(256,32,(c,W,H)=>{for(let i=0;i<32;i++)for(let j=0;j<4;j++){c.fillStyle=(i+j)%2?"#111":"#fff";c.fillRect(i*8,j*8,8,8)}}),roughness:.5}),
+   roofT=new T.MeshStandardMaterial({map:canvasTex(256,64,(c,W,H)=>{c.fillStyle="#fffbe0";c.fillRect(0,0,W,H);c.fillStyle="#111";c.font="900 44px system-ui";c.textAlign="center";c.fillText("TAXI",W/2,48)}),emissive:0xfff4c0,emissiveIntensity:.5,emissiveMap:null});
+ TAXIS.forEach((t,i)=>{S.remove(t.m);const g=new T.Group(),kit=Kit();const head=M(0xfffbe8,{emissive:0xfff2c0,emissiveIntensity:.6}),tail=UM(0xd01010,{emissive:0xa00000,emissiveIntensity:.6});
+   kit.add(rbox(4.2,.62,1.84,.14),yel,0,.62,0);kit.add(rbox(1.2,.2,1.78,.1),yel,1.3,.98,0,0,0,-.08);kit.add(rbox(2.3,.66,1.66,.2),glassD,-.15,1.22,0);kit.add(rbox(2.0,.08,1.6,.04),yel,-.15,1.56,0);
+   [-1.2,-.15,.9].forEach(x=>kit.add(bx(.07,.6,1.68),yel,x,1.22,0));[-1,1].forEach(s=>{kit.add(bx(3.9,.12,.02),chk,0,.72,s*.925);kit.add(bx(.1,.04,.02),hub,-.6,.85,s*.93);kit.add(bx(.1,.04,.02),hub,.4,.85,s*.93);
+     kit.add(rbox(.12,.1,.18,.03),yel,.95,1.2,s*.98)});
+   [-1,1].forEach(s=>{kit.add(rbox(.16,.22,1.9,.06),hub,s*2.12,.45,0)});
+   [[1.35,.92],[1.35,-.92],[-1.35,.92],[-1.35,-.92]].forEach(([x,z])=>{kit.add(cy(.36,.36,.26,18),tire,x,.36,z,Math.PI/2);kit.add(cy(.2,.2,.27,12),hub,x,.36,z,Math.PI/2)});
+   const sg=new T.Mesh(rbox(.7,.22,.3,.05),[roofT,roofT]);sg.position.set(-.15,1.72,0);g.add(sg);kit.build(g);
+   const hl=[];[-.65,.65].forEach(z=>{const h=new T.Mesh(cy(.1,.1,.04,12),head);h.rotation.z=Math.PI/2;h.position.set(2.12,.7,z);g.add(h);hl.push(h);const tl=new T.Mesh(bx(.04,.14,.24),tail);tl.position.set(-2.12,.72,z);g.add(tl)});
+   S.add(g);t.m=g;t.head=head;t.flash=0;t.stop=0;
+   t.tap=utap("street",t.x,t.z,"Press E to wave down the taxi 🚕",()=>{t.stop=2.6;t.flash=1.2;ubeep(420,.18,"square",.05);setTimeout(()=>ubeep(420,.25,"square",.05),230);bub("🚕",["\"Where to, kid? The meter says $3.00 to start.\"","Beep beep! The driver waves at you.","\"Can't stop long — I've got 4 more rides before lunch!\""][i%3])},2.4)});
+ U.anims.push((dt,now)=>{for(const t of TAXIS){if(!t.tap)continue;if(t.stop>0){t.stop-=dt;if(t.v0===undefined){t.v0=t.v;t.v=Math.sign(t.v)*1e-4}}else if(t.v0!==undefined){t.v=t.v0;t.v0=undefined}
+   t.tap.x=t.x;t.tap.z=t.z;if(t.flash>0){t.flash-=dt;t.head.emissiveIntensity=Math.sin(now/60)>0?2.5:.3}else t.head.emissiveIntensity=.6}})}
+/* ---------- 3D DISPLAY WINDOWS on every clothing store, planters + notice case at the school ---------- */
+{const kit=Kit(),frm=UM(0x1f3a33,{metalness:.3,roughness:.5}),back=UM(0x3a2a20,{roughness:.8}),plinth=UM(0xd8c3a0,{roughness:.6}),manq=UM(0xf2efe8,{roughness:.5}),
+   jac=[0xe23b3b,0x2a6bd8,0xffb52e,0x2a9d8f,0x6b4a2f,0x222222].map(c=>UM(c,{roughness:.7})),strip=UM(0xfff1c8,{emissive:0xffe2a0,emissiveIntensity:1.2}),glassList=[];
+ const bld=DOORS.map(d=>{const side=Math.sign(d.z),bx0=d.x-(d.kind==="apartment"?(side>0?-2:2):0);return {kind:d.kind,side,x:bx0,m:mat4(bx0,0,side*14,side>0?Math.PI:0)}});
+ const toW=(b,lx,lz)=>({x:b.x+(b.side>0?-lx:lx),z:b.side*(14-lz)});let bi=0;
+ bld.filter(b=>b.kind==="clothing").forEach(b=>{[[-2.95,2.7],[2.8,2.8]].forEach(([cx,w],k)=>{const y0=.8,h=2.3,yc=y0+h/2,z0=5,dz=.56;kit.base(b.m);
+   kit.add(bx(w,y0,dz),UM(0x1b2a26,{roughness:.6}),cx,y0/2,z0+dz/2);kit.add(bx(w+.2,.1,dz+.14),stoneM,cx,y0+.05,z0+dz/2+.04);kit.add(bx(w-.08,h,.04),back,cx,yc,z0+.03);kit.add(bx(w-.1,.12,dz-.06),plinth,cx,y0+.16,z0+dz/2);
+   kit.add(bx(w,.1,dz),frm,cx,y0+h+.05,z0+dz/2);[-1,1].forEach(s=>kit.add(bx(.08,h,dz),frm,cx+s*(w/2-.04),yc,z0+dz/2));kit.add(bx(w-.2,.04,.04),strip,cx,y0+h-.06,z0+dz-.1);kit.add(bx(.04,h,.04),frm,cx,yc,z0+dz-.02);
+   [-1,1].forEach((s,m)=>{const mx=cx+s*w/4,j=jac[(bi+m+k)%jac.length];kit.add(cy(.12,.14,.02,14),hub0(),mx,y0+.23,z0+.28);kit.add(cy(.015,.015,.6,6),hub0(),mx,y0+.55,z0+.28);
+     kit.add(new T.CapsuleGeometry(.16,.34,2,8),j,mx,y0+1.12,z0+.28,0,0,0,1.25,1,.7);kit.add(sp(.09,7),j,mx-.2,y0+1.38,z0+.28);kit.add(sp(.09,7),j,mx+.2,y0+1.38,z0+.28);
+     kit.add(new T.CapsuleGeometry(.05,.4,2,6),j,mx-.24,y0+1.08,z0+.3,0,0,.12);kit.add(new T.CapsuleGeometry(.05,.4,2,6),j,mx+.24,y0+1.08,z0+.3,0,0,-.12);
+     kit.add(cy(.035,.04,.1,8),manq,mx,y0+1.52,z0+.28);kit.add(sp(.1,8),manq,mx,y0+1.68,z0+.28,0,0,0,.85,1.05,.9);
+     for(let q=0;q<3;q++)kit.add(bx(.3,.06,.22),jac[(bi+q+2)%jac.length],cx+s*.08,y0+.25+q*.065,z0+.42)});
+   const gm=new T.Mesh(bx(w-.16,h-.1,.02),GLASS);const p=new T.Vector3(cx,yc,z0+dz-.01).applyMatrix4(b.m);gm.position.copy(p);gm.rotation.y=b.side>0?Math.PI:0;S.add(gm);
+   const A=toW(b,cx-w/2,z0),B=toW(b,cx+w/2,z0+dz+.04);usolid(A.x,B.x,A.z,B.z,y0+h+.1);const tp=toW(b,cx,z0+1.25);
+   utap("street",tp.x,tp.z,"Press E to window-shop 🧥",()=>uoffer("🧥","Jackets and hoodies on display. Price tags are in dollars!","shop","window"),1.05);bi++})});
+ bld.filter(b=>b.kind==="school").forEach(b=>{kit.base(b.m);const hedge=UM(0x3f7f3a,{roughness:.9,flatShading:true});
+   [-3.7,3.7].forEach(cx=>{kit.add(rbox(2.3,.55,.85,.05),stoneM,cx,.28,5.5);for(let k=0;k<5;k++)kit.add(ico(.34,1),hedge,cx-.9+k*.45,.72+(k%2)*.05,5.5,0,k,0,1,.8,1);for(let k=0;k<4;k++)kit.add(sp(.05,6),UM(0xffd23f),cx-.7+k*.45,.95,5.78)});
+   kit.add(bx(1.8,1.5,.14),UM(0x24407a),-3.85,3.5,5.07);kit.add(bx(1.6,1.3,.02),UM(0xc49a6c,{roughness:1}),-3.85,3.5,5.15);
+   [[-.5,.3,0xffffff],[.2,.35,0xfff3a8],[-.3,-.3,0xbfe6ff],[.45,-.25,0xffd0e0]].forEach(([a,c,col])=>kit.add(bx(.42,.5,.012),UM(col),-3.85+a,3.5+c,5.17,0,0,a*.1));
+   const gm=new T.Mesh(bx(1.62,1.32,.02),GLASS);gm.position.copy(new T.Vector3(-3.85,3.5,5.2).applyMatrix4(b.m));gm.rotation.y=b.side>0?Math.PI:0;S.add(gm);
+   [-3.7,3.7].forEach(cx=>{const A=toW(b,cx-1.15,5.07),B=toW(b,cx+1.15,5.93);usolid(A.x,B.x,A.z,B.z,.6)});
+   const tp=toW(b,-3.85,6.1);utap("street",tp.x,tp.z,"Press E to read the school notice board 📌",()=>uoffer("📌","FIELD DAY FRIDAY! Every class needs teams of 4.","shirts","notice"),1.2)});
+ kit.build(S,{name:"u_storefronts"});
+ function hub0(){return silver}}
+/* the Canva facade art above the 3D storefront level is a true flat backdrop (upper floors), not a walk-up object */
+S.traverse(o=>{if(o.isMesh&&Array.isArray(o.material)&&o.material.some(m=>m&&m.map&&FAC&&Object.values(FAC).includes(m.map)))U.flatOK.add(o)});
+/* Theo's idle "review challenge" offer follows you everywhere; when you are right at a street object, the object gets E
+   (doors, Brock, Ms. Marcia and every other NPC still win). Talking to Theo (Q) is unchanged. */
+{const _intU=interactions;interactions=function(){const L=_intU();if(QG||CH||U.quiz||HELD||DH)return L;const t=nearTap();if(!t||L.some(d=>d.type==="tap"&&d.t===t))return L;
+  const inR=L.filter(d=>Math.hypot(d.x-P.x,d.z-P.z)<d.r);
+  /* an NPC/door/Brock that is actually in range keeps E; one that is merely listed but out of range no longer hides the object */
+  const qt=d=>d.type==="talk"&&d.r===9&&/^Press Q/.test(d.label||"");
+         if(inR.some(d=>d.type!=="skill"&&!qt(d)&&!(d.type==="game"&&d.npc==="Theo"&&!d.indoor)&&d.type!=="none"))return L;
+  if(inR.length&&Math.hypot(P.x-t.x,P.z-t.z)>Math.min(t.r,1.4))return L;
+  const hasQ=L.some(qt);return [{type:"tap",t,x:P.x,z:P.z,r:9,label:t.label+(hasQ?"  ·  Q 💬 talk":"")}].concat(L.filter(d=>!qt(d)))}}
+
+/* =====================================================================
+   19. UNIVERSE · CLOTHING STORE + THEO'S APARTMENT: the Canva wall pictures become real 3D furniture you can walk
+   up to, look at from the side and use. (The Canva art now hangs only as framed posters, which really are flat.)
+   ===================================================================== */
+/* crop part of a Canva room picture into a framed poster: u0,v0,u1,v1 in 0..1 of the image */
+function uposter(g,name,u0,v0,u1,v1,x,y,z,w,ry=0,frame=0x2a1a10){const t=TL.load("tex/room_"+name+".webp");t.colorSpace=T.SRGBColorSpace;t.repeat.set(u1-u0,v1-v0);t.offset.set(u0,1-v1);
+  const h=w*((v1-v0)*9)/((u1-u0)*16),grp=new T.Group();grp.position.set(x,y,z);grp.rotation.y=ry;g.add(grp);const fr=new T.Mesh(rbox(w+.12,h+.12,.05,.015),UM(frame));grp.add(fr);
+  const p=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshStandardMaterial({map:t,roughness:.7}));p.position.z=.03;grp.add(p);U.flatOK.add(p);return grp}
+/* T-shirt and hoodie silhouettes (extruded, bevelled) + a wire hanger */
+const SHIRT=(()=>{const s=new T.Shape();s.moveTo(-.12,.3);s.lineTo(-.25,.25);s.lineTo(-.34,.08);s.lineTo(-.24,.03);s.lineTo(-.18,.13);s.lineTo(-.18,-.32);s.lineTo(.18,-.32);s.lineTo(.18,.13);s.lineTo(.24,.03);s.lineTo(.34,.08);s.lineTo(.25,.25);s.lineTo(.12,.3);s.quadraticCurveTo(0,.2,-.12,.3);
+  const g=new T.ExtrudeGeometry(s,{depth:.03,bevelEnabled:true,bevelThickness:.012,bevelSize:.012,bevelSegments:1,curveSegments:4});g.translate(0,0,-.015);return g})();
+const HANGER=(()=>{const k=Kit(),m=UM(0xc9ced4,{metalness:.8,roughness:.3}),g=new T.Group();k.add(new T.TorusGeometry(.04,.006,4,10,Math.PI*1.4),m,0,.38,0,0,0,-.2);k.add(bx(.5,.012,.012),m,0,.3,0);k.add(bx(.012,.1,.012),m,0,.33,0);k.build(g,{shadow:false});return g.children[0].geometry})();
+/* ---------- CLOTHING STORE ---------- */
+{const C=ROOMS.clothing,g=C.g,cz=C.cz;
+ uremove(g,o=>o.material&&o.material.map&&/room_clothing/.test((o.material.map.image&&o.material.map.image.src)||"")||o.geometry&&o.geometry.type==="PlaneGeometry"&&Math.abs(o.position.z-(-RD/2+.27))<.01&&o.geometry.parameters.width===9.9);
+ const kit=Kit(),oak=UM(0xb98552,{roughness:.6}),oakD=UM(0x7a5236,{roughness:.7}),white=UM(0xf4f1ea,{roughness:.6}),metal=UM(0x3a3a3a,{metalness:.7,roughness:.35}),
+   tee=[0xe23b3b,0xffd23f,0x2a9d8f,0x3d5af1,0xff8fb1,0x1d1d1d,0xffffff,0x7cc33a].map(c=>UM(c,{roughness:.8}));
+ /* back-left: cubby wall of folded shirt stacks (5 x 4 cubbies) */
+ {const x0=-8.55,w=5.2,h=3.2,d=.55,zb=-RD/2+.2;kit.add(bx(w,h,.04),oakD,x0+w/2,h/2,zb+.02);for(let c=0;c<=5;c++)kit.add(bx(.05,h,d),oak,x0+c*w/5,h/2,zb+d/2);for(let r=0;r<=4;r++)kit.add(bx(w,.05,d),oak,x0+w/2,.1+r*(h-.1)/4,zb+d/2);
+  let n=0;for(let c=0;c<5;c++)for(let r=0;r<4;r++){const cx=x0+w/10+c*w/5,y=.13+r*(h-.1)/4;const st=2+((c+r)%3);for(let k=0;k<st;k++){kit.add(rbox(.72,.07,.38,.025),tee[(c*4+r+k)%8],cx,y+.04+k*.075,zb+.3);n++}}
+  usolid(x0,x0+w,cz+zb,cz+zb+d+.05,h);C.cubbyN=n;
+  utap("clothing",x0+w/2,zb+1.3,"Press E to look through the folded shirts 👕",()=>uoffer("👕","Soft cotton tees, folded neat in stacks.","shirts","cubby"),1.6)}
+ /* back-right: shoe wall with sneakers + Timberland boots on display */
+ const shoes=[];{const x0=3.35,w=5.2,h=3.2,zb=-RD/2+.2;kit.add(bx(w,h,.04),white,x0+w/2,h/2,zb+.02);[-0.03,w+.03].forEach(a=>kit.add(bx(.06,h,.42),oakD,x0+a,h/2,zb+.21));
+  for(let r=0;r<5;r++){const y=.35+r*.62;kit.add(rbox(w,.05,.36,.015),oak,x0+w/2,y,zb+.2);
+   for(let k=0;k<6;k++){const sx=x0+.45+k*.86,boot=r===2&&k>=3,col=boot?UM(0xc8913a,{roughness:.85}):tee[(r*6+k)%8],sole=boot?UM(0x5a3a1a):white;
+     if(boot){kit.add(rbox(.2,.24,.36,.05),col,sx,y+.15,zb+.2);kit.add(rbox(.22,.07,.38,.02),sole,sx,y+.06,zb+.2);kit.add(cy(.06,.06,.25,8),col,sx,y+.3,zb+.13)}
+     else{kit.add(rbox(.2,.1,.36,.045),col,sx,y+.1,zb+.2);kit.add(rbox(.21,.045,.38,.02),sole,sx,y+.045,zb+.2);kit.add(rbox(.17,.08,.14,.035),col,sx,y+.16,zb+.12)}
+     shoes.push({x:sx,y,boot})}}
+  sign(g,"TIMBERLAND BOOTS · 150 XP",x0+w*.75,1.95,zb+.42,1.9,.22,"#5a3a1a","#ffd23f");usolid(x0,x0+w,cz+zb,cz+zb+.45,h);
+  utap("clothing",x0+w/2,zb+1.2,"Press E to check out the shoe wall 👟",()=>uoffer("👟","Fresh kicks! The Timberland boots are an XP upgrade in the shop (150 XP).","shop","shoes"),1.6)}
+ /* neon MR. SAL'S over the counter (a real lit tube sign, not a picture) */
+ {const t=canvasTex(1024,256,(c,W,H)=>{c.clearRect(0,0,W,H);c.font="900 170px 'Brush Script MT',cursive";c.textAlign="center";c.textBaseline="middle";c.shadowColor="#ff2bc0";c.shadowBlur=40;c.fillStyle="#ffe6fb";c.fillText("Mr. Sal's",W/2,H/2+8)});
+  const p=new T.Mesh(new T.PlaneGeometry(4,1),new T.MeshBasicMaterial({map:t,transparent:true,toneMapped:false}));p.position.set(0,4.35,-RD/2+.32);g.add(p);U.flatOK.add(p);kit.add(rbox(4.3,1.15,.08,.03),UM(0x1b1b2a),0,4.35,-RD/2+.24);
+  const nl=new T.PointLight(0xff5ad8,6,6);nl.position.set(0,4.2,-RD/2+1.2);g.add(nl)}
+ /* counter: oak top, panelled front, register, bag stack (replaces the plain box) */
+ uremove(g,o=>o.geometry&&o.geometry.type==="BoxGeometry"&&o.geometry.parameters.width===4&&o.geometry.parameters.height===1.1&&Math.abs(o.position.z+5.3)<.01);
+ kit.add(rbox(4.2,.08,1.3,.03),oak,0,1.12,-5.3);kit.add(bx(4,1.04,1.1),UM(0x1f7a72,{roughness:.6}),0,.54,-5.3);for(let k=0;k<4;k++)kit.add(rbox(.85,.7,.04,.02),UM(0x26948a,{roughness:.55}),-1.5+k,.55,-4.73);
+ kit.add(bx(4.04,.08,1.14),oakD,0,.04,-5.3);
+ const reg=new T.Group();reg.position.set(-1.2,1.16,-5.3);g.add(reg);{const rk=Kit();rk.add(rbox(.5,.18,.42,.03),UM(0x2b2f36,{metalness:.3}),0,.09,0);rk.add(rbox(.42,.26,.06,.02),UM(0x2b2f36),0,.33,-.12,-.3);rk.add(bx(.36,.18,.01),UM(0x6fd0ff,{emissive:0x2bb0ff,emissiveIntensity:.8}),0,.34,-.085,-.3);
+  for(let i=0;i<3;i++)for(let j=0;j<3;j++)rk.add(bx(.06,.025,.05),UM(0xeeeeee),-.08+i*.08,.19,.02+j*.07);rk.build(reg)}
+ const drawer=new T.Mesh(rbox(.46,.08,.36,.015),UM(0x3a3f48,{metalness:.4}));drawer.position.set(0,.04,.02);reg.add(drawer);
+ for(let k=0;k<4;k++)kit.add(bx(.36,.02,.48),UM(0xe9d8b4),1.3,1.17+k*.02,-5.3);
+ /* hoodies on a wall rail (left wall) */
+ {kit.add(cy(.025,.025,5,8),metal,-8.6,2.1,0,Math.PI/2);[-2.4,2.4].forEach(z=>kit.add(bx(.3,.05,.05),metal,-8.72,2.1,z));for(let k=0;k<10;k++){const z=-2.2+k*.48;kit.add(HANGER,metal,-8.55,1.75,z,0,Math.PI/2,0);kit.add(SHIRT,tee[(k+3)%8],-8.55,1.72,z,0,Math.PI/2,0,1.2,1.5,1.4)}}
+ /* hat pegboard (right wall) */
+ const hats=[];{kit.add(bx(.05,1.6,3),UM(0xd8c3a0),8.78,2,3.5);for(let r=0;r<2;r++)for(let k=0;k<5;k++){const z=2.3+k*.6,y=1.6+r*.75,c=tee[(r*5+k+1)%8];kit.add(cy(.012,.012,.18,6),metal,8.68,y,z,0,0,Math.PI/2);
+  kit.add(new T.SphereGeometry(.15,12,6,0,Math.PI*2,0,Math.PI/2),c,8.6,y-.02,z,0,0,Math.PI/2);kit.add(cy(.15,.15,.02,12,false),c,8.48,y-.1,z,Math.PI/2.4,0,Math.PI/2);hats.push({y,z,c})}}
+ utap("clothing",8,3.5,"Press E to try on a hat 🧢",()=>{const h=hats[Math.floor(Math.random()*hats.length)];bub("🧢","Looking fresh! (Hats are 12 coins in the shop.)")},1.4);
+ /* fitting room booth with a sliding curtain (front-left corner) */
+ const cur=new T.Group();{const x=-7.7,z=5.2;kit.add(bx(1.8,2.6,.06),white,x,1.3,z-.9);kit.add(bx(1.8,2.6,.06),white,x,1.3,z+.9);kit.add(bx(.06,2.6,1.8),white,x-.88,1.3,z);kit.add(bx(1.9,.1,1.9),oakD,x,2.65,z);
+  kit.add(rbox(.04,1.3,.6,.02),UM(0xcfe6ff,{metalness:.9,roughness:.05}),x-.84,1.4,z);kit.add(bx(.04,.04,1.8),metal,x+.88,2.45,z);sign(g,"FITTING ROOM",x+.92,2.75,z,1.5,.25,"#1f7a72","#fff",Math.PI/2);
+  cur.position.set(x+.88,0,z);g.add(cur);const cm=UM(0x8a1f2d,{roughness:.9,side:T.DoubleSide});for(let k=0;k<8;k++){const m=new T.Mesh(cy(.06,.06,2.2,8,true),cm);m.position.set(0,1.32,-.8+k*.23);m.scale.set(.6,1,1);cur.add(m)}
+  usolid(cz*0+x-.9,x+.9,cz+z-.95,cz+z-.85,2.6);usolid(x-.9,x+.9,cz+z+.85,cz+z+.95,2.6);usolid(x-.95,x-.85,cz+z-.9,cz+z+.9,2.6)}
+ let curO=0,curC=0;utap("clothing",-6.4,5.2,"Press E to open the fitting room curtain 🪞",()=>{curO=!curO;ubeep(curO?600:400,.08,"triangle",.03);bub("🪞",curO?"Step in and try something on!":"Curtain closed.");},1.4);
+ /* mannequins in outfits (replace the plain boxes) */
+ uremove(g,o=>o.geometry&&o.geometry.type==="BoxGeometry"&&((o.geometry.parameters.width===.9&&o.geometry.parameters.height===.15)||(o.geometry.parameters.width===.6&&o.geometry.parameters.height===1.4))&&Math.abs(Math.abs(o.position.x)-6)<.01);
+ [-6,6].forEach((x,i)=>{const j=tee[i?3:0],pants=UM(i?0x2a3a5a:0x3a2a1a);kit.add(cy(.3,.34,.06,20),oakD,x,.03,3);kit.add(cy(.02,.02,.7,6),metal,x,.4,3);
+   kit.add(new T.CapsuleGeometry(.11,.6,2,8),pants,x-.1,.78,3);kit.add(new T.CapsuleGeometry(.11,.6,2,8),pants,x+.1,.78,3);kit.add(new T.CapsuleGeometry(.2,.4,2,10),j,x,1.42,3,0,0,0,1.2,1,.75);
+   kit.add(new T.CapsuleGeometry(.065,.5,2,6),j,x-.32,1.36,3,0,0,.15);kit.add(new T.CapsuleGeometry(.065,.5,2,6),j,x+.32,1.36,3,0,0,-.15);kit.add(cy(.05,.05,.12,8),white,x,1.83,3);kit.add(sp(.13,10),white,x,2.0,3,0,0,0,.85,1.1,.9);
+   kit.add(new T.SphereGeometry(.15,12,6,0,Math.PI*2,0,Math.PI/2),tee[i?1:4],x,2.06,3);usolid(x-.35,x+.35,cz+2.65,cz+3.35,2.1)});
+ utap("clothing",-6,2,"Press E to check the mannequin's outfit 👖",()=>bub("👖","Red hoodie + brown cargo pants. A whole outfit!"),1.2);
+ utap("clothing",6,2,"Press E to check the mannequin's outfit 👖",()=>bub("👖","Blue tee + navy jeans + a yellow cap. Classic!"),1.2);
+ kit.build(g,{name:"u_clothing"});
+ /* the rack shirts become real T-shirt shapes on hangers (same meshes, so try-on/put-back still works) */
+ g.traverse(o=>{if(o.isMesh&&o.geometry&&o.geometry.type==="BoxGeometry"&&o.geometry.parameters.width===.4&&o.geometry.parameters.height===1&&o.geometry.parameters.depth===.12){o.geometry=SHIRT;o.scale.set(1.05,1.5,1);o.rotation.y=0;const hg=new T.Mesh(HANGER,metal);hg.position.y=-.02;hg.scale.set(1/1.05,1/1.5,1);o.add(hg)}});
+ uposter(g,"clothing",.33,.18,.67,.44,0,2.0,-RD/2+.25,1.6,0);/* Canva "Mr. Sal's" doorway art as a framed poster behind the counter */
+ U.anims.push((dt,now)=>{if(AREA!=="clothing")return;curC+=((curO?1:0)-curC)*Math.min(1,dt*6);cur.children.forEach((m,k)=>{m.position.z=-.8+k*.23*(1-curC*.8)})});
+ utap("clothing",-1.2,-4.3,"Press E to ring up the register 💵",()=>{ubeep(1300,.08,"square",.04);setTimeout(()=>ubeep(1700,.12,"square",.04),110);drawer.position.z=.25;setTimeout(()=>drawer.position.z=.02,1500);uoffer("💵","Ka-ching! The drawer slides open.","shop","register")},.9)}
+/* ---------- THEO'S APARTMENT ---------- */
+{const A=ROOMS.apartment,g=A.g,cz=A.cz;
+ uremove(g,o=>o.geometry&&o.geometry.type==="PlaneGeometry"&&Math.abs(o.position.z-(-RD/2+.27))<.01&&o.geometry.parameters.width===9.9);
+ const kit=Kit(),oak=UM(0xa8743f,{roughness:.6}),oakD=UM(0x6b4123,{roughness:.7}),white=UM(0xf4f1ea,{roughness:.6}),metal=UM(0x9aa0a8,{metalness:.8,roughness:.3}),fab=UM(0x3d6fb0,{roughness:.95}),fab2=UM(0x335d96,{roughness:.95}),
+   bk=[0xc0392b,0x2a6bd8,0xffb52e,0x2a9d8f,0x8a5cff,0x6b4a2f,0xe8e0d0,0x1d1d1d].map(c=>UM(c,{roughness:.8})),zb=-RD/2+.2;
+ /* couch, coffee table, bed (replace the plain boxes) */
+ uremove(g,o=>o.geometry&&o.geometry.type==="BoxGeometry"&&o.material&&o.material.color&&[0x3d6fb0,0x7a4a2a,0xe8e0d0].includes(o.material.color.getHex())&&o.position.z<0&&o.position.z>-7&&o.geometry.parameters.width>=2.4);
+ kit.add(rbox(4.2,.42,1.5,.08),fab2,-3,.3,-3.1);[-1,0,1].forEach(k=>{kit.add(rbox(1.32,.22,1.2,.08),fab,-3+k*1.36,.62,-2.95);kit.add(rbox(1.3,.75,.3,.1),fab,-3+k*1.36,.95,-3.7,-.12)});
+ [-1,1].forEach(s=>kit.add(rbox(.32,.75,1.5,.1),fab2,-3+s*2.2,.55,-3.1));[[-4.9,-3.75],[-1.1,-3.75],[-4.9,-2.45],[-1.1,-2.45]].forEach(([x,z])=>kit.add(cy(.04,.03,.12,6),oakD,x,.06,z));
+ kit.add(rbox(.42,.4,.12,.05),UM(0xffb52e,{roughness:.95}),-4.4,.92,-3.45,-.2,.3);kit.add(rbox(.42,.4,.12,.05),UM(0xe23b3b,{roughness:.95}),-1.6,.92,-3.45,-.2,-.3);
+ kit.add(rbox(2.4,.07,1.2,.03),oak,-3,.44,-.8);[[-1.1,-.3],[1.1,-.3],[-1.1,.3],[1.1,.3]].forEach(([a,b])=>kit.add(bx(.06,.4,.06),oakD,-3+a,.2,-.8+b));kit.add(bx(2.2,.03,1),oakD,-3,.12,-.8);
+ kit.add(rbox(.16,.03,.06,.01),UM(0x222222),-3.4,.49,-.7,0,.4);kit.add(rbox(.3,.04,.22,.01),bk[1],-2.5,.5,-.9,0,-.2);kit.add(cy(.05,.045,.1,10),white,-2.2,.53,-.6);
+ kit.add(rbox(2.6,.35,4,.05),oakD,5.5,.2,-4.5);kit.add(rbox(2.5,.3,3.9,.12),white,5.5,.5,-4.5);kit.add(rbox(2.56,.12,2.6,.06),UM(0x2a9d8f,{roughness:.95}),5.5,.67,-3.75);
+ [-.6,.6].forEach(a=>kit.add(rbox(.9,.18,.45,.09),UM(0xffffff,{roughness:.9}),5.5+a,.72,-6.05));kit.add(rbox(2.7,1.3,.12,.05),oakD,5.5,.75,-6.6);
+ /* bookshelf (back-left) with real books */
+ {const x0=-8.7,w=1.9,h=3,d=.4;kit.add(bx(w,h,.03),oakD,x0+w/2,h/2,zb+.015);[0,w].forEach(a=>kit.add(bx(.05,h,d),oak,x0+a,h/2,zb+d/2));for(let r=0;r<=5;r++)kit.add(bx(w,.04,d),oak,x0+w/2,.05+r*(h-.1)/5,zb+d/2);
+  let n=0;for(let r=0;r<5;r++){let x=x0+.08;const y=.07+r*(h-.1)/5;while(x<x0+w-.15){const bw=.05+((n*7)%5)*.012,bh=.3+((n*3)%4)*.04;kit.add(bx(bw,bh,.26),bk[n%8],x+bw/2,y+bh/2,zb+.2,0,0,(n%9===0)?.12:0);x+=bw+.006;n++}}
+  A.books=n;usolid(x0,x0+w,cz+zb,cz+zb+d,h);utap("apartment",x0+w/2,zb+1.1,"Press E to pull a book off the shelf 📚",()=>uoffer("📚","Theo's books: comics, a dinosaur guide, and Math Mysteries!","books","shelf"),1.3)}
+ /* window with a sill, mullions, a city view set back behind the glass, plants */
+ {const W=3,H=2.2,y=2.5;const sk=TL.load("tex/skyline.webp");sk.colorSpace=T.SRGBColorSpace;const view=new T.Mesh(new T.PlaneGeometry(W,H),new T.MeshBasicMaterial({map:sk,toneMapped:false}));view.position.set(-1.6,y,zb+.01);g.add(view);U.flatOK.add(view);
+  [-1,1].forEach(s=>kit.add(bx(.14,H+.2,.32),white,-1.6+s*(W/2+.07),y,zb+.16));kit.add(bx(W+.28,.14,.32),white,-1.6,y+H/2+.07,zb+.16);kit.add(rbox(W+.5,.08,.42,.02),white,-1.6,y-H/2-.04,zb+.21);
+  kit.add(bx(.05,H,.05),white,-1.6,y,zb+.1);kit.add(bx(W,.05,.05),white,-1.6,y+.2,zb+.1);const gl=new T.Mesh(bx(W,H,.01),GLASS);gl.position.set(-1.6,y,zb+.12);g.add(gl);
+  [-2.6,-.6].forEach(x=>{kit.add(cy(.12,.09,.18,12),UM(0xb85c38),x,y-H/2+.09,zb+.25);for(let k=0;k<5;k++)kit.add(ico(.08,0),UM(0x3f8f3a,{flatShading:true}),x+Math.cos(k)*.07,y-H/2+.25+k*.03,zb+.25+Math.sin(k)*.07)});
+  uposter(g,"apartment",.29,.25,.4,.52,-4.8,2.7,zb+.03,.75,0);uposter(g,"apartment",.69,.15,.79,.43,1.3,2.9,zb+.03,.7,0)}
+ /* TV on a media console; press E for a math game show */
+ const tvS=new T.Mesh(bx(1.5,.85,.02),UM(0x0a0a12,{emissive:0x000000,roughness:.2}));{kit.add(rbox(2.2,.55,.5,.04),oakD,2.3,.28,zb+.3);[-.55,0,.55].forEach(a=>kit.add(rbox(.66,.4,.03,.01),oak,2.3+a,.28,zb+.56));kit.add(rbox(1.6,.95,.06,.03),UM(0x111111),2.3,1.15,zb+.2);
+  kit.add(bx(.3,.03,.18),UM(0x222222),2.3,.57,zb+.3);kit.add(bx(.05,.08,.05),UM(0x222222),2.3,.62,zb+.25);tvS.position.set(2.3,1.15,zb+.235);g.add(tvS);usolid(1.2,3.4,cz+zb,cz+zb+.6,1.6)}
+ const tvT=canvasTex(512,288,(c,W,H)=>{c.fillStyle="#2b1a6a";c.fillRect(0,0,W,H);c.fillStyle="#ffd23f";c.font="900 54px system-ui";c.textAlign="center";c.fillText("MATH MASTERS",W/2,110);c.font="700 34px system-ui";c.fillStyle="#fff";c.fillText("tonight at 7:00",W/2,170);c.fillText("🍕 pizza fractions round",W/2,220)});let tvOn=false;
+ utap("apartment",2.3,zb+1.3,"Press E to turn on the TV 📺",function(){tvOn=!tvOn;tvS.material=tvOn?new T.MeshBasicMaterial({map:tvT,toneMapped:false}):UM(0x0a0a12,{roughness:.2});ubeep(tvOn?500:250,.1,"sine",.04);if(tvOn)uoffer("📺","\"Welcome to MATH MASTERS! Tonight: pizza fractions!\"","pizza","tv");else bub("📺","TV off.")},1.3);
+ /* kitchen run along the right wall: base cabinets with doors, sink + faucet, stove + pot, microwave */
+ {const x=8.45,z0=-1.9,len=3.4;kit.add(bx(.85,.9,len),white,x,.45,z0+len/2);kit.add(rbox(.95,.06,len+.05,.02),UM(0x3a3f48,{roughness:.35}),x-.04,.93,z0+len/2);
+  kit.add(bx(.6,.12,.7),UM(0xb8bcc2,{metalness:.8,roughness:.25}),x-.05,.92,z0+.6);kit.add(cy(.02,.02,.32,8),metal,x+.25,1.1,z0+.6);kit.add(cy(.018,.018,.25,8),metal,x+.12,1.26,z0+.6,0,0,Math.PI/2);
+  [[-.15,.15],[.15,.15],[-.15,-.15],[.15,-.15]].forEach(([a,b])=>kit.add(tor(.09,.012,4,14),UM(0x222222),x-.05+a,.965,z0+2.5+b,Math.PI/2));kit.add(bx(.05,.22,.6),UM(0x222222),x-.44,.75,z0+2.5);
+  kit.add(cy(.13,.12,.16,14),UM(0xc0392b,{metalness:.4}),x-.05,1.05,z0+2.4);kit.add(rbox(.5,.32,.6,.03),UM(0xdedede,{metalness:.4}),x-.05,1.12,z0+1.55);kit.add(bx(.12,.2,.01),UM(0x111111),x-.31,1.12,z0+1.35);
+  for(let k=0;k<4;k++)kit.add(bx(.02,.7,.8),UM(0xe8e2d6),x-.44,.45,z0+.43+k*.85);usolid(x-.45,x+.45,cz+z0,cz+z0+len,1)}
+ const mwd=new T.Group();mwd.position.set(8.4-.31,1.12,-1.9+1.25);g.add(mwd);{const d=new T.Mesh(bx(.02,.28,.4),UM(0x222a30,{roughness:.2,metalness:.3}));d.position.z=.2;mwd.add(d)}
+ const water=new T.Mesh(cy(.012,.012,.17,6),new T.MeshStandardMaterial({color:0x9fd4ff,transparent:true,opacity:.7}));water.position.set(8.4+.12-.13,1.06,-1.9+.6);water.visible=false;g.add(water);
+ let tapOn=0,mwO=0,mwC=0,boil=0;
+ utap("apartment",7.4,-1.3,"Press E to turn on the kitchen faucet 🚰",()=>{tapOn=tapOn?0:6;water.visible=!!tapOn;bub("🚰",tapOn?"Water's running! Don't forget to turn it off.":"Faucet off. Saving water!")},1);
+ utap("apartment",7.4,-.35,"Press E to open the microwave ⏲️",()=>{mwO=!mwO;ubeep(mwO?800:600,.06,"square",.03);if(mwO)uoffer("⏲️","Popcorn time: the microwave says 2:30. That's 150 seconds!","clock","microwave")},1);
+ utap("apartment",7.4,.6,"Press E to cook on the stove 🍲",()=>{boil=5;bub("🍲","Mmm, Theo's grandma's soup is bubbling!")},1);
+ U.anims.push((dt,now)=>{if(AREA!=="apartment")return;if(tapOn>0){tapOn-=dt;water.scale.x=1+Math.sin(now/40)*.15;if(tapOn<=0)water.visible=false}mwC+=((mwO?1:0)-mwC)*Math.min(1,dt*7);mwd.rotation.y=-mwC*1.7;
+   if(boil>0){boil-=dt;if(Math.random()<.3)upuff(g,8.4,1.16,-1.9+2.4,1,0xffffff,.1,.6,.6,.025,-.3)}});
+ /* string lights along the top of the back wall */
+ for(let i=0;i<22;i++){const b=new T.Mesh(sp(.045,6),UM([0xffd23f,0xff6b8a,0x6fd0ff,0x6dff6b][i%4],{emissive:[0xffd23f,0xff6b8a,0x6fd0ff,0x6dff6b][i%4],emissiveIntensity:1.5}));b.position.set(-8+i*.76,5.1-Math.sin((i%11)/10*Math.PI)*.3,zb+.12);g.add(b)}
+ kit.build(g,{name:"u_apartment"})}
+
+/* =====================================================================
+   20. UNIVERSE · SCHOOL (lobby, hallway, gym, cafeteria, rooftop): the Canva wall pictures of shelves, doors, hoops,
+   serving lines become real 3D you can walk up to; Canva art stays only as framed posters. Everything gets an E action.
+   ===================================================================== */
+function uartOff(R){let n=0;R.g.children.slice().forEach(o=>{if(o.isMesh&&o.geometry&&o.geometry.type==="PlaneGeometry"&&o.material&&o.material.isMeshBasicMaterial&&o.material.map&&Math.abs(o.geometry.parameters.height-o.geometry.parameters.width*9/16)<.01){R.g.remove(o);n++}});return n}
+function wallClock(g,x,y,z,ry){const grp=new T.Group();grp.position.set(x,y,z);grp.rotation.y=ry;g.add(grp);const k=Kit();k.add(cy(.38,.38,.07,28),UM(0x222222),0,0,.035,Math.PI/2);k.add(cy(.34,.34,.075,28),UM(0xfafafa),0,0,.04,Math.PI/2);
+  for(let i=0;i<12;i++){const a=i/12*Math.PI*2;k.add(bx(.025,i%3?.04:.08,.01),UM(0x111111),Math.sin(a)*.29,Math.cos(a)*.29,.08,0,0,-a)}k.build(grp);
+  const mk=(L,w,c)=>{const p=new T.Group();p.position.z=.09;const m=new T.Mesh(bx(w,L,.008),UM(c));m.position.y=L/2-.03;p.add(m);grp.add(p);return p};const hh=mk(.18,.03,0x111111),mm=mk(.27,.02,0x111111),ss=mk(.29,.008,0xd62828);
+  U.anims.push(()=>{const d=new Date(),s=d.getSeconds(),m=d.getMinutes()+s/60,h=d.getHours()%12+m/60;ss.rotation.z=-s/60*Math.PI*2;mm.rotation.z=-m/60*Math.PI*2;hh.rotation.z=-h/12*Math.PI*2});return grp}
+function fountain(g,x,z,ry,area){const grp=new T.Group();grp.position.set(x,0,z);grp.rotation.y=ry;g.add(grp);const st=UM(0xc9ced4,{metalness:.8,roughness:.25}),k=Kit();k.add(rbox(.6,.32,.45,.05),st,0,.92,.22);k.add(bx(.12,.75,.12),st,0,.4,.08);k.add(cy(.17,.12,.06,16),UM(0x9aa0a8,{metalness:.9}),0,1.07,.25);k.add(cy(.02,.02,.08,8),st,0,1.12,.12);k.build(grp);
+  const arc=[];for(let i=0;i<8;i++){const d=new T.Mesh(sp(.018,5),UM(0x9fd4ff,{emissive:0x4aa0ff,emissiveIntensity:.4}));d.visible=false;grp.add(d);arc.push(d)}let on=0;
+  U.anims.push((dt,now)=>{if(on>0){on-=dt;arc.forEach((d,i)=>{const t=((now/400+i/8)%1);d.visible=on>0;d.position.set(0,1.16+Math.sin(t*Math.PI)*.12,.12+t*.2)})}});
+  const wp=new T.Vector3(0,0,.9).applyAxisAngle(new T.Vector3(0,1,0),ry);utap(area,x+wp.x,z+wp.z,"Press E to get a drink from the fountain 💧",()=>{on=3;bub("💧","Ahh, cold water! Stay hydrated, mathematician.")},1.1)}
+function binLid(g,x,z,col,label,area,what){const grp=new T.Group();grp.position.set(x,0,z);g.add(grp);const k=Kit(),c=UM(col,{roughness:.5});k.add(rbox(.55,.8,.55,.05),c,0,.4,0);k.add(cy(.22,.22,.02,14),UM(0x161616),0,.79,0);k.build(grp);
+  const h=new T.Group();h.position.set(0,.82,-.28);grp.add(h);const lid=new T.Mesh(rbox(.6,.06,.6,.025),c);lid.position.z=.28;h.add(lid);sign(grp,label,0,.5,.29,.45,.14,"#ffffff","#14123a");let o=0,cu=0;
+  U.anims.push(dt=>{cu+=((o?1:0)-cu)*Math.min(1,dt*7);h.rotation.x=-cu*1.8});const R=ROOMS[area];usolid(x-.3,x+.3,R.cz+z-.3,R.cz+z+.3,.85);
+  utap(area,x,z+.7,"Press E to lift the "+label.toLowerCase()+" bin lid",()=>{o=!o;if(o)bub("🗑️","Inside: "+what)},1)}
+/* ---------- LOBBY ---------- */
+{const R=ROOMS.lobby,g=R.g,cz=R.cz,wx=-9+.22;uartOff(R);const k=Kit(),cork=UM(0xc49a6c,{roughness:1}),fr=UM(0x7a4a2a),pin=[0xd62828,0x2a6bd8,0xffd23f,0x2a9d8f];
+ /* cork bulletin board with real pinned papers (left wall) */
+ k.add(bx(.08,1.9,3.6),fr,wx+.04,2.3,-2.4);k.add(bx(.04,1.7,3.4),cork,wx+.09,2.3,-2.4);
+ [[-3.6,2.7,0xffffff],[-2.9,2.75,0xfff3a8],[-2.2,2.65,0xbfe6ff],[-1.5,2.7,0xffd0e0],[-3.4,1.9,0xd7ffd0],[-2.5,1.85,0xffffff],[-1.6,1.9,0xfff3a8]].forEach(([z,y,c],i)=>{k.add(bx(.012,.55,.45),UM(c),wx+.12,y,z,0,0,(i%3-1)*.04);k.add(sp(.025,6),UM(pin[i%4]),wx+.14,y+.22,z)});
+ const notes=["Spelling Bee — Thursday!","Math Club: 4 × 6 = 24 members","Lost: blue water bottle","Field Day: bring sneakers","Book Fair: books are $4 each","Art show in the gym","Kindness Challenge ⭐"];
+ notes.forEach((t,i)=>{});sign(g,"WELCOME EXPLORERS!",wx+.14,3.35,-2.4,3,.32,"#24407a","#ffd23f",Math.PI/2);
+ utap("lobby",-7.9,-2.4,"Press E to read the bulletin board 📌",()=>{const t=notes[Math.floor(Math.random()*notes.length)];uoffer("📌","Notice: "+t,/\$4/.test(t)?"fruit":"mult","lobbyboard")},1.6);
+ /* wall clock + framed Canva posters */
+ wallClock(g,wx+.05,4.2,1.8,Math.PI/2);utap("lobby",-7.9,1.8,"Press E to check the clock 🕒",()=>{const d=new Date();uoffer("🕒","It's "+((d.getHours()%12)||12)+":"+String(d.getMinutes()).padStart(2,"0")+". How long until recess?","clock","lobbyclock")},1.4);
+ uposter(g,"lobby",.71,.1,.92,.33,wx+.06,2.4,2.2,1.5,Math.PI/2,0x24407a);uposter(g,"lobby",.02,.15,.25,.43,wx+.06,2.5,5.2,1.4,Math.PI/2,0x24407a);
+ fountain(g,wx+.25,-5.2,Math.PI/2,"lobby");
+ /* office counter: bell, sign-in clipboard, pencil cup */
+ k.add(cy(.09,.11,.03,16),UM(0x7a4a2a),-3.6,1.2,-1.2);const bell=new T.Mesh(new T.SphereGeometry(.08,14,6,0,Math.PI*2,0,Math.PI/2),UM(0xffd23f,{metalness:.9,roughness:.2}));bell.position.set(-3.6,1.21,-1.2);g.add(bell);
+ k.add(bx(.32,.02,.42),UM(0x8a6a44),-4.6,1.19,-1.1);k.add(bx(.28,.005,.36),UM(0xffffff),-4.6,1.205,-1.1);k.add(bx(.1,.03,.05),silver,-4.6,1.21,-1.3);k.add(cy(.06,.05,.14,12),UM(0x2a6bd8),-6.5,1.25,-1.2);
+ for(let i=0;i<4;i++)k.add(cy(.008,.008,.2,5),UM([0xffd23f,0xe23b3b,0x2a9d8f,0x3d7be0][i]),-6.5+(i-1.5)*.025,1.35,-1.2,(i-1.5)*.15);
+ let ring=0;U.anims.push(dt=>{ring=Math.max(0,ring-dt);bell.position.y=1.21+Math.abs(Math.sin(ring*40))*.02*ring});
+ utap("lobby",-3.6,0,"Press E to ring the office bell 🛎️",()=>{ring=.8;ubeep(1760,.5,"sine",.06);bub("🛎️","Ding! \"Welcome! Sign in on the clipboard, please.\"")},1.1);
+ utap("lobby",-4.6,0,"Press E to sign in on the clipboard 📋",()=>bub("📋","You signed in: "+(window.PNAME||"Explorer")+" — 8:05 AM. Right on time!"),1);
+ /* lost & found box with a hinged lid */
+ const lf=new T.Group();lf.position.set(7.6,0,2.2);g.add(lf);{const lk=Kit();lk.add(bx(1.1,.6,.7),UM(0x8a5a32),0,.3,0);lk.build(lf);sign(lf,"LOST & FOUND",0,.4,.36,.9,.2,"#24407a","#fff")}
+ const lh=new T.Group();lh.position.set(0,.6,-.35);lf.add(lh);{const l=new T.Mesh(bx(1.14,.05,.74),UM(0x6b4123));l.position.z=.35;lh.add(l)}
+ for(const [c,x,y] of [[0xe23b3b,-.3,.5],[0x2a6bd8,.1,.52],[0x6dff6b,.35,.48]]){const m=new T.Mesh(ico(.13,0),UM(c,{flatShading:true}));m.position.set(x,y,0);m.scale.y=.6;lf.add(m)}
+ let lo=0,lc=0;U.anims.push(dt=>{lc+=((lo?1:0)-lc)*Math.min(1,dt*7);lh.rotation.x=-lc*1.7});usolid(7.05,8.15,cz+1.85,cz+2.55,.65);
+ utap("lobby",7.6,3.1,"Press E to open the Lost & Found box 🧤",()=>{lo=!lo;if(!lo)return;if(onceXP("lostfound",10,"🧤 You returned a lost glove to the office! +10 XP"))return;bub("🧤","A red mitten, a blue hat, and a green yo-yo. No name tags!")},1.2);
+ /* plants get pots with rims + leaves; benches get slats */
+ [[-8,-7],[8,6.8],[-8,6.8]].forEach(([x,z])=>{k.add(tor(.42,.05,6,16),UM(0x9a4a2a),x,.7,z,Math.PI/2);for(let i=0;i<7;i++){const a=i*.9;k.add(new T.CapsuleGeometry(.06,.5,2,6),UM(0x2f7a2a,{flatShading:true}),x+Math.cos(a)*.25,1.4+i%2*.15,z+Math.sin(a)*.25,Math.sin(a)*.5,0,Math.cos(a)*.5)}});
+ utap("lobby",-7.2,-6.2,"Press E to water the plant 🪴",()=>{upuff(g,-8,1.3,-7,10,0x6fb6ff,.6,1,.6,.03);bub("🪴","Glug glug. The plant looks happier already!")},1.2);
+ k.build(g,{name:"u_lobby"})}
+/* ---------- HALLWAY: real double doors to the rooftop stairs, clock, fountain, fire extinguisher cabinet, bins ---------- */
+{const R=ROOMS.hallway,g=R.g,cz=R.cz,zb=-15+.22;uartOff(R);const k=Kit(),teal=UM(0x2a8fa8,{metalness:.3,roughness:.4}),bar=UM(0xc9ced4,{metalness:.85,roughness:.25});
+ [-1,1].forEach(s=>{const x=s*.66;k.add(rbox(1.28,2.8,.08,.02),teal,x,1.4,zb+.05);k.add(bx(.7,1.2,.02),UM(0x1d2a38,{roughness:.1,metalness:.5}),x,1.95,zb+.1);k.add(bx(.9,.07,.07),bar,x,1.1,zb+.15);[-.4,.4].forEach(a=>k.add(bx(.05,.1,.1),bar,x+a,1.1,zb+.11))});
+ k.add(bx(2.9,.18,.2),UM(0x1f5f70),0,2.9,zb+.08);[-1.45,1.45].forEach(x=>k.add(bx(.14,3,.2),UM(0x1f5f70),x,1.5,zb+.08));sign(g,"ROOFTOP GARDEN ↑",0,3.35,zb+.06,2.6,.35,"#1f5f70","#ffffff");
+ wallClock(g,2.9,3.4,zb+.02,0);uposter(g,"hallway",.0,.06,.12,.3,-3.1,2.4,zb+.06,1.1,0,0x24407a);uposter(g,"hallway",.79,.06,1,.3,3,2.3,zb+.06,1.6,0,0x24407a);
+ fountain(g,-4.28,13.6,Math.PI/2,"hallway");
+ /* fire extinguisher cabinet: glass door swings, red extinguisher inside */
+ const fe=new T.Group();fe.position.set(4.28,1.3,13.6);fe.rotation.y=-Math.PI/2;g.add(fe);{const fk=Kit();fk.add(bx(.6,.9,.2),UM(0xd8d8d8,{metalness:.5}),0,0,.1);fk.add(cy(.09,.09,.5,14),UM(0xd62828,{metalness:.3}),0,-.05,.12);fk.add(cy(.03,.04,.12,8),UM(0x222222),0,.26,.12);fk.add(new T.TorusGeometry(.06,.012,4,10,Math.PI),UM(0x222222),.06,.3,.12);fk.build(fe)}
+ const fd=new T.Group();fd.position.set(-.3,0,.21);fe.add(fd);{const d=new T.Mesh(bx(.6,.9,.02),GLASS);d.position.x=.3;fd.add(d);const fr=new T.Mesh(bx(.6,.04,.03),UM(0xbbbbbb));fr.position.set(.3,.43,0);fd.add(fr)}sign(fe,"FIRE EXTINGUISHER",0,.55,.21,.6,.12,"#d62828","#fff");
+ let fo=0,fc=0;U.anims.push(dt=>{fc+=((fo?1:0)-fc)*Math.min(1,dt*7);fd.rotation.y=-fc*1.6});
+ utap("hallway",3.6,13.6,"Press E to open the fire extinguisher cabinet 🧯",()=>{fo=!fo;if(fo)bub("🧯","Only grown-ups use this — in a real fire, walk calmly outside with your class!")},1);
+ binLid(g,-3.2,-14.2,0x2a6bd8,"RECYCLE","hallway","crumpled drafts of a times-table poster and 3 juice boxes.");binLid(g,3.2,-14.2,0x2f6b3a,"TRASH","hallway","pencil shavings and a banana peel. Ew!");
+ k.build(g,{name:"u_hallway"})}
+/* ---------- GYM: 3D hoop with net, scoreboard, wall pads, banners, ball rack, slatted bleachers ---------- */
+{const R=ROOMS.gym,g=R.g,cz=R.cz,zb=-10+.22;uartOff(R);const k=Kit(),white=UM(0xffffff,{roughness:.4}),orange=UM(0xff6a1a,{metalness:.3,roughness:.4}),steel=UM(0x5a5f66,{metalness:.7,roughness:.4});
+ k.add(bx(.16,.16,1.2),steel,0,3.7,zb+.6);k.add(bx(.12,.9,.12),steel,0,3.3,zb+.1);k.add(rbox(1.8,1.05,.06,.02),white,0,3.95,zb+1.2);k.add(bx(.6,.45,.065),UM(0xd62828),0,3.75,zb+1.21);k.add(bx(.5,.35,.07),white,0,3.75,zb+1.215);
+ k.add(tor(.23,.018,6,24),orange,0,3.48,zb+1.5,Math.PI/2);k.add(bx(.1,.04,.2),orange,0,3.48,zb+1.28);
+ for(let i=0;i<12;i++){const a=i/12*Math.PI*2;k.add(cy(.006,.006,.42,3),white,Math.cos(a)*.19,3.28,zb+1.5+Math.sin(a)*.19,Math.sin(a)*.18,0,-Math.cos(a)*.18)}k.add(tor(.15,.006,3,16),white,0,3.1,zb+1.5,Math.PI/2);
+ const pads=[0xc8102e,0x24407a,0x2a9d8f,0x3d7be0];for(let i=0;i<10;i++)k.add(rbox(2,1.6,.15,.05),UM(pads[i%4],{roughness:.8}),-9+i*2,.85,zb+.08);
+ const sbT=document.createElement("canvas");sbT.width=512;sbT.height=200;const sbx=sbT.getContext("2d"),sbTex=new T.CanvasTexture(sbT);sbTex.colorSpace=T.SRGBColorSpace;let home=0,guest=12;
+ const drawSB=()=>{sbx.fillStyle="#0b0b12";sbx.fillRect(0,0,512,200);sbx.font="800 30px system-ui";sbx.fillStyle="#fff";sbx.textAlign="center";sbx.fillText("HOME",110,44);sbx.fillText("GUEST",402,44);sbx.fillText("LEVEL UP",256,44);
+   sbx.font="900 96px monospace";sbx.fillStyle="#ff3b3b";sbx.fillText(String(home).padStart(2,"0"),110,150);sbx.fillText(String(guest).padStart(2,"0"),402,150);sbx.fillStyle="#ffd23f";sbx.font="900 60px monospace";sbx.fillText("4",256,140);sbTex.needsUpdate=true};drawSB();
+ k.add(rbox(3.4,1.4,.25,.05),UM(0x14141c),0,5.6,zb+.15);const sb=new T.Mesh(new T.PlaneGeometry(3.2,1.25),new T.MeshBasicMaterial({map:sbTex,toneMapped:false}));sb.position.set(0,5.6,zb+.29);g.add(sb);U.flatOK.add(sb);
+ [["CHAMPS 2024","#24407a"],["ALL-STARS","#2e7d32"],["DISTRICT CUP","#c8102e"],["FAIR PLAY","#6a1b9a"]].forEach(([t,c],i)=>{const x=[-8,-5,5,8][i];const p=new T.Group();p.position.set(x,4.6,zb+.05);g.add(p);sign(p,t,0,0,0,1.3,1.6,c,"#ffd23f");k.add(cy(.03,.03,1.5,6),UM(0xc9a227,{metalness:.8}),x,5.45,zb+.07,0,0,Math.PI/2)});
+ /* ball rack with balls */
+ const rx=9.6,rz=-2;k.add(bx(.06,1,.06),steel,rx-.5,.5,rz-.9);k.add(bx(.06,1,.06),steel,rx-.5,.5,rz+.9);k.add(bx(.06,1,.06),steel,rx+.2,.5,rz-.9);k.add(bx(.06,1,.06),steel,rx+.2,.5,rz+.9);[.3,.75].forEach(y=>{k.add(bx(.06,.06,1.85),steel,rx-.5,y,rz);k.add(bx(.06,.06,1.85),steel,rx+.2,y,rz)});
+ for(let r=0;r<2;r++)for(let i=0;i<4;i++)k.add(sp(.12,12),UM(0xe8742c,{roughness:.6}),rx-.15,.45+r*.45,rz-.66+i*.44);usolid(rx-.55,rx+.25,cz+rz-.95,cz+rz+.95,1);
+ /* bleachers get seat planks, risers and a hand rail */
+ for(let i=0;i<3;i++){const x=-11+.8+i*1.2,h=.5+i*.5;k.add(rbox(1.0,.06,11.8,.02),UM(0xd9a066,{roughness:.5}),x+.1,h+.03,1);k.add(bx(.04,.25,11.8),UM(0x1d2a5a),x+.6,h-.12,1)}
+ [ -4.9,0,4.9,6.9].forEach(z=>k.add(cy(.03,.03,1.2,6),steel,-11+.8+2*1.2+.4,1.5+.6,1+z*.98));k.add(cy(.03,.03,11.8,6),steel,-11+.8+2*1.2+.4,2.1,1,Math.PI/2);
+ k.build(g,{name:"u_gym"});
+ /* free throws now fly at the 3D hoop and count on the scoreboard */
+ const ball=new T.Mesh(sp(.12,14),UM(0xe8742c,{roughness:.6}));ball.visible=false;g.add(ball);let fly=null;
+ const ft=TAPS.find(t=>t.area==="gym"&&/free throw/.test(t.label));if(ft){ft.x=0;ft.z=cz-2.5;ft.r=2.6;ft.fn=()=>{if(fly)return;const ok=Math.random()<.6;fly={t:0,ok,from:new T.Vector3(P.x-R.cx,1.6,P.z-cz)};ball.visible=true}}
+ U.anims.push(dt=>{if(!fly)return;fly.t+=dt/1.1;const t=Math.min(1,fly.t),to=new T.Vector3(fly.ok?0:.28,3.5,zb+1.5);ball.position.lerpVectors(fly.from,to,t);ball.position.y+=Math.sin(t*Math.PI)*1.6;
+   if(t>=1){ball.visible=false;const ok=fly.ok;fly=null;if(ok){home+=2;drawSB();ubeep(880,.15,"triangle",.05,200);uoffer("🏀","Swish! HOME has "+home+" points now.","mult","hoop")}else{ubeep(150,.2,"square",.04);bub("🏀","Clank! Off the rim. Try again!")}}});
+ utap("gym",0,zb+5.2,"Press E to look at the scoreboard 🏟️",()=>uoffer("🏟️","HOME "+home+" · GUEST "+guest+". Each basket is 2 points.","mult","scoreboard"),1)}
+/* ---------- CAFETERIA: steel serving line with real food, sneeze guard, milk cooler, menu board, windows, bins ---------- */
+{const R=ROOMS.cafeteria,g=R.g,cz=R.cz,zb=-10+.22;uartOff(R);const k=Kit(),steel=UM(0xc9ced4,{metalness:.85,roughness:.25}),steelD=UM(0x8a9098,{metalness:.8,roughness:.3});
+ const x0=-6,len=12,zc=zb+1.3;k.add(bx(len,.9,.9),steelD,x0+len/2,.45,zc);k.add(rbox(len+.1,.06,.95,.02),steel,x0+len/2,.93,zc);for(let i=0;i<6;i++)k.add(rbox(1.8,.65,.03,.02),steel,x0+1+i*2,.45,zc+.46);
+ k.add(bx(len,.04,.35),steel,x0+len/2,.82,zc+.65);[0,len].forEach(a=>k.add(bx(.04,.1,.06),steel,x0+a,.8,zc+.5));
+ const gl=new T.Mesh(bx(len,.02,.6),GLASS);gl.position.set(x0+len/2,1.4,zc+.15);gl.rotation.x=-.5;g.add(gl);for(let i=0;i<=6;i++)k.add(cy(.015,.015,.5,6),steel,x0+i*2,1.2,zc);
+ const pans=[["pizza",0xf2c46d],["apples",0xd92b2b],["bananas",0xffd23f],["carrots",0xff8c1a],["salad",0x3f8f3a],["milk",0xffffff]];
+ pans.forEach(([n,c],i)=>{const px=x0+1+i*2;k.add(bx(1.7,.08,.6),steel,px,.98,zc);
+   if(n==="pizza"){for(let s=0;s<8;s++){const a=s/8*Math.PI*2;k.add(new T.CylinderGeometry(.3,.3,.04,8,1,false,a,Math.PI/4-.04),UM(0xf2c46d),px,1.04,zc);if(s%2)k.add(sp(.03,5),UM(0xb3261e),px+Math.sin(a+.4)*.18,1.07,zc+Math.cos(a+.4)*.18)}}
+   else if(n==="apples")for(let a=0;a<9;a++)k.add(sp(.07,8),UM([0xd92b2b,0x6dbf3a][a%2]),px-.5+(a%5)*.25,1.07+(a>4?.05:0),zc-.12+(a>4?.18:0));
+   else if(n==="bananas")for(let a=0;a<6;a++)k.add(new T.TorusGeometry(.16,.03,5,8,Math.PI*.6),UM(0xffd23f),px-.4+a*.16,1.05,zc,Math.PI/2,0,.4);
+   else if(n==="carrots")for(let a=0;a<14;a++)k.add(cy(.012,.025,.22,6),UM(0xff8c1a),px-.6+a*.09,1.04,zc,Math.PI/2,0,(a%3-1)*.4);
+   else if(n==="salad")for(let a=0;a<12;a++)k.add(ico(.06,0),UM(a%3?0x3f8f3a:0xd92b2b,{flatShading:true}),px-.6+(a%6)*.24,1.05,zc-.1+(a>5?.2:0));
+   else for(let a=0;a<8;a++){const mx=px-.6+(a%4)*.38,mz=zc-.12+(a>3?.24:0);k.add(bx(.12,.2,.12),UM(a%2?0xffffff:0xd6e9ff),mx,1.12,mz);k.add(new T.ConeGeometry(.09,.06,4),UM(0x2a6bd8),mx,1.25,mz,0,Math.PI/4)}});
+ usolid(x0,x0+len,cz+zc-.5,cz+zc+.7,1.1);
+ const menu=canvasTex(1024,512,(c,W,H)=>{c.fillStyle="#173322";c.fillRect(0,0,W,H);c.strokeStyle="#c49a6c";c.lineWidth=20;c.strokeRect(10,10,W-20,H-20);c.fillStyle="#ffd23f";c.font="900 64px system-ui";c.textAlign="center";c.fillText("TODAY'S LUNCH",W/2,95);
+   c.font="600 46px system-ui";c.fillStyle="#fff";["Pizza slice (1/8 pie) .... $1.25","Apple or banana .... 45¢","Carrot sticks .... 35¢","Milk .... 50¢"].forEach((t,i)=>c.fillText(t,W/2,190+i*80))});
+ const mb=new T.Mesh(new T.PlaneGeometry(4,2),new T.MeshStandardMaterial({map:menu,roughness:.9}));mb.position.set(0,3.4,zb+.05);g.add(mb);U.flatOK.add(mb);k.add(rbox(4.2,2.2,.06,.02),UM(0x7a5236),0,3.4,zb+.02);
+ /* windows with frames, sills and the playground outside set back behind glass */
+ [-8,8].forEach(x=>{const v=TL.load("tex/skyline.webp");v.colorSpace=T.SRGBColorSpace;const p=new T.Mesh(new T.PlaneGeometry(2.4,1.8),new T.MeshBasicMaterial({map:v,toneMapped:false}));p.position.set(x,3.2,zb+.01);g.add(p);U.flatOK.add(p);
+   [-1,1].forEach(s=>k.add(bx(.14,2,.3),UM(0xffffff),x+s*1.27,3.2,zb+.15));k.add(bx(2.7,.14,.3),UM(0xffffff),x,4.27,zb+.15);k.add(rbox(2.9,.08,.4,.02),UM(0xffffff),x,2.26,zb+.2);k.add(bx(.05,1.8,.05),UM(0xffffff),x,3.2,zb+.1)});
+ uposter(g,"cafeteria",.02,.25,.2,.7,-10.75,2.6,0,1.3,Math.PI/2,0x2a9d8f);uposter(g,"cafeteria",.8,.25,1,.7,10.75,2.6,0,1.3,-Math.PI/2,0x2a9d8f);
+ /* milk cooler with a sliding glass lid */
+ const mc=new T.Group();mc.position.set(8.2,0,zc);g.add(mc);{const ck=Kit();ck.add(rbox(1.4,.9,.8,.04),UM(0x2a6bd8,{metalness:.3}),0,.45,0);for(let a=0;a<10;a++)ck.add(bx(.12,.2,.12),UM(a%2?0xffffff:0xd6e9ff),-.5+(a%5)*.25,.95,-.15+(a>4?.3:0));ck.build(mc);sign(mc,"MILK 50¢",0,.55,.41,.8,.2,"#2a6bd8","#fff")}
+ const lid=new T.Mesh(bx(1.36,.03,.78),GLASS);lid.position.set(0,1.1,0);mc.add(lid);let lo=0,lcur=0;U.anims.push(dt=>{lcur+=((lo?1:0)-lcur)*Math.min(1,dt*6);lid.position.x=lcur*.6});usolid(7.5,8.9,cz+zc-.4,cz+zc+.4,1.1);
+ utap("cafeteria",8.2,zc+1,"Press E to slide open the milk cooler 🥛",()=>{lo=!lo;if(lo)uoffer("🥛","Cold milk! Each carton is 50¢.","fruit","milk")},1.1);
+ utap("cafeteria",x0+1,zc+1.1,"Press E to take a slice of pizza 🍕",()=>uoffer("🍕","The pizza is cut into 8 equal slices.","pizza","pizza"),1.3);
+ utap("cafeteria",x0+3,zc+1.1,"Press E to grab an apple 🍎",()=>uoffer("🍎","Crunchy! Apples are 45¢ each.","fruit","cafapple"),1.1);
+ utap("cafeteria",x0+5,zc+1.1,"Press E to take some bananas 🍌",()=>uoffer("🍌","Bananas: great brain food!","share","banana"),1.1);
+ binLid(g,-9.8,6,0x2f6b3a,"TRASH","cafeteria","napkins and an empty chip bag.");binLid(g,-9.8,7,0x2a6bd8,"RECYCLE","cafeteria","milk cartons and a water bottle.");binLid(g,-9.8,8,0x8a5a32,"COMPOST","cafeteria","apple cores and banana peels.");
+ /* tables get rounded tops, round stools-style benches and trays with real food */
+ k.build(g,{name:"u_cafeteria"})}
+/* ---------- ROOFTOP GARDEN: sunflowers + tomato stakes, watering can (plants grow), telescope, compost bin ---------- */
+{const R=ROOMS.rooftop,g=R.g,cz=R.cz,k=Kit();const flowers=new T.Group();g.add(flowers);const fk=Kit();
+ for(let i=0;i<4;i++){const x=-8+i*5.3;for(let j=0;j<3;j++){const fx=x-1.2+j*1.2;fk.add(cy(.02,.025,1.1,6),UM(0x3f8f3a),fx,1.15,7.1);fk.add(cy(.16,.16,.05,14),UM(0xffc81e),fx,1.75,7.15,Math.PI/2.4);fk.add(cy(.07,.07,.06,10),UM(0x5a3a1a),fx,1.76,7.18,Math.PI/2.4)}
+   for(let j=0;j<2;j++){const tx=x-.6+j*1.2;k.add(cy(.012,.012,1.2,4),UM(0x8a6a44),tx,1.2,6.5);for(let t=0;t<4;t++)k.add(sp(.06,7),UM(0xd62828),tx+.06,.8+t*.18,6.5+(t%2?.05:-.05))}}
+ fk.build(flowers);let grow=0,gs=1;
+ const can=new T.Group();can.position.set(9,.12,4.5);g.add(can);{const ck=Kit();ck.add(cy(.16,.18,.32,14),UM(0x2a9d8f,{metalness:.5}),0,.16,0);ck.add(cy(.02,.035,.4,8),UM(0x2a9d8f,{metalness:.5}),.24,.3,0,0,0,-.9);ck.add(new T.TorusGeometry(.12,.015,4,10,Math.PI),UM(0x2a9d8f,{metalness:.5}),0,.34,0,0,Math.PI/2,0);ck.build(can)}
+ utap("rooftop",9,4.5,"Press E to water the garden 🚿",()=>{grow=2;upuff(g,0,1.4,6.8,30,0x6fb6ff,8,.5,1,.03);bub("🌻","The sunflowers drink it up and grow taller!")},1.2);
+ U.anims.push(dt=>{if(grow>0){grow-=dt;gs=Math.min(1.35,gs+dt*.15);flowers.scale.y=gs;flowers.position.y=-(gs-1)*.7}});
+ /* telescope on a tripod at the edge */
+ const tel=new T.Group();tel.position.set(-9,0,-6);g.add(tel);{const tk=Kit();[0,2.1,4.2].forEach(a=>tk.add(cy(.02,.02,1.3,5),UM(0x333333),Math.cos(a)*.25,.6,Math.sin(a)*.25,Math.sin(a)*.2,0,-Math.cos(a)*.2));tk.add(cy(.07,.09,.9,14),UM(0xeeeeee,{metalness:.4}),0,1.3,0,0,0,1.2);tk.add(cy(.1,.1,.06,14),UM(0x222222),.38,1.45,0,0,0,1.2);tk.build(tel)}
+ usolid(-9.35,-8.65,cz-6.35,cz-5.65,1.4);utap("rooftop",-8.2,-5.4,"Press E to look through the telescope 🔭",()=>uoffer("🔭","You can see the whole skyline! That tall tower is 1,454 feet.","round","telescope"),1.2);
+ /* compost bin with a lid: worms inside */
+ binLid(g,9,-4,0x6b4123,"COMPOST","rooftop","rich dark soil… and wiggly worms! 🪱 They turn food scraps into dirt for the garden.");
+ k.build(g,{name:"u_rooftop"})}

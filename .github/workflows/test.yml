@@ -34,6 +34,8 @@ jobs:
         run: node tools/verify_tbvr.js
       - name: Arcade cabinet math answer keys (9 grade-4 standards + XP wager rules, independent)
         run: node tools/verify_cabinets.js
+      - name: Universe math moments (13 generators x 3000 seeds, independent key)
+        run: node tools/verify_universe.js
       - name: Shipped build consistency
         run: node tools/check_dist.js
   e2e:
@@ -81,6 +83,8 @@ jobs:
         run: TAG=ci_cab HOOK=./p13cabinets.js node test/play.js
       - name: Arcade cabinet math on a phone (390x844, touch E + taps)
         run: TAG=ci_cab_phone W=390 H=844 TOUCH=1 HOOK=./p13cabinets.js node test/play.js
+      - name: Universe e2e (trash can lid + contents, hydrant, lamp, tree, newsstand math moment, E priority, flat-panel audit)
+        run: TAG=ci_universe HOOK=./p13universe.js node test/play.js
       - name: Cinematic conversations e2e (letterbox, face-framing camera, subtitles, character voices for Theo, Marcia, Okafor, Arcade Worker, Mr. Sal, Brock)
         run: TAG=ci_cine HOOK=./p13cine.js node test/play.js
       - name: Cinematic conversations on a phone (390x844, touch taps)
