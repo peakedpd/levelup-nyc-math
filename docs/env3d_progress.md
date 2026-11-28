@@ -96,3 +96,27 @@ Full per-task ledger: /workspace/meshy_raw/ledger.jsonl (outside the repo).
 - **Flat audit**: Meshy GLB props and rigged (skinned) characters no longer count as flat cards. Before, Brock's model tripped p13universe.
 - **Gym**: 3-row wooden bleachers with steel braces and a collider. "Cheer from the bleachers" offers a points math moment.
 - **Classroom**: cubbies by the door with 8 colored bins and a coat-hook rail. "Check the cubbies" offers a share math moment.
+
+## Final state (2026-11-28)
+- **Published SHAs**:
+  - 14ff879 street + Mr. Sal/Brock
+  - e8ddc69 30 props + arcade neon
+  - 0fb5b08 hallway + apartment
+  - 55d18e5 perf + gym/classroom + flat-audit fix
+  - then this log update
+- **CI**:
+  - 14ff879 failed on the p9 ArrowLeft timing; the check was made fps-robust in e8ddc69.
+  - e8ddc69 and 0fb5b08 failed p13universe because the GLB props counted as flat panels; fixed in 55d18e5.
+- **Meshy credits**:
+  - This pass used 550: Sal + Brock 100, 30 props 450.
+  - Balance 747; the account started at 2,100 credits.
+  - No credits were bought.
+- **Screenshots**:
+  - shots/env3d/final_grid.png: before/after, desktop + phone, for street, arcade, classroom, clothing, hallway, apartment
+  - shots/env3d/{before,final}/{desktop,phone}/
+- **Gaps**:
+  - Numbered-locker doors and the fridge door don't swing. The Meshy props are single meshes, so the interactions are wobble/spin/pop plus sounds.
+  - The painted fire escape still shows a little below the storefront cut on the apartment facades.
+  - On the software renderer the fps dropped by about 0.5 (street 3.5 → 3.3); real GPUs are unaffected in practice.
+  - Mr. Sal and Brock have no lip-sync.
+  - The rooftop area wasn't touched.
