@@ -69,3 +69,12 @@ Full per-task ledger: /workspace/meshy_raw/ledger.jsonl (outside the repo).
   - **Apartment**: plant.
 - **Test**: test/p16props.js (in CI): every prop loads, sits on its surface, is visible, its tap runs, and its quiz contains the answer. Generators are checked over 400 seeds each.
 - **Screenshots**: shots/env3d/after2/{desktop,phone}/ (arcade_a/b, clothing_a/b, lobby_a, hallway_a, cafeteria_a, gym_a …)
+
+## Step 3: school hallway, apartment, wall-depth fix (env3d_rooms.js)
+- **Hallway**: two cork bulletin boards above the lockers. Each is a real 3D frame and cork with 6 pinned notices and push pins. Reading one gives a bulletin note and an optional clock math moment.
+- **Theo's apartment**:
+  - striped rug
+  - two wall shelves with 14 books and a toy robot with a glowing eye; tap it for an optional books math moment
+  - floor lamp whose switch turns its warm light on and off
+- **Fix**: the room walls are 0.4 m thick, so the arcade neon strips and lightning bolts were partly buried in the wall. They now sit on the inner wall face and show.
+- **Screenshots**: shots/env3d/after3/desktop/{hall_board,arcade_neon,apt_shelf,hallway_a,apartment_a}.png
