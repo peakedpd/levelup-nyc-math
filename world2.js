@@ -137,40 +137,83 @@ const AR=ROOMS.arcade,WK={x:AR.cx-7.2,z:AR.cz+4.85};
   /* uprights */
   [-1.15,0,1.15].forEach(dz=>box(g,.05,2.45,.05,wood,shX,1.28,shZ+dz,0));
 
-  const tag=(txt,x,y,z)=>{const t=canvasTex(256,96,(c,W,H)=>{c.fillStyle="#fff8e0";c.fillRect(0,0,W,H);c.strokeStyle="#14123a";c.lineWidth=8;c.strokeRect(4,4,W-8,H-8);c.fillStyle="#14123a";c.textAlign="center";c.textBaseline="middle";c.font="800 36px Trebuchet MS,sans-serif";c.fillText(txt,W/2,H/2)});
-    const m=new T.Mesh(new T.PlaneGeometry(.34,.13),new T.MeshBasicMaterial({map:t,toneMapped:false}));m.position.set(x,y,z);m.rotation.y=Math.PI/2;g.add(m)};
+  /* Shelves face +x (into the room). Prizes are big, bright and packed, one category per shelf, so they read from the doorway. */
+  const gl=(c,i=.35,o={})=>M(c,Object.assign({emissive:c,emissiveIntensity:i,roughness:.4},o));
+  const add=(geo,mat,x,y,z,par=g)=>{const o=new T.Mesh(geo,mat);o.position.set(x,y,z);par.add(o);return o};
+  const label=(txt,price,bg,x,y,z,w=1.5)=>{const H0=96,t=canvasTex(1024,H0,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.strokeStyle="#14123a";c.lineWidth=8;c.strokeRect(4,4,W-8,H-8);c.textBaseline="middle";c.fillStyle="#14123a";let fs=70;c.font=`900 ${fs}px Trebuchet MS,sans-serif`;while(c.measureText(txt).width>W-330&&fs>30){fs-=2;c.font=`900 ${fs}px Trebuchet MS,sans-serif`}c.textAlign="left";c.fillText(txt,26,H/2+3);
+      c.fillStyle="#14123a";c.fillRect(W-280,14,262,H-28);c.fillStyle="#ffd23f";c.textAlign="center";c.font="900 56px Trebuchet MS,sans-serif";c.fillText(price+" TIX",W-149,H/2+3)});
+    const m=new T.Mesh(new T.PlaneGeometry(w,w*H0/1024),new T.MeshBasicMaterial({map:t,toneMapped:false}));m.position.set(x,y,z);m.rotation.y=Math.PI/2;g.add(m);return m};
+  const word=(txt,bg,fg)=>canvasTex(256,96,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.fillStyle=fg;c.textAlign="center";c.textBaseline="middle";c.font="900 54px Trebuchet MS,sans-serif";c.fillText(txt,W/2,H/2+3)});
+  const decal=(tex,w,h,x,y,z,par=g)=>{const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:tex,toneMapped:false,transparent:true}));m.position.set(x,y,z);m.rotation.y=Math.PI/2;par.add(m);return m};
+  const PAL=[0xff4d6d,0xffd23f,0x7cff6b,0x2bd9ff,0xc84bff,0xff8a3d,0xff7ad9];
+  /* CANDY: glass jars full of candy balls, lollipop cups, gummy bags */
+  const gummyT=word("GUMMY","#ff3d7f","#fff");
+  const addCandy=(x,y,z,col=0xff4d6d,s=1,kind=0)=>{
+    if(kind===0){const jar=add(new T.CylinderGeometry(.11*s,.11*s,.26*s,16),M(0xdff4ff,{roughness:.05,transparent:true,opacity:.35,depthWrite:false}),x,y+.13*s,z);
+      for(let i=0;i<14;i++){const a=i*2.4,r=.065*s*((i%3)/2+.3);add(new T.SphereGeometry(.03*s,8,6),gl(PAL[(i+col)%PAL.length],.3),x+Math.cos(a)*r,y+.04*s+Math.floor(i/4)*.05*s,z+Math.sin(a)*r)}
+      add(new T.CylinderGeometry(.12*s,.12*s,.04*s,16),gl(col,.25),x,y+.28*s,z)}
+    else if(kind===1){add(new T.CylinderGeometry(.07*s,.06*s,.1*s,12),M(0xffffff),x,y+.05*s,z);
+      [[-.05,.0],[.05,.03],[0,-.04]].forEach(([dz,dx],i)=>{add(new T.CylinderGeometry(.008*s,.008*s,.26*s,6),M(0xffffff),x+dx*s,y+.18*s,z+dz*s);
+        const pop=add(new T.CylinderGeometry(.065*s,.065*s,.025*s,20),gl(PAL[(i*2+col)%PAL.length],.45),x+dx*s,y+.33*s,z+dz*s);pop.rotation.z=Math.PI/2;
+        const sw=add(new T.TorusGeometry(.04*s,.008*s,6,20),M(0xffffff,{emissive:0xffffff,emissiveIntensity:.3}),x+dx*s+.014*s,y+.33*s,z+dz*s);sw.rotation.y=Math.PI/2})}
+    else {const bag=add(new T.BoxGeometry(.05*s,.24*s,.17*s),gl(PAL[col%PAL.length],.3),x,y+.12*s,z);decal(gummyT,.15*s,.06*s,x+.027*s,y+.14*s,z)}};
+  /* SLIME: white tubs with bright glossy goo and a SLIME label */
+  const slimeT=word("SLIME","#14123a","#7cff6b");
+  const addSlime=(x,y,z,col=0x7cff6b,s=1)=>{add(new T.CylinderGeometry(.12*s,.11*s,.13*s,18),M(0xf6f2ea,{roughness:.5}),x,y+.065*s,z);
+    const goo=add(new T.SphereGeometry(.115*s,18,12),gl(col,.3,{roughness:.08,metalness:.1}),x,y+.13*s,z);goo.scale.y=.6;
+    const drip=add(new T.SphereGeometry(.03*s,10,8),gl(col,.55,{roughness:.08}),x+.11*s,y+.1*s,z+.03*s);drip.scale.y=1.6;
+    decal(slimeT,.17*s,.06*s,x+.122*s,y+.06*s,z)};
+  /* FIDGET SPINNERS: three-lobed spinners hanging on a pegboard, facing the room */
+  const addSpinner=(x,y,z,col=0x2bd9ff,s=1,peg=true)=>{const sp=new T.Group();sp.position.set(x,y,z);g.add(sp);const m=gl(col,.22,{metalness:.2,roughness:.35});
+    for(let i=0;i<3;i++){const a=i*2.094+Math.PI/2;const arm=add(new T.BoxGeometry(.03*s,.06*s,.1*s),m,0,Math.sin(a)*.05*s,Math.cos(a)*.05*s,sp);arm.rotation.x=-a;
+      const lobe=add(new T.CylinderGeometry(.055*s,.055*s,.035*s,18),m,0,Math.sin(a)*.1*s,Math.cos(a)*.1*s,sp);lobe.rotation.z=Math.PI/2;
+      const bear=add(new T.CylinderGeometry(.025*s,.025*s,.04*s,12),M(0xdddddd,{metalness:.8,roughness:.2}),.002,Math.sin(a)*.1*s,Math.cos(a)*.1*s,sp);bear.rotation.z=Math.PI/2}
+    const hub=add(new T.CylinderGeometry(.045*s,.045*s,.05*s,18),M(0xffffff,{metalness:.5,roughness:.2}),0,0,0,sp);hub.rotation.z=Math.PI/2;
+    if(peg){const pg=add(new T.CylinderGeometry(.008,.008,.3,6),M(0xbbbbbb,{metalness:.7}),-.12,0,0,sp);pg.rotation.z=Math.PI/2}
+    return sp};
+  /* SQUISHY TOYS: round plush animals with faces (cat, bear, bunny, frog) */
+  const addSquishy=(x,y,z,col=0xff8fb1,s=1,kind=0)=>{const r=.13*s,b=add(new T.SphereGeometry(r,18,14),M(col,{roughness:.85,emissive:col,emissiveIntensity:.18}),x,y+r,z);b.scale.set(.95,1,1.05);
+    const fx=x+r*.92,ink=M(0x14123a);[-1,1].forEach(sd=>{add(new T.SphereGeometry(.02*s,8,6),ink,fx,y+r*1.15,z+sd*.045*s);const ch=add(new T.SphereGeometry(.022*s,8,6),M(0xff6f9a,{roughness:.9}),fx-.01*s,y+r*.9,z+sd*.075*s);ch.scale.x=.4});
+    const mo=add(new T.TorusGeometry(.02*s,.006*s,6,12,Math.PI),ink,fx+.004,y+r*.95,z);mo.rotation.set(0,Math.PI/2,Math.PI);
+    const em=M(col,{roughness:.85,emissive:col,emissiveIntensity:.18});
+    if(kind===0)[-1,1].forEach(sd=>{const e=add(new T.ConeGeometry(.04*s,.07*s,4),em,x,y+r*1.95,z+sd*.07*s);e.rotation.x=sd*.25});
+    else if(kind===1)[-1,1].forEach(sd=>add(new T.SphereGeometry(.04*s,10,8),em,x,y+r*1.85,z+sd*.08*s));
+    else if(kind===2)[-1,1].forEach(sd=>{const e=add(new T.CapsuleGeometry(.025*s,.09*s,4,8),em,x,y+r*2.15,z+sd*.04*s);e.rotation.x=sd*.15});
+    else [-1,1].forEach(sd=>{add(new T.SphereGeometry(.04*s,10,8),M(0xffffff),x+r*.5,y+r*1.75,z+sd*.06*s);add(new T.SphereGeometry(.018*s,8,6),ink,x+r*.5+.035*s,y+r*1.75,z+sd*.06*s)})};
+  /* RC CARS: bodies with big wheels, spoiler and antenna, plus a remote and a boxed car */
+  const addCar=(x,y,z,col=0x2bd9ff,s=1)=>{const m=gl(col,.3,{metalness:.45,roughness:.3});
+    add(new T.BoxGeometry(.17*s,.07*s,.34*s),m,x,y+.09*s,z);add(new T.BoxGeometry(.14*s,.06*s,.15*s),M(0x14183a,{roughness:.15,metalness:.4}),x,y+.155*s,z-.02*s);
+    const sp=add(new T.BoxGeometry(.17*s,.015*s,.06*s),m,x,y+.18*s,z+.15*s);add(new T.BoxGeometry(.015*s,.05*s,.015*s),m,x,y+.15*s,z+.15*s);
+    const wm=M(0x151515,{roughness:.9}),rim=M(0xd0d0d0,{metalness:.8,roughness:.2});
+    for(const dz of[-.11,.11])for(const sd of[-1,1]){const w=add(new T.CylinderGeometry(.055*s,.055*s,.045*s,16),wm,x+sd*.1*s,y+.055*s,z+dz*s);w.rotation.z=Math.PI/2;const rr=add(new T.CylinderGeometry(.028*s,.028*s,.048*s,10),rim,x+sd*.1*s,y+.055*s,z+dz*s);rr.rotation.z=Math.PI/2}
+    add(new T.CylinderGeometry(.004*s,.004*s,.22*s,6),M(0x222222),x-.05*s,y+.23*s,z+.1*s);add(new T.SphereGeometry(.014*s,8,6),gl(0xff2a2a,.8),x-.05*s,y+.34*s,z+.1*s)};
+  const rcBoxT=canvasTex(512,320,(c,W,H)=>{const gr=c.createLinearGradient(0,0,W,H);gr.addColorStop(0,"#ff5d1a");gr.addColorStop(1,"#c8102e");c.fillStyle=gr;c.fillRect(0,0,W,H);c.fillStyle="#ffd23f";c.font="900 72px Trebuchet MS,sans-serif";c.textAlign="center";c.fillText("RC TURBO",W/2,78);
+    c.fillStyle="#bfe9ff";c.fillRect(70,110,372,170);c.fillStyle="#2bd9ff";c.fillRect(140,190,232,46);c.fillStyle="#14183a";c.fillRect(190,160,120,36);c.fillStyle="#111";[175,335].forEach(x=>{c.beginPath();c.arc(x,244,30,0,6.3);c.fill()});c.strokeStyle="#111";c.lineWidth=4;c.beginPath();c.moveTo(200,160);c.lineTo(180,112);c.stroke()});
+  const addRemote=(x,y,z,s=1)=>{const r=add(new T.BoxGeometry(.06*s,.1*s,.2*s),M(0x222233,{roughness:.4}),x,y+.05*s,z);r.rotation.z=-.5;
+    [-.05,.05].forEach(dz=>add(new T.CylinderGeometry(.012*s,.012*s,.05*s,8),gl(0xffd23f,.5),x+.04*s,y+.12*s,z+dz*s));add(new T.CylinderGeometry(.004,.004,.2*s,6),M(0x999999,{metalness:.7}),x-.02*s,y+.2*s,z-.08*s)};
 
-  const addCandy=(x,y,z,col=0xff4d6d)=>{const jar=new T.Mesh(new T.CylinderGeometry(.075,.08,.15,12),M(col,{roughness:.3,transparent:true,opacity:.82,metalness:.05}));jar.position.set(x,y+.08,z);g.add(jar);
-    const lid=new T.Mesh(new T.CylinderGeometry(.085,.085,.03,12),M(0xffd23f,{roughness:.45}));lid.position.set(x,y+.165,z);g.add(lid);
-    const bag=new T.Mesh(new T.BoxGeometry(.1,.14,.05),M(col,{roughness:.55}));bag.position.set(x+.13,y+.08,z);bag.rotation.z=.12;g.add(bag)};
-  const addSlime=(x,y,z,col=0x7cff6b)=>{const tub=new T.Mesh(new T.CylinderGeometry(.1,.1,.07,14),M(0xf4f0e6,{roughness:.5}));tub.position.set(x,y+.035,z);g.add(tub);
-    const goo=new T.Mesh(new T.SphereGeometry(.085,14,10),M(col,{roughness:.12,metalness:.08}));goo.scale.y=.55;goo.position.set(x,y+.085,z);g.add(goo)};
-  const addSpinner=(x,y,z,col=0x2bd9ff)=>{const m=M(col,{emissive:col,emissiveIntensity:.25,roughness:.35});const s=new T.Group();
-    for(let i=0;i<3;i++){const l=new T.Mesh(new T.CylinderGeometry(.045,.045,.03,12),m);l.position.set(Math.cos(i*2.09)*.07,0,Math.sin(i*2.09)*.07);s.add(l)}
-    s.add(new T.Mesh(new T.CylinderGeometry(.03,.03,.04,12),M(0xffffff)));s.rotation.x=Math.PI/2;s.position.set(x,y+.03,z);g.add(s)};
-  const addSquishy=(x,y,z,col=0xff8fb1)=>{const b=new T.Mesh(new T.SphereGeometry(.09,14,12),M(col,{roughness:.75}));b.scale.set(1.05,1.2,.95);b.position.set(x,y+.1,z);g.add(b);
-    const eye=M(0x14123a);[-.03,.03].forEach(dx=>{const e=new T.Mesh(new T.SphereGeometry(.015,8,6),eye);e.position.set(x+dx,y+.13,z+.07);g.add(e)})};
-  const addCar=(x,y,z,col=0x2bd9ff)=>{const body=new T.Mesh(new T.BoxGeometry(.22,.06,.12),M(col,{roughness:.35,metalness:.35}));body.position.set(x,y+.075,z);g.add(body);
-    const cab=new T.Mesh(new T.BoxGeometry(.1,.05,.11),M(0x1a2448,{roughness:.3}));cab.position.set(x+.02,y+.12,z);g.add(cab);
-    const wm=M(0x1a1a1a,{roughness:.8});for(const dx of[-.07,.07])for(const dz of[-.075,.075]){const w=new T.Mesh(new T.CylinderGeometry(.032,.032,.036,10),wm);w.rotation.z=Math.PI/2;w.position.set(x+dx,y+.032,z+dz);g.add(w)}};
-
-  /* shelf items — five identifiable prize types, with ticket tags on the lip */
-  const lip=shX+shD/2-.02;
-  [[-1.35,0xff4d6d],[-1.1,0xff9f1c],[-.85,0x7a5cff]].forEach(([z,c])=>addCandy(shX,0.13,shZ+z,c));
-  [[-1.35,0xff4d6d],[-1.05,0xffc83d]].forEach(([z,c])=>addCandy(shX,.83,shZ+z,c));
-  tag("CANDY  15🎟️",lip,.55,shZ-1.1);
-  [[-.45,0x7cff6b],[-.2,0xc84bff],[.05,0x2bd9ff]].forEach(([z,c])=>addSlime(shX,0.13,shZ+z,c));
-  [[-.45,0x7cff6b],[-.18,0xff5d8f]].forEach(([z,c])=>addSlime(shX,.83,shZ+z,c));
-  tag("SLIME  30🎟️",lip,.55,shZ-.2);
-  [[.45,0x2bd9ff],[.7,0xffd23f],[.95,0xff5d8f]].forEach(([z,c])=>addSpinner(shX,.83,shZ+z,c));
-  addSpinner(shX,1.47,shZ+.7,0x6dff6b);addSpinner(shX,1.47,shZ+.95,0x2bd9ff);
-  tag("SPINNER  80🎟️",lip,1.18,shZ+.7);
-  [[.4,0xff8fb1],[.65,0xffd23f],[.9,0x7cff6b]].forEach(([z,c])=>addSquishy(shX,0.13,shZ+z,c));
-  addSquishy(shX,1.47,shZ+.4,0xff8fb1);
-  tag("SQUISHY  45🎟️",lip,.55,shZ+.65);
-  addCar(shX,2.12,shZ-1.2,0x2bd9ff);addCar(shX,2.12,shZ-.85,0xff5d1a);addCar(shX,2.12,shZ-.5,0x6dff6b);
-  addCar(shX,1.47,shZ-1.2,0xffc83d);
-  tag("RC CAR  200🎟️",lip,1.85,shZ-.85);
+  /* shelf layout (bottom → top): squishies, slime, candy, spinners on a pegboard, RC cars */
+  const lip=shX+shD/2+.012, Z0=shZ-shLen/2+.25, Z1=shZ+shLen/2-.25, row=(n,f)=>{for(let i=0;i<n;i++)f(Z0+(Z1-Z0)*i/(n-1),i)};
+  const SY=[0.105,.805,1.445,2.085,2.545];
+  row(7,(z,i)=>addSquishy(shX+(i%2?.02:-.04),SY[0],z,[0xff8fb1,0xffd23f,0xb9f2ff,0x9be15d,0xc8a2ff,0xffb36b,0x7ad9ff][i],1.3,i%4));
+  row(8,(z,i)=>addSlime(shX+(i%2?.04:-.04),SY[1],z,[0x22e04a,0xa020f0,0x1e90ff,0xff2a75,0xffd000,0x22e04a,0xff6a00,0xa020f0][i],1.3));
+  row(9,(z,i)=>addCandy(shX+(i%2?.03:-.04),SY[2],z,i,1.25,i%3));
+  /* pegboard behind the spinner shelf */
+  box(g,.03,.6,shLen-.12,M(0x2a1f3d,{roughness:.8}),shBack+.06,SY[3]+.32,shZ,0);
+  row(7,(z,i)=>addSpinner(shX+.08,SY[3]+.34+(i%2?.06:-.04),z,[0xff2a55,0x1e90ff,0x22c55e,0xffb000,0xa020f0,0xff6a00,0x00c2c7][i],1.45));
+  addCar(shX,SY[4],Z0+.2,0x1e90ff,1.25);addCar(shX+.03,SY[4],Z0+.75,0xff4a00,1.25);addCar(shX,SY[4],Z0+1.3,0x22c55e,1.25);addRemote(shX+.08,SY[4],Z0+1.75,1.3);
+  {const bx=add(new T.BoxGeometry(.18,.32,.52),M(0xc8102e,{roughness:.6}),shX-.05,SY[4]+.16,Z1-.45);const f=decal(rcBoxT,.5,.31,shX+.042,SY[4]+.16,Z1-.45);addCar(shX,SY[4],Z1-.02,0xffd23f,.8)}
+  /* big labels on each shelf lip: category + ticket price */
+  label("SQUISHY TOYS",45,"#ffb3cf",lip,.075,shZ);
+  label("SLIME",30,"#9dff8f",lip,SY[1]-.09,shZ);
+  label("CANDY",15,"#ff9fb0",lip,SY[2]-.09,shZ);
+  label("FIDGET SPINNERS",80,"#9fe9ff",lip,SY[3]-.09,shZ);
+  label("RC CARS",200,"#ffc27a",lip,SY[4]-.09,shZ);
+  /* warm shelf lighting: LED strips under each shelf + two spots so the shelves read from the doorway */
+  const led=M(0xfff1c8,{emissive:0xffe2a0,emissiveIntensity:2.2});
+  SY.slice(1).forEach(y=>box(g,.03,.02,shLen-.1,led,shX+.24,y-.04,shZ,0));
+  [[3.95],[6.35]].forEach(([z])=>{const sp=new T.SpotLight(0xffe2b0,18,7,.75,.5,1.2);sp.position.set(-6.9,3.4,shZ+(z-5.15)*.6);sp.target.position.set(shX,1.3,z);g.add(sp);g.add(sp.target)});
+  {const fill=new T.PointLight(0xffd9a0,10,3.5);fill.position.set(-7.9,1.4,shZ);g.add(fill)}
 
   /* open-legged counter: top + short apron + legs, so feet show in the aisle behind it */
   const cx=-6.5, cz=5.15, cw=.78, cd=2.55, topY=.95;
@@ -188,7 +231,7 @@ const AR=ROOMS.arcade,WK={x:AR.cx-7.2,z:AR.cz+4.85};
   box(g,.03,.42,.7,glass,gx+cw/2-.04,(topY+.42)/2,gz,0);
   box(g,.7,.42,.03,glass,gx,(topY+.42)/2,gz-.34,0);
   box(g,.7,.42,.03,glass,gx,(topY+.42)/2,gz+.34,0);
-  addSpinner(gx,.99,gz-.12,0x2bd9ff);addSlime(gx-.16,.99,gz+.12,0x7cff6b);addSquishy(gx+.16,.99,gz+.1,0xff8fb1);
+  addSpinner(gx,1.12,gz-.18,0x2bd9ff,.8,false);addSlime(gx-.12,.99,gz+.14,0x7cff6b,.75);addSquishy(gx+.12,.99,gz+.12,0xff8fb1,.7,1);
 
   /* ticket counter machine — chunky 3D kiosk at the entrance-end of the desk */
   const tx=cx, tz=cz+1.15;
