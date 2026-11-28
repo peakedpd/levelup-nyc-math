@@ -56,8 +56,8 @@ const NPC={
  okafor_street:{name:"Ms. Okafor",key:"okafor",pos:()=>({x:STREET_OK.x,z:STREET_OK.z}),head:()=>boneHead(ACT.okafor_st,new V3(STREET_OK.x,.12+1.93,STREET_OK.z)),act:()=>ACT.okafor_st,bill:()=>ACT.okafor_st?null:W2.ok,solid:true},
  okafor:{name:"Ms. Okafor",key:"okafor",pos:()=>({x:TCH.x,z:TCH.z}),head:()=>boneHead(ACT.okafor,new V3(TCH.x,(TCH.fy||0)+1.93,TCH.z)),act:()=>ACT.okafor,bill:()=>ACT.okafor?null:TCH.mesh,face:y=>{TCH.yaw=y},pin:s=>{TCH.x=s.x;TCH.z=s.z;TCH.mesh.position.x=s.x;TCH.mesh.position.z=s.z}},
  worker:{name:"Arcade Worker",key:"worker",pos:()=>({x:WK.x,z:WK.z}),head:()=>boneHead(ACT.worker,new V3(WK.x,1.7,WK.z)),act:()=>ACT.worker},
- sal:{name:"Mr. Sal",key:"sal",pos:()=>({x:SAL.x,z:SAL.z}),head:()=>new V3(SAL.x,2.0,SAL.z),bill:()=>W2.sal&&W2.sal.m},
- brock:{name:"Brock",key:"brock",pos:()=>({x:BRK.x,z:BRK.z}),head:()=>new V3(BRK.x,.12+1.62,BRK.z),bill:()=>BRK.mesh},
+ sal:{name:"Mr. Sal",key:"sal",pos:()=>({x:SAL.x,z:SAL.z}),head:()=>boneHead(ACT.sal,new V3(SAL.x,2.0,SAL.z)),act:()=>ACT.sal,bill:()=>ACT.sal?null:(W2.sal&&W2.sal.m)},
+ brock:{name:"Brock",key:"brock",pos:()=>({x:BRK.x,z:BRK.z}),head:()=>boneHead(ACT.brock,new V3(BRK.x,.12+1.62,BRK.z)),act:()=>ACT.brock,bill:()=>ACT.brock?null:BRK.mesh},
  muncher:{name:"Number Muncher",key:"muncher",pos:()=>({x:BOSS.g.position.x,z:BOSS.g.position.z}),head:()=>{const v=new V3();(BOSS.head||BOSS.g).getWorldPosition(v);return v},bill:()=>null}
 };
 function npcFor(who){const k=voiceKey(who);if(k==="okafor")return AREA==="school"?NPC.okafor:NPC.okafor_street;return NPC[k]||null}

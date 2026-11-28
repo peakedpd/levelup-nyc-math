@@ -38,6 +38,13 @@ module.exports = async ({ pg, f, OUT, res, sleep }) => {
   await npc('okafor', 'school', () => { P.x = TCH.x + 5; P.z = TCH.z + 4 }, 'okafor');
   res.cardsHidden.cls = await f.evaluate(() => TCH.mat.visible === false); ok(res.cardsHidden.cls, 'classroom Okafor card art hidden');
   await npc('worker', 'arcade', () => { P.x = WK.x + 3; P.z = WK.z - 3 }, 'worker');
+  // Mr. Sal (Clothing Store) and Brock (street challenger) are rigged 3D models too; their flat cards are hidden
+  await npc('sal', 'clothing', () => { P.x = SAL.x + 3; P.z = SAL.z + 4 }, 'sal');
+  await f.evaluate(() => { if (AREA !== 'street') leaveRoom(); brockSet({ on: true, sk: 'mult', title: 'Brock', say: 'Think you can beat me?', done: false }) });
+  await npc('brock', 'street', () => { P.x = BRK.x + 4; P.z = BRK.z + 4 }, 'brock');
+  res.cardsHidden.sal = await f.evaluate(() => W2.sal.mat.visible === false); ok(res.cardsHidden.sal, 'Mr. Sal card art hidden');
+  res.cardsHidden.brock = await f.evaluate(() => BRK.mat.visible === false); ok(res.cardsHidden.brock, 'Brock card art hidden');
+  await f.evaluate(() => brockSet({ on: false }));
   // ---- cinematic close-ups (talk clip plays while the line is spoken) ----
   const cine = async (label, area, start) => {
     await f.evaluate(a => { if (AREA !== a) { if (AREA !== 'street') leaveRoom(); if (a !== 'street') goRoom(a, 'door') } }, area); await sleep(1500);
