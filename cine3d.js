@@ -79,7 +79,7 @@ function frame(subject,other,o){o=o||{};const B=bounds(subject),L=solids(),skip=
   for(const s of(o.side>0?[1,-1]:[-1,1])){cands.push({kind:"ots",pos:other.clone().addScaledVector(f,-.9).addScaledVector(r,s*.85).add(new V3(0,low+.05,0)),look:subject.clone()});}
   for(const s of[1,-1])for(const k of[1.3,1])cands.push({kind:"ots",pos:other.clone().addScaledVector(f,-.6*k).addScaledVector(r,s*.75*k).add(new V3(0,low*.6,0)),look:subject.clone()});
   const mid=subject.clone().lerp(other,.5);
-  for(const s of[1,-1])for(const k of[1,.7])cands.push({kind:"two",pos:mid.clone().addScaledVector(r,s*Math.max(1.6,D*1.15)*k).addScaledVector(f,-.25).add(new V3(0,.12+low*.5,0)),look:subject.clone().lerp(other,.18)});
+  for(const s of[1,-1])for(const k of[1,.7])cands.push({kind:"two",pos:mid.clone().addScaledVector(r,s*Math.max(1.6,D*1.15)*k).addScaledVector(f,-.25).add(new V3(0,.12+low*.5,0)),look:subject.clone().lerp(other,innerWidth<innerHeight?0:.18)});
   if(D>1.3)cands.push({kind:"single",pos:subject.clone().addScaledVector(f,-Math.min(1.1,D-.35)),look:subject.clone()});
   cands.push({kind:"close",pos:subject.clone().addScaledVector(f,-.75).add(new V3(0,.05,0)),look:subject.clone()});
   const okB=p=>!B||(p.x>B.x0&&p.x<B.x1&&p.z>B.z0&&p.z<B.z1&&p.y>B.y0&&p.y<B.y1);
@@ -149,7 +149,7 @@ const _gc=gameCam;gameCam=function(dt){const c=CUR;if(!c||!c.cam)return _gc(dt);
   const back=s.pos.clone().sub(s.look).normalize();const want=s.pos.clone().addScaledVector(back,ST.motion?(1-e)*.35:0);
   if(c.shake&&t-c.shake<420){const a=(1-(t-c.shake)/420)*.05;want.x+=(Math.random()-.5)*a;want.y+=(Math.random()-.5)*a;want.z+=(Math.random()-.5)*a}
   if(c.cut&&(!ST.motion||c.i===0&&t-c.t0<60||cam.position.distanceTo(want)>4)){cam.position.copy(want);c.cut=false}else cam.position.lerp(want,Math.min(1,dt*(ST.motion?4:12)));
-  const look=sub.clone();if(c.shotFor==="npc"&&s.kind==="two")look.lerp(oth,.15);cam.lookAt(look);try{PR.style.display="none"}catch(_){}return true};
+  const look=sub.clone();if(c.shotFor==="npc"&&s.kind==="two"&&innerWidth>=innerHeight)look.lerp(oth,.15);cam.lookAt(look);try{PR.style.display="none"}catch(_){}return true};
 function undoBob(c){for(const b of c.bob){if(b.q&&b.o.quaternion.equals(b.qa))b.o.quaternion.copy(b.q);if(b.dy&&Math.abs(b.o.position.y-b.ya)<1e-6)b.o.position.y-=b.dy}c.bob=[]}
 const _ug=updateGame;updateGame=function(dt,t){if(CUR&&CUR.o.blockQG&&QG&&QG.phase==="intro")QG.t0=t;_ug(dt,t);const c=CUR;
   if(!c){if(PEND&&PEND.go)playPending();return}
