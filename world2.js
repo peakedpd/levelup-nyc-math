@@ -1272,16 +1272,16 @@ const _gcL=gameCam;gameCam=function(dt){if(CA.restore){cam.position.copy(CA.rest
     if(!CA.camOn){CA.camOn=1;cam.position.copy(want)}else cam.position.lerp(want,Math.min(1,dt*6));cam.lookAt(look);W2.camFree=false;return true}
   CA.camOn=0;const r=_gcL(dt);W2.camFree=!r;return r};
 /* arcade follow camera: lift it and look past the avatar so the Prize Corner/counter aren't hidden behind your head; fade the avatar when the camera is right on it */
-W2.followFix=false;let FADE=1;function heroFade(a){const H=ACT.hero;if(!H||Math.abs(a-FADE)<.01&&!(a<1&&!H.g.userData.fadeMats))return;FADE=a;
+W2.followFix=true;let FADE=1;function heroFade(a){const H=ACT.hero;if(!H||Math.abs(a-FADE)<.01&&!(a<1&&!H.g.userData.fadeMats))return;FADE=a;
   H.g.traverse(o=>{if(!o.isMesh||!o.material)return;if(!o.userData.fadeMat){o.userData.fadeMat=Array.isArray(o.material)?o.material.map(m=>m.clone()):o.material.clone();o.userData.origMat=o.material}
     if(a>=.999){o.material=o.userData.origMat}else{o.material=o.userData.fadeMat;(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{m.transparent=true;m.opacity=a;m.depthWrite=a>.6})}});H.g.userData.fadeMats=1}
 const _ugL=updateGame;updateGame=function(dt,now){_ugL(dt,now);try{clawTick()}catch(e){CA.on=false}
   let fade=1;if(W2.followFix&&W2.camFree&&AREA==="arcade"&&camDist>1.3&&!W2.ui&&!QG){const hy=P.y+1.75,head=new T.Vector3(P.x,hy,P.z),base=cam.position.clone(),R0=ROOMS.arcade;
     const fwd=new T.Vector3(P.x-base.x,0,P.z-base.z);const fl=fwd.length();if(fl>.05){fwd.multiplyScalar(1/fl);const right=new T.Vector3(-fwd.z,0,fwd.x);
       const near=Math.max(0,1-(head.distanceTo(base)-.6)/2.4);/* the closer the camera is pushed in, the more it lifts and slides over the shoulder */
-      const up=Math.min(.75*near+.25,(R0.h||5.6)-.4-base.y),side=.42*near;const p=base.clone().addScaledVector(right,side);p.y+=Math.max(0,up);
+      const up=Math.min(.75*near+.25,(R0.h||5.6)-.4-base.y),side=.38+.3*near;const p=base.clone().addScaledVector(right,side);p.y+=Math.max(0,up);
       const x0=R0.cx-(R0.w||18)/2+.35,x1=R0.cx+(R0.w||18)/2-.35,z0=R0.cz-(R0.d||16)/2+.35,z1=R0.cz+(R0.d||16)/2-.35;p.x=Math.min(x1,Math.max(x0,p.x));p.z=Math.min(z1,Math.max(z0,p.z));
-      cam.position.copy(p);cam.lookAt(head.x+fwd.x*3.2,hy-.15-near*.35,head.z+fwd.z*3.2);CA.restore=base;
+      cam.position.copy(p);cam.lookAt(head.x+fwd.x*3.2+right.x*side,hy-.15-near*.35,head.z+fwd.z*3.2+right.z*side);CA.restore=base;
       const d=p.distanceTo(head);fade=d<1.05?.25:d<1.7?.25+.75*(d-1.05)/.65:1}}
   if(CA.camOn&&ACT.hero){fade=1;ACT.hero.g.visible=false}if(st.open)PR.style.display="none";heroFade(fade);W2.camFree=false};
 addEventListener("keydown",e=>{if(!st.open)return;if(e.key==="Escape"){close();return}if(st.phase==="ask"&&/^[1-4]$/.test(e.key))answer(+e.key-1);e.stopPropagation()},true);
