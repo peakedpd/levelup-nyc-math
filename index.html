@@ -264,7 +264,10 @@ const HERO=n=>"hero"+String(n).padStart(2,"0");
 const HERO_NAMES=["Red Puffs","Green Curls","Purple Curls","Blonde Hoodie","Orange Cut","Lavender Hijab","Red Freckles","Teal Ponytail","Afro Phones","Long Braid","Round Glasses","Colorful Locs"];
 const EMO={hoodie:"🧥",jacket:"🧥",sneak:"👟",cap:"🧢",glasses:"👓",pack1:"🎒",pack2:"🎒"};
 const wearEmo=()=>Object.values(S.eq).map(i=>EMO[i]).filter(Boolean).join("");
-const NAMES=["Skyler","Jordan","River","Sage","Nova","Ace","Zuri","Kai","Milo","Luna","Rio","Indigo"];
+const NAME_ADJ=["Neon","Cosmic","Turbo","Pixel","Lucky","Swift","Brave","Sunny","Happy","Mighty","Super","Jolly","Bright","Clever","Cool","Epic","Fuzzy","Golden","Silver","Rocket","Shiny","Speedy","Stellar","Bouncy","Frosty","Glowy","Hyper","Jazzy","Magic","Nimble","Quick","Rapid","Royal","Sparky","Zippy","Bold","Calm","Daring","Fancy","Gentle","Wise","Witty","Chill","Cyber","Laser","Astro","Comet","Lunar","Solar","Thunder"];
+const NAME_NOUN=["Fox","Panda","Tiger","Falcon","Otter","Koala","Comet","Rocket","Star","Dragon","Phoenix","Wolf","Eagle","Shark","Dolphin","Penguin","Lion","Bear","Hawk","Bunny","Turtle","Owl","Llama","Moose","Raven","Gecko","Puma","Lynx","Bison","Badger","Robin","Jaguar","Cobra","Whale","Pixel","Ninja","Wizard","Racer","Hero","Champ","Coder","Builder","Ranger","Pilot","Captain","Explorer","Scout","Jet","Bolt","Blaze"];
+// Surprise-me pool: 12 classic nicknames + every Adjective+Noun pair (letters only, max 14 chars). John asked for at least 1,000 names (2026-11-27).
+const NAMES=[...new Set(["Skyler","Jordan","River","Sage","Nova","Ace","Zuri","Kai","Milo","Luna","Rio","Indigo"].concat(NAME_ADJ.flatMap(a=>NAME_NOUN.filter(n=>n!==a).map(n=>a+n))).filter(s=>/^[A-Za-z0-9]{1,14}$/.test(s)))];
 const BAD_IN=["fuck","shit","bitch","porn","nazi","fck","sht"],BAD_WORD=["ass","sex","kill","hate","damn","dick","gun","butt","poop","dumb","stupid"];
 function badName(n){const l=String(n).toLowerCase(),flat=l.replace(/[^a-z]/g,""),w=l.split(/[^a-z]+/).filter(Boolean);return BAD_IN.some(b=>flat.includes(b))||w.some(x=>BAD_WORD.includes(x)||BAD_WORD.includes(x.replace(/e?s$/,"")))}
 

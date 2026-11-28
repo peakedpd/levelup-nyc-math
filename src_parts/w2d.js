@@ -1,7 +1,7 @@
 /* ---------- interactions: room exits, Prize Corner, Mr. Sal's counter, Ticket Blaster, talk ---------- */
 const _interactions=interactions;interactions=function(){if(W2.blaster||W2.ui||W2.hand)return [];let L=_interactions();if(QG)return L;
   if(AREA!=="street"){const R0=ROOMS[AREA];L=L.filter(d=>d.type!=="exit");if(R0.exits)L=R0.exits.map(e=>({type:"exit2",x:e.x,z:e.z,r:1.9,label:e.label,to:e.to,spawn:e.spawn})).concat(L)}
-  if(AREA==="arcade"){L=L.filter(d=>d.type!=="game");L.push({type:"blaster",x:AR.cx+3.9,z:AR.cz+5.25,r:1.9,label:"Press E to play 🎟️ TICKET BLASTER!"});L=L.map(d=>d.type==="station"&&d.id==="arcade"?Object.assign({},d,{type:"counter",x:AR.cx-6.5,z:AR.cz+5.15,r:2.4,label:"Press E — trade tickets at the Prize Corner ("+TIX.n+" 🎟️)"}):d)}
+  if(AREA==="arcade"){L=L.filter(d=>d.type!=="game");L.push({type:"blaster",x:AR.cx+3.9,z:AR.cz+5.25,r:1.9,label:"Press E to play 🎟️ TICKET BLASTER!"});L=L.map(d=>d.type==="station"&&d.id==="arcade"?Object.assign({},d,{type:"counter",x:AR.cx-6.15,z:AR.cz+5.15,r:2.2,label:"Press E — trade tickets at the Prize Corner ("+TIX.n+" 🎟️)"}):d)}
   if(AREA==="clothing")L=L.map(d=>d.type==="station"&&d.id==="shop"?Object.assign({},d,{type:"salshop",x:CL.cx,z:CL.cz-4.2,r:2.6,label:"Press E — Mr. Sal: shop for clothes with City Coins"}):d);
   const tk=nearTalker();if(tk)L=L.map(d=>/^(game|counter|salshop|station)$/.test(d.type)?Object.assign({},d,{label:d.label+"  ·  Q 💬 talk"}):d);
   if(tk&&!L.some(d=>d.type!=="exit2"&&Math.hypot(d.x-P.x,d.z-P.z)<d.r))L.push({type:"talk",x:P.x,z:P.z,r:9,label:"Press Q (or 💬) to talk to "+tk[0]});

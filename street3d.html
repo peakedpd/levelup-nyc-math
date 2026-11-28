@@ -154,6 +154,23 @@ function interactions(){if(QG){if(QG.phase==="ask"&&QG.nearPad)return [{type:"pa
 const ROOMS={},RW=18,RD=16,RH=5.6;
 function M(c,o={}){return new T.MeshStandardMaterial(Object.assign({color:c,roughness:.8},o))}
 function box(g,w,h,d,mat,x,y,z,solid=1){const o=new T.Mesh(new T.BoxGeometry(w,h,d),mat);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;if(solid)o.userData.solid=1;g.add(o);return o}
+function exitDoor(g,x,z,ry=0){
+  const wood=M(0x3a2416,{roughness:.7}),panel=M(0x4a2e1a,{roughness:.65}),trim=M(0x2a1810,{roughness:.6}),brass=M(0xffd23f,{metalness:.7,roughness:.35,emissive:0x664400,emissiveIntensity:.25});
+  const grp=new T.Group();grp.position.set(x,0,z);grp.rotation.y=ry;g.add(grp);
+  box(grp,2.36,3.05,.1,panel,0,1.52,.02,0);
+  box(grp,.16,3.15,.18,trim,-1.18,1.57,.06,0);box(grp,.16,3.15,.18,trim,1.18,1.57,.06,0);
+  box(grp,2.52,.16,.2,trim,0,3.15,.07,0);
+  box(grp,.08,1.15,.04,wood,-.02,2.05,.08,0);box(grp,1.0,.04,.04,wood,0,1.5,.08,0);
+  const h=new T.Mesh(new T.CylinderGeometry(.035,.035,.16,10),brass);h.rotation.z=Math.PI/2;h.position.set(.82,1.38,.12);grp.add(h);
+  const knob=new T.Mesh(new T.SphereGeometry(.05,10,8),brass);knob.position.set(.92,1.38,.12);grp.add(knob);
+  /* glowing red EXIT sign mounted at the top of the door */
+  box(grp,1.42,.38,.12,M(0x4a0000,{emissive:0xff1a1a,emissiveIntensity:1.8}),0,3.52,.1,0);
+  const c=document.createElement("canvas");c.width=512;c.height=128;const ctx=c.getContext("2d");
+  ctx.fillStyle="#7a0000";ctx.fillRect(0,0,512,128);ctx.strokeStyle="#ff4d4d";ctx.lineWidth=14;ctx.strokeRect(10,10,492,108);
+  ctx.fillStyle="#fff";ctx.font="900 86px Trebuchet MS,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("EXIT",256,70);
+  const tex=new T.CanvasTexture(c);if(T.SRGBColorSpace)tex.colorSpace=T.SRGBColorSpace;
+  const sm=new T.Mesh(new T.PlaneGeometry(1.36,.34),new T.MeshBasicMaterial({map:tex,toneMapped:false}));sm.position.set(0,3.52,.17);grp.add(sm);
+  return grp}
 function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(cx,0,cz);S.add(g);
   const wallC={school:0xf4e3b5,arcade:0x14081e,clothing:0xf2efe8,apartment:0xe9c9a0}[kind],floorC={school:0xc8915a,arcade:0x1a1228,clothing:0xd9d2c5,apartment:0x9b6a43}[kind];
   const wm=M(wallC),fm=M(floorC,{roughness:.6});
@@ -161,7 +178,7 @@ function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(
   const ce=new T.Mesh(new T.PlaneGeometry(RW,RD),M(kind==="arcade"?0x0d0818:0xf8f4ec));ce.rotation.x=Math.PI/2;ce.position.y=RH;g.add(ce);
   box(g,RW,RH,.4,wm,0,RH/2,-RD/2);box(g,.4,RH,RD,wm,-RW/2,RH/2,0);box(g,.4,RH,RD,wm,RW/2,RH/2,0);
   box(g,(RW-2.6)/2,RH,.4,wm,-(RW+2.6)/4,RH/2,RD/2);box(g,(RW-2.6)/2,RH,.4,wm,(RW+2.6)/4,RH/2,RD/2);box(g,2.6,RH-3,.4,wm,0,3+(RH-3)/2,RD/2);
-  box(g,2.6,3,.1,M(0x3a6fd8,{emissive:0x1d3f8a,emissiveIntensity:.4}),0,1.5,RD/2+.3,0); // exit door glow
+  exitDoor(g,0,RD/2+.12,Math.PI); // real EXIT door back to the street (was a plain blue panel)
   if(kind==="arcade"){const t=TL.load("tex/room_arcade.webp");t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;
     const mw=RW-.3,mh=mw*1190/2560,mp=new T.Mesh(new T.PlaneGeometry(mw,mh),new T.MeshBasicMaterial({map:t,toneMapped:false}));
     mp.position.set(0,RH-mh/2+.08,-RD/2+.24);g.add(mp);
@@ -186,8 +203,7 @@ function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(
     /* air hockey — mid floor, low so the back-wall mural stays visible */ box(g,1.55,.72,2.3,M(0x0d1a33),0,.36,-2.35);box(g,1.4,.04,2.1,M(0x2bd9ff,{emissive:0x2bd9ff,emissiveIntensity:.55}),0,.74,-2.35,0);
     /* Ticket Blaster stays, moved to the entrance so it does not cover the new room art */
     box(g,3,2.2,1.4,M(0x5b2bd0),3.9,1.1,5.25);box(g,2.6,.05,1.1,M(0x22ff88,{emissive:0x22ff88,emissiveIntensity:.8}),3.9,2.25,5.25,0);
-    /* prize counter body (art + worker are placed in w2c) */
-    box(g,1.3,1.05,3.4,M(0x5a3a22),-6.5,.52,5.15);
+    /* 3D Prize Corner (shelves, open-legged counter, worker) is built in w2c */
     st(-6.5,5.15,"Prize Counter & Ticket Rush","arcade")}
   if(kind==="clothing"){const cl=[0xe23b3b,0xffd23f,0x2a9d8f,0x3d5af1,0xff8fb1];
     for(let rk=0;rk<4;rk++){const x=-6+rk*4;box(g,.08,1.8,.08,M(0x333333),x-1.3,.9,-1);box(g,.08,1.8,.08,M(0x333333),x+1.3,.9,-1);box(g,2.7,.06,.06,M(0x333333),x,1.75,-1);
@@ -242,7 +258,16 @@ function blocked(x,z,feet){for(const b of SOL)if(x>b.x0-PRAD&&x<b.x1+PRAD&&z>b.z
 function moveBody(o,dx,dz){const f=o.fy||0;if(blocked(o.x,o.z,f)){o.x+=dx;o.z+=dz;return}/* already overlapping a collider (spawn/teleport/NPC moved onto us): let any move out instead of freezing */if(!blocked(o.x+dx,o.z,f))o.x+=dx;if(!blocked(o.x,o.z+dz,f))o.z+=dz}
 let AREA="street",RET=null,camSnap=false;
 function enterRoom(kind){const R0=ROOMS[kind];if(!R0)return;if(AREA==="street")RET={x:P.x,z:P.z-Math.sign(P.z||1)*1.2};AREA=kind;P.x=R0.exit.x;P.z=R0.exit.z-2.6;P.fy=0;P.vy=0;P.yaw=Math.PI;TH.x=P.x+1.2;TH.z=P.z+.6;camYaw=0;camPitch=.32;camDist=5.2;camSnap=true;try{parent.postMessage({lv3d:"area",area:kind},"*")}catch(_){}}
-function leaveRoom(){AREA="street";if(!RET)RET={x:SPAWN.x,z:SPAWN.z};P.x=RET.x;P.z=RET.z;P.fy=.12;P.vy=0;P.yaw=RET.z<0?0:Math.PI;camYaw=P.yaw+Math.PI;TH.x=P.x+1;TH.z=P.z;camDist=8.5;camSnap=true;try{parent.postMessage({lv3d:"area",area:"street"},"*")}catch(_){}}
+function sidewalkOK(x,z){const gnd=supportAt(x,z,.12);return gnd<=.2&&!blocked(x,z,.12)}
+function safeStreetSpawn(fromKind,ret){
+  const cands=[];if(ret)cands.push({x:ret.x,z:ret.z});
+  DOORS.filter(d=>!fromKind||d.kind===fromKind||{school:["school"],arcade:["arcade"],clothing:["clothing"],apartment:["apartment"],lobby:["school"]}[fromKind]&&d.kind===({school:"school",lobby:"school",hallway:"school",rooftop:"school",gym:"school",cafeteria:"school",clothing:"clothing",arcade:"arcade",apartment:"apartment"}[fromKind]||fromKind)).forEach(d=>{const t=d.z>0?-1:1;cands.push({x:d.x,z:d.z+t*2.8},{x:d.x,z:d.z+t*3.6},{x:d.x+1.3,z:d.z+t*2.8},{x:d.x-1.3,z:d.z+t*2.8})});
+  if(ret){const t=Math.sign(ret.z||-1)*-1||1;cands.push({x:ret.x,z:ret.z+t*2},{x:ret.x,z:Math.sign(ret.z||-1)*7})}
+  cands.push({x:SPAWN.x,z:SPAWN.z});
+  for(const c of cands){if(sidewalkOK(c.x,c.z))return c}
+  for(let i=0;i<16;i++){const x=SPAWN.x+(i%2?-1:1)*i*.4,z=SPAWN.z;if(sidewalkOK(x,z))return {x,z}}
+  return {x:SPAWN.x,z:SPAWN.z}}
+function leaveRoom(){const from=AREA;AREA="street";const sp=safeStreetSpawn(from,RET||SPAWN);P.x=sp.x;P.z=sp.z;P.fy=.12;P.vy=0;P.yaw=P.z<0?0:Math.PI;camYaw=P.yaw+Math.PI;TH.x=P.x+1;TH.z=P.z;camDist=8.5;camSnap=true;try{parent.postMessage({lv3d:"area",area:"street"},"*")}catch(_){}}
 /* =====================================================================
    3D MATH GAMES — world questions (street) and cinematic arcade games (indoors)
    Flow: zoom-in on the real objects -> question read aloud -> answer in the world
@@ -419,7 +444,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   else if(target){const dx=target.x-P.x,dz=target.z-P.z,d=Math.hypot(dx,dz);if(d<.25)target=null;else{mvx=dx/d;mvz=dz/d}}
   const m=Math.hypot(mvx,mvz),moving=m>0;IDLE=moving?0:IDLE+dt;
   if(moving){const sp=K.shift?7.5:4.2;moveBody(P,mvx/m*sp*dt,mvz/m*sp*dt);if(AREA==="street")clampPos(P);P.yaw=locked?camYaw+Math.PI:Math.atan2(mvx,mvz)}
-  {const g0=supportAt(P.x,P.z,P.fy);if(P.fy<=g0+.001&&P.vy<=0){P.fy=g0;P.vy=0;P.onG=true}else{P.vy-=22*dt;P.fy+=P.vy*dt;P.onG=false;if(P.fy<g0){P.fy=g0;P.vy=0;P.onG=true}}}
+  {const g0=supportAt(P.x,P.z,P.fy);if(P.fy<=g0+.001&&P.vy<=0){P.fy=g0;P.vy=0;P.onG=true}else{P.vy-=22*dt;P.fy+=P.vy*dt;P.onG=false;if(P.fy<g0){P.fy=g0;P.vy=0;P.onG=true}}if(AREA==="street"&&P.onG&&P.fy>8){const sp=safeStreetSpawn(null,{x:P.x,z:Math.sign(P.z||-1)*7});P.x=sp.x;P.z=sp.z;P.fy=.12;P.vy=0}}
   const ground=P.fy;P.y=0;
   if(!moving&&AREA==="school"&&TCH.meet)P.yaw=Math.atan2(TCH.x-P.x,TCH.z-P.z);
   {const d=Math.hypot(P.x-TH.x,P.z-TH.z);if(!moving&&d<2.6&&!(AREA==="school"&&TCH.meet)){if(d<1.5)P.yaw=Math.atan2(TH.x-P.x,TH.z-P.z);if(!TH.chat)TH.chat={t:now,l:THEO_LINES[Math.floor(Math.random()*THEO_LINES.length)]}}else if(moving)TH.chat=null}

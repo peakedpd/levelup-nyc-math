@@ -67,6 +67,8 @@ jobs:
         run: TAG=ci_move HOOK=./p9move.js node test/play.js
       - name: Real-life games e2e (Theo's street game, Play it for real from a lesson, objects for all 9 skills)
         run: TAG=ci_real HOOK=./p10real.js node test/play.js
+      - name: Arcade EXIT door e2e (returns to an open sidewalk, player can move, no roof trap)
+        run: TAG=ci_exit HOOK=./p11exit.js node test/play.js
       - name: Educator review page e2e
         run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)
