@@ -53,8 +53,8 @@ function boneHead(a,fb){const b=hb(a);if(b&&a.g.visible){const v=new V3();b.getW
 const NPC={
  theo:{name:"Theo",key:"theo",pos:()=>({x:TH.x,z:TH.z}),head:()=>boneHead(ACT.theo,new V3(TH.x,(TH.fy||0)+1.72,TH.z)),act:()=>ACT.theo,pin:s=>{TH.x=s.x;TH.z=s.z;if(ACT.theo)ACT.theo.g.position.set(TH.x,TH.fy||0,TH.z)}},
  marcia:{name:"Ms. Marcia",key:"marcia",pos:()=>({x:MA.x,z:MA.z}),head:()=>boneHead(ACT.marcia,new V3(MA.x,.12+2.08,MA.z)),act:()=>ACT.marcia,pin:s=>{MA.x=s.x;MA.z=s.z;if(ACT.marcia)ACT.marcia.g.position.set(MA.x,.12,MA.z)}},
- okafor_street:{name:"Ms. Okafor",key:"okafor",pos:()=>({x:STREET_OK.x,z:STREET_OK.z}),head:()=>new V3(STREET_OK.x,.12+1.93,STREET_OK.z),bill:()=>W2.ok,solid:true},
- okafor:{name:"Ms. Okafor",key:"okafor",pos:()=>({x:TCH.x,z:TCH.z}),head:()=>new V3(TCH.x,(TCH.fy||0)+1.93,TCH.z),bill:()=>TCH.mesh,face:y=>{TCH.yaw=y},pin:s=>{TCH.x=s.x;TCH.z=s.z;TCH.mesh.position.x=s.x;TCH.mesh.position.z=s.z}},
+ okafor_street:{name:"Ms. Okafor",key:"okafor",pos:()=>({x:STREET_OK.x,z:STREET_OK.z}),head:()=>boneHead(ACT.okafor_st,new V3(STREET_OK.x,.12+1.93,STREET_OK.z)),act:()=>ACT.okafor_st,bill:()=>ACT.okafor_st?null:W2.ok,solid:true},
+ okafor:{name:"Ms. Okafor",key:"okafor",pos:()=>({x:TCH.x,z:TCH.z}),head:()=>boneHead(ACT.okafor,new V3(TCH.x,(TCH.fy||0)+1.93,TCH.z)),act:()=>ACT.okafor,bill:()=>ACT.okafor?null:TCH.mesh,face:y=>{TCH.yaw=y},pin:s=>{TCH.x=s.x;TCH.z=s.z;TCH.mesh.position.x=s.x;TCH.mesh.position.z=s.z}},
  worker:{name:"Arcade Worker",key:"worker",pos:()=>({x:WK.x,z:WK.z}),head:()=>boneHead(ACT.worker,new V3(WK.x,1.7,WK.z)),act:()=>ACT.worker},
  sal:{name:"Mr. Sal",key:"sal",pos:()=>({x:SAL.x,z:SAL.z}),head:()=>new V3(SAL.x,2.0,SAL.z),bill:()=>W2.sal&&W2.sal.m},
  brock:{name:"Brock",key:"brock",pos:()=>({x:BRK.x,z:BRK.z}),head:()=>new V3(BRK.x,.12+1.62,BRK.z),bill:()=>BRK.mesh},
@@ -161,9 +161,13 @@ const _ug=updateGame;updateGame=function(dt,t){if(CUR&&CUR.o.blockQG&&QG&&QG.pha
   undoBob(c);const n=c.n,a=n.act&&n.act();
   if(c.cam){for(const k in K)K[k]=false;try{JOY.x=JOY.z=0}catch(_){}if(n.pin)n.pin(c.pin);
     const np=n.pos(),yawN=Math.atan2(P.x-np.x,P.z-np.z),yawP=Math.atan2(np.x-P.x,np.z-P.z);P.yaw=yawP;const H=ACT.hero;if(H){H.g.visible=true;H.yaw=H.g.rotation.y=yawP}
-    if(a){a.yaw=a.g.rotation.y=yawN}if(n.face)n.face(yawN)}
+    // rigged 3D actors "cheat" halfway toward the camera so a side two-shot still shows their face
+    if(a){let y=yawN;if(a.clips){const yc=Math.atan2(cam.position.x-np.x,cam.position.z-np.z);y=yawN+wrapA(yc-yawN)*.5}a.yaw=a.g.rotation.y=y}if(n.face)n.face(yawN)}
   const talking=c.line&&c.line.text&&c.line.who!=="hero"&&!c.vdone,ts=t/1000;
-  if(talking&&ST.motion){const b=hb(a);if(b){const q=b.quaternion.clone();b.rotateX(Math.sin(ts*9)*.07);b.rotateY(Math.sin(ts*3.3)*.05);c.bob.push({o:b,q,qa:b.quaternion.clone()})}
+  // rigged 3D characters act the line out: talk while speaking, wave on a greeting, cheer on a win; the student talks on their lines
+  if(a&&a.clips){const says=c.line&&c.line.text&&c.line.who!=="hero"&&(!c.vdone||now()-c.lt0<Math.max(2200,c.line.text.length*60));if(says)charPose(a,c.kind==="win"?"cheer":c.kind==="greet"&&c.i===0&&now()-c.lt0<1800?"wave":"talk",250);else if(c.kind==="win")charPose(a,"cheer",250)}
+  {const H=ACT.hero;if(H&&H.clips&&c.line&&c.line.who==="hero"&&c.line.text&&now()-c.lt0<2500)charPose(H,"talk",250)}
+  if(talking&&ST.motion&&!(a&&a.clips)){const b=hb(a);if(b){const q=b.quaternion.clone();b.rotateX(Math.sin(ts*9)*.07);b.rotateY(Math.sin(ts*3.3)*.05);c.bob.push({o:b,q,qa:b.quaternion.clone()})}
     else{const m=n.bill&&n.bill();if(m){const dy=Math.abs(Math.sin(ts*10))*.035;m.position.y+=dy;c.bob.push({o:m,dy,ya:m.position.y})}}}
   if(lineDone(c,t))nextLine();if(CUR===c&&(c.cam||c.aim))aim(c)};
 const _ub=updateBubble;updateBubble=function(t){if(CUR&&CUR.cam){BUB.style.display="none";return}return _ub(t)};

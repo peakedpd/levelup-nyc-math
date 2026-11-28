@@ -522,7 +522,7 @@ function dnext(){if(!DQ)return;DQ.i++;if(DQ.i>=DQ.lines.length){const cb=DQ.cb;D
 let CR=null;
 function buildCreator(){
   const hs=$("#o-hero");hs.innerHTML="";
-  for(let i=0;i<12;i++){const b=document.createElement("button");b.setAttribute("aria-pressed",CR.hero===i);b.setAttribute("aria-label",HERO_NAMES[i]);b.innerHTML=`<img src="${IM(HERO(i))}" alt="">`;b.onclick=()=>{CR.hero=i;buildCreator()};hs.appendChild(b)}
+  for(let i=0;i<12;i++){const b=document.createElement("button");b.setAttribute("aria-pressed",CR.hero===i);b.setAttribute("aria-label",HERO_NAMES[i]);b.innerHTML=`<img src="img/characters_3d/thumbs/${HERO(i)}.webp" onerror="this.onerror=null;this.src='${IM(HERO(i))}'" alt="" style="object-fit:contain">`;b.onclick=()=>{CR.hero=i;buildCreator()};hs.appendChild(b)}
   const bs=$("#o-bg");bs.innerHTML="";BGS.forEach((col,i)=>{const b=document.createElement("button");b.className="sw";b.style.background=col;b.setAttribute("aria-label","Backdrop "+(i+1));b.setAttribute("aria-pressed",CR.bg===i);b.onclick=()=>{CR.bg=i;buildCreator()};bs.appendChild(b)});
   turnView("cPrev",()=>HERO(CR.hero),c=>{const g=c.createRadialGradient(150,330,10,150,330,260);g.addColorStop(0,"#fff");g.addColorStop(1,BGS[CR.bg]);c.fillStyle=g;c.fillRect(0,0,300,480)});$("#cName").textContent=HERO_NAMES[CR.hero];
 }

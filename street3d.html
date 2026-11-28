@@ -21,7 +21,7 @@ if(window.NOGL){window.onerror=()=>true;addEventListener("DOMContentLoaded",()=>
 </script>
 <script src="three-lib.js"></script>
 <script>/* character models are small .glb files fetched after the page opens (they used to be ~20 MB of inline base64) */
-window.HERO03D_URL=window.HERO03D_URL||"models/hero00.glb";window.THEO3D_URL=window.THEO3D_URL||"models/theo.glb";window.MARCIA3D_URL=window.MARCIA3D_URL||"models/marcia.glb";window.WORKER3D_URL=window.WORKER3D_URL||"models/worker.glb";</script>
+/* Meshy-generated rigged characters from the Canva renders in img/characters_3d (walk/idle/talk/wave/cheer clips) */window.CHAR3D=n=>"models/characters/"+n+".glb";window.HERO03D_URL=window.HERO03D_URL||CHAR3D("hero00");window.THEO3D_URL=window.THEO3D_URL||CHAR3D("theo");window.MARCIA3D_URL=window.MARCIA3D_URL||CHAR3D("marcia");window.WORKER3D_URL=window.WORKER3D_URL||CHAR3D("worker");window.OKAFOR3D_URL=window.OKAFOR3D_URL||CHAR3D("okafor");</script>
 <!-- world2.js (school lobby/hallway/rooftop, arcade worker + prize counter, street talk, Ticket Blaster, touch controls) is loaded after the main script -->
 <script>
 "use strict";if(/embed/.test(location.search))document.body.classList.add("emb");
@@ -124,8 +124,8 @@ const GL=new GLTFLoader();
 function b64buf(u){const b=atob(u.slice(u.indexOf(",")+1)),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a.buffer}
 function charBuf(url){if(/^data:/.test(url))return Promise.resolve(b64buf(url));return fetch(url).then(r=>{if(!r.ok)throw new Error(url+" "+r.status);return r.arrayBuffer()})}
 function loadChar(url,targetH){return new Promise(res=>{if(!url)return res(null);charBuf(url).then(buf=>GL.parse(buf,"",g=>{const m=g.scene;m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false}});
-  const mix=new T.AnimationMixer(m),clip=g.animations[0],act=clip?mix.clipAction(clip):null;act&&act.play();mix.setTime(0);m.updateMatrixWorld(true);
-  const bb=new T.Box3().setFromObject(m,true),h=bb.max.y-bb.min.y||1.8;const s=targetH/h;const wrap=new T.Group();m.scale.setScalar(s);m.position.y=-bb.min.y*s;wrap.add(m);S.add(wrap);const o={g:wrap,mix,act,dur:clip?clip.duration:1,t:0,yaw:0};calibrate(o,m);mix.setTime(0);res(o)},e=>{console.error(e);res(null)})).catch(e=>{console.error(e);res(null)})})}
+  const mix=new T.AnimationMixer(m),AN=g.animations,clip=AN.find(a=>/walk/i.test(a.name))||AN[0],act=clip?mix.clipAction(clip):null;act&&act.play();mix.setTime(0);m.updateMatrixWorld(true);
+  const bb=new T.Box3().setFromObject(m,true),h=bb.max.y-bb.min.y||1.8;const s=targetH/h;const wrap=new T.Group();m.scale.setScalar(s);m.position.y=-bb.min.y*s;wrap.add(m);S.add(wrap);const o={g:wrap,mix,act,dur:clip?clip.duration:1,t:0,yaw:0};calibrate(o,m);mix.setTime(0);if(AN.length>1){o.clips={};AN.forEach(a=>{if(a===clip)return;const x=mix.clipAction(a);x.play();x.setEffectiveWeight(0);o.clips[a.name.toLowerCase()]={a:x,dur:a.duration,t:0}})}res(o)},e=>{console.error(e);res(null)})).catch(e=>{console.error(e);res(null)})})}
 const ACT={};
 /* ---------- input ---------- */
 const K={};addEventListener("keydown",e=>{if(window.OVERLAY_KEYS&&OVERLAY_KEYS(e))return;K[e.key.toLowerCase()]=true;if(e.key.startsWith("Arrow"))e.preventDefault();if(TOOL.style.display==="flex"&&e.key.toLowerCase()!=="t")return;if(e.key.toLowerCase()==="t"){toggleTool();return}if(e.key.toLowerCase()==="e")tryDoor();if(e.key.toLowerCase()==="m"&&nearDoor&&nearDoor.type==="station"&&!QG){try{parent.postMessage({lv3d:"door",id:nearDoor.id},"*")}catch(_){}}if(QG&&QG.phase==="ask"&&/^[1-4]$/.test(e.key)){const a=QG.ans[+e.key-1];if(a&&!a.used)answer(a)}if(e.key===" "){e.preventDefault();if(P.onG)P.vy=7.5}if(e.key.toLowerCase()==="i")camDist=Math.max(.6,camDist-1.5);if(e.key.toLowerCase()==="o")camDist=Math.min(20,camDist+1.5)});addEventListener("keyup",e=>K[e.key.toLowerCase()]=false);addEventListener("blur",()=>{for(const k in K)K[k]=false});
@@ -525,7 +525,17 @@ function calibrate(o,m){try{const feet=[];const blinks=[];m.traverse(b=>{if(b.is
   if(!feet.length||!o.act){o.nat=4.2;return}const v=new T.Vector3();let best=0;feet.slice(0,4).forEach(f=>{let lo=1e9,hi=-1e9;for(let i=0;i<24;i++){o.mix.setTime(o.dur*i/24);m.updateMatrixWorld(true);f.getWorldPosition(v);lo=Math.min(lo,v.z);hi=Math.max(hi,v.z)}best=Math.max(best,hi-lo)});
   o.nat=Math.max(.8,Math.min(8,2*best/o.dur));o.stride=best}catch(e){o.nat=4.2}}
 function blink(o,dt){if(!o.blinks||!o.blinks.length)return;o.bt=(o.bt||2+Math.random()*3)-dt;let w=0;if(o.bt<0){w=Math.max(0,1-Math.abs(o.bt+.08)/.08);if(o.bt<-.16)o.bt=2.5+Math.random()*3.5}o.blinks.forEach(([mm,i])=>mm.morphTargetInfluences[i]=w)}
-function step(o,mv,dt,speed=4.2,air=false){if(!o)return;const m=o.g.children[0];o.idleT=(o.idleT||0)+dt;blink(o,dt);
+/* rigged characters with several clips: walk/idle blend by speed, plus a one-off or looping pose (talk, wave, cheer) */
+function charPose(o,n,ms){if(!o||!o.clips||!o.clips[n])return false;if(!o.pose||o.pose.n!==n){o.clips[n].t=0}o.pose={n,until:ms?performance.now()+ms:0};return true}
+function step2(o,mv,dt,speed,air){const m=o.g.children[0],C=o.clips;o.idleT=(o.idleT||0)+dt;blink(o,dt);m.rotation.x=T.MathUtils.lerp(m.rotation.x,air?-.12:0,dt*(air?8:10));m.scale.y=m.scale.x;
+  if(o.pose&&o.pose.until&&performance.now()>o.pose.until)o.pose=null;const P0=o.pose&&C[o.pose.n];o.pw=T.MathUtils.clamp((o.pw||0)+(P0?dt*5:-dt*5),0,1);if(P0)o.lastPose=P0;
+  o.blend=T.MathUtils.clamp((o.blend||0)+(mv||air?dt*6:-dt*6),0,1);
+  if(air)o.t=o.dur*.25;else if(mv)o.t=(o.t+dt*Math.min(3.2,speed/(o.nat||4.2)))%o.dur;else if(o.blend>0)o.t=(o.t+dt*.6)%o.dur;
+  const I=C.idle;if(I)I.t=(I.t+dt)%I.dur;const LP=o.lastPose;if(LP){LP.t+=dt;if(LP.t>LP.dur)LP.t=(o.pose&&!o.pose.until)?LP.t%LP.dur:Math.min(LP.t,LP.dur-.001)}
+  const pw=o.pw;for(const k in C)if(C[k]!==I&&C[k]!==LP)C[k].a.setEffectiveWeight(0);
+  o.act.time=o.t;o.act.setEffectiveWeight(o.blend*(1-pw));if(I){I.a.time=I.t;I.a.setEffectiveWeight((1-o.blend)*(1-pw))}if(LP){LP.a.time=LP.t;LP.a.setEffectiveWeight(pw)}
+  if(!I&&!pw&&!o.blend)o.act.time=0,o.act.setEffectiveWeight(1);o.mix.update(0)}
+function step(o,mv,dt,speed=4.2,air=false){if(!o)return;if(o.clips)return step2(o,mv,dt,speed,air);const m=o.g.children[0];o.idleT=(o.idleT||0)+dt;blink(o,dt);
   if(air){o.mix.setTime(o.dur*.25);m.rotation.x=T.MathUtils.lerp(m.rotation.x,-.12,dt*8);m.scale.y=m.scale.x;return}
   m.rotation.x=T.MathUtils.lerp(m.rotation.x,0,dt*10);
   if(mv){o.blend=Math.min(1,(o.blend||0)+dt*6);o.t=(o.t+dt*Math.min(3.2,speed/(o.nat||4.2)))%o.dur;o.mix.setTime(o.t);m.scale.y=m.scale.x}
@@ -575,11 +585,11 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   SKYDOME.position.copy(cam.position);sun.position.set(P.x-30,40,P.z+25);sun.target.position.set(P.x,0,P.z);sun.target.updateMatrixWorld();
   updateTeacher(dt,now);updateGame(dt,now);updateBubble(now);R.render(S,cam);requestAnimationFrame(frame)}
 /* open the street as soon as the player's own model is ready; Theo and Marcia stream in right after */
-loadChar(window.HERO03D_URL,2.0).then(h=>{ACT.hero=h;const l=document.getElementById("load");l.style.opacity=0;setTimeout(()=>l.remove(),600);loadChar(window.THEO3D_URL,1.95).then(t=>{ACT.theo=t});loadChar(window.MARCIA3D_URL,2.35).then(m=>{ACT.marcia=m;if(m)m.g.visible=AREA==="street"})});
+loadChar(window.HERO03D_URL,2.0).then(h=>{if(ACT.hero&&h&&ACT.hero!==h)S.remove(h.g);else ACT.hero=h;const l=document.getElementById("load");l.style.opacity=0;setTimeout(()=>l.remove(),600);loadChar(window.THEO3D_URL,1.95).then(t=>{ACT.theo=t});loadChar(window.MARCIA3D_URL,2.35).then(m=>{ACT.marcia=m;if(m)m.g.visible=AREA==="street"})});
 camYaw=Math.PI*.12;cam.position.set(P.x+3,4,P.z+7);requestAnimationFrame(frame);
 window.__dbg={P,ACT,K};
 {const hp=document.getElementById("help"),full=hp.innerHTML;let open=true;const close=()=>{open=false;hp.innerHTML="❓ <b>Controls</b>";hp.style.cursor="pointer"};hp.onclick=()=>{if(open)close();else{open=true;hp.innerHTML=full;setTimeout(()=>{if(open)close()},9000)}};setTimeout(close,12000);
  setTimeout(()=>{if(!locked)LK.style.opacity=".0";LK.style.transition="opacity 1s"},9000)}
 </script>
-<script src="hero_sprites.js"></script><script src="learn_scenes.js"></script><script src="world2.js"></script><script src="classroom3d.js"></script><script src="cine_lines.js"></script><script src="voice/manifest.js"></script><script src="cine3d.js"></script>
+<script src="hero_sprites.js"></script><script src="learn_scenes.js"></script><script src="world2.js"></script><script src="classroom3d.js"></script><script src="chars3d.js"></script><script src="cine_lines.js"></script><script src="voice/manifest.js"></script><script src="cine3d.js"></script>
 </body></html>

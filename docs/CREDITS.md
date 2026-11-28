@@ -17,3 +17,7 @@ Lines that include the player's name or changing numbers (hints, "Yes! 42 is rig
 To re-record: `node tools/voice_lines.js && /workspace/tts/venv/bin/python tools/voice_render.py` (writes voice/manifest.js).
 
 - Universe detail pass (w2u–w2x): all props are procedural Three.js geometry made for this project; no third-party models or textures added.
+
+## 3D characters (Meshy)
+
+`models/characters/*.glb` — 16 rigged characters generated with **Meshy AI** (Meshy Pro subscription, account peakedpd@gmail.com; Pro-tier generations are privately licensed to the account owner) from the Canva AI renders in `img/characters_3d/`: Image to 3D (meshy-7.1, PBR textures, ~25k triangles, A-pose) → Meshy auto-rigging (meshyrig skeleton) → Meshy animation library (Idle, Talk with Hands Open, Wave One Hand, Victory Cheer) + the rig's walking cycle. Optimized with glTF-Transform (1K WebP textures, quantized geometry). Raw Meshy downloads are kept outside the repo. Voices are unchanged.

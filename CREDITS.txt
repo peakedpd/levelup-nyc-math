@@ -33,3 +33,5 @@ Textures — Poly Haven (https://polyhaven.com, CC0 1.0), resized and converted 
   - Oak Veneer 01 (oak_veneer_01) — Jenelle van Heerden — https://polyhaven.com/a/oak_veneer_01  (wood diffuse / roughness)
 
 Poster / whiteboard artwork: Canva AI (John's Canva account).
+
+3D characters (models/characters/*.glb) — generated with Meshy AI (https://www.meshy.ai, Meshy Pro subscription, account peakedpd@gmail.com; Pro-tier output is privately licensed to the account owner) from the Canva AI character renders in img/characters_3d/. Image to 3D (meshy-7.1, PBR, ~25k triangles, A-pose), Meshy auto-rigging (meshyrig skeleton) and Meshy animation library clips (Idle, Talk with Hands Open, Wave One Hand, Victory Cheer, plus the rig's walking cycle). Optimized with glTF-Transform (1K WebP textures, quantized geometry). Characters: 12 heroes (hero00–hero11), Theo, Ms. Marcia, Ms. Okafor, Arcade Worker.
