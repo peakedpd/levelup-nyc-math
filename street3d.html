@@ -177,7 +177,7 @@ function room(kind,idx){const cx=0,cz=300+idx*45,g=new T.Group();g.position.set(
   const fl=new T.Mesh(new T.PlaneGeometry(RW,RD),fm);fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;g.add(fl);
   const ce=new T.Mesh(new T.PlaneGeometry(RW,RD),M(kind==="arcade"?0x0d0818:0xf8f4ec));ce.rotation.x=Math.PI/2;ce.position.y=RH;g.add(ce);
   box(g,RW,RH,.4,wm,0,RH/2,-RD/2);box(g,.4,RH,RD,wm,-RW/2,RH/2,0);box(g,.4,RH,RD,wm,RW/2,RH/2,0);
-  box(g,(RW-2.6)/2,RH,.4,wm,-(RW+2.6)/4,RH/2,RD/2);box(g,(RW-2.6)/2,RH,.4,wm,(RW+2.6)/4,RH/2,RD/2);box(g,2.6,RH-3,.4,wm,0,3+(RH-3)/2,RD/2);
+  box(g,(RW-2.6)/2,RH,.4,wm,-(RW+2.6)/4,RH/2,RD/2);box(g,(RW-2.6)/2,RH,.4,wm,(RW+2.6)/4,RH/2,RD/2);box(g,2.6,RH-3.8,.4,wm,0,3.8+(RH-3.8)/2,RD/2);
   exitDoor(g,0,RD/2+.12,Math.PI); // real EXIT door back to the street (was a plain blue panel)
   if(kind==="arcade"){const t=TL.load("tex/room_arcade.webp");t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;
     const mw=RW-.3,mh=mw*1190/2560,mp=new T.Mesh(new T.PlaneGeometry(mw,mh),new T.MeshBasicMaterial({map:t,toneMapped:false}));

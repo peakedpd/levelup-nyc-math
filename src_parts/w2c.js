@@ -2,7 +2,7 @@
 /* Worker used to share the solid counter box (WK at x=-6.2 inside a 1.3-wide desk at x=-6.5),
    so his legs were buried and a sneaker poked out in front. He now stands on the floor in the
    aisle behind an open-legged counter; shelves are real 3D, not a flat photo. Worker is arcade-only. */
-const AR=ROOMS.arcade,WK={x:AR.cx-7.55,z:AR.cz+5.15};
+const AR=ROOMS.arcade,WK={x:AR.cx-7.2,z:AR.cz+4.85};
 (function buildPrizeCorner(){
   const g=AR.g, wood=M(0x6b3a1a,{roughness:.7}), dark=M(0x3d2212,{roughness:.65}), edge=M(0x8a5a30,{roughness:.6});
   /* wall shelves: back against x=-9, front around x=-8.22, leaving an aisle for the worker */
