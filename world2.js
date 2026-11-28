@@ -1862,3 +1862,13 @@ function binLid(g,x,z,col,label,area,what){const grp=new T.Group();grp.position.
   utap("street",G.x,G.z,"Press E to look through the basement grate 🕳️",()=>{ubeep(220,.1);if(i%3===1)onceXP("aptGrate"+i,3,"🪙 You fish a shiny coin out of the grate with a stick! +3 XP");else bub("🕳️","Just old leaves and a lost mitten down there.")},.9);
   utap("street",L.x,L.z,"Press E to check the fire-escape ladder 🪜",()=>bub("🪜","The ladder is locked up high. Fire escapes are for emergencies only!"),.9)});
  U.aptFronts=fronts.length}
+/* school front: real blue double doors (grilles, push bars, kick plates), "104" fanlight, brass lanterns — over the painted ones */
+{const blue=UM(0x1f4fa0,{roughness:.45,metalness:.2}),blueD=UM(0x173c7a,{roughness:.5}),brass=UM(0xd4a640,{metalness:.85,roughness:.25}),iron=UM(0x1d1f22,{metalness:.6,roughness:.45}),
+ gl=UM(0x9fc4e8,{emissive:0x334455,emissiveIntensity:.3,roughness:.1,metalness:.3}),stoneM=UM(0xe6dcc8,{roughness:.8}),lamp=UM(0xfff0c0,{emissive:0xffc66b,emissiveIntensity:1.3}),fan=UM(0xfff4d8,{emissive:0xd9b26a,emissiveIntensity:.35});
+ const kit=Kit();DOORS.filter(d=>d.kind==="school").forEach(d=>{const side=Math.sign(d.z);kit.base(mat4(d.x,0,side*9,side>0?Math.PI:0));
+  kit.add(bx(2.6,2.75,.1),blueD,0,3.12,.04);[-1,1].forEach(s=>{const cx=s*.64;kit.add(rbox(1.2,2.6,.07,.02),blue,cx,3.12,.1);kit.add(bx(.62,.9,.03),gl,cx,3.75,.14);
+   for(let i=0;i<4;i++)kit.add(cy(.012,.012,.9,5),iron,cx-.24+i*.16,3.75,.16);kit.add(tor(.18,.015,5,16),iron,cx,3.75,.16);kit.add(bx(1.1,.3,.02),brass,cx,1.98,.14);kit.add(cy(.03,.03,1,8),brass,cx,2.95,.2,0,0,Math.PI/2);[-.42,.42].forEach(o=>kit.add(bx(.04,.04,.1),brass,cx+o,2.95,.16))});
+  kit.add(cy(1.3,1.3,.08,24),stoneM,0,4.55,.05,Math.PI/2);kit.add(cy(1.15,1.15,.09,24),fan,0,4.55,.06,Math.PI/2);for(let i=0;i<9;i++){const a=Math.PI*(i+.5)/9;kit.add(bx(.03,1.1,.03),UM(0x6b5a3a),Math.cos(a)*.57,4.55+Math.sin(a)*.57,.12,0,0,a-Math.PI/2)}
+  kit.add(bx(2.9,.12,.2),stoneM,0,4.52,.12);kit.add(rbox(.5,.22,.03,.02),UM(0x1b2a4a),0,4.95,.13);
+  [-2.05,2.05].forEach(x=>{kit.add(bx(.08,.08,.32),iron,x,4.5,.16);kit.add(cy(.14,.1,.4,6),lamp,x,4.3,.34);kit.add(cy(.18,.05,.15,6),brass,x,4.58,.34);kit.add(cy(.06,.14,.06,6),brass,x,4.08,.34)})});
+ kit.build(S,{name:"u_school_doors"})}
