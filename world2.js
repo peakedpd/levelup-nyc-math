@@ -1872,3 +1872,16 @@ function binLid(g,x,z,col,label,area,what){const grp=new T.Group();grp.position.
   kit.add(bx(2.9,.12,.2),stoneM,0,4.52,.12);kit.add(rbox(.5,.22,.03,.02),UM(0x1b2a4a),0,4.95,.13);
   [-2.05,2.05].forEach(x=>{kit.add(bx(.08,.08,.32),iron,x,4.5,.16);kit.add(cy(.14,.1,.4,6),lamp,x,4.3,.34);kit.add(cy(.18,.05,.15,6),brass,x,4.58,.34);kit.add(cy(.06,.14,.06,6),brass,x,4.08,.34)})});
  kit.build(S,{name:"u_school_doors"})}
+/* clothing store entrance: real framed glass doors (pulls, kick plates, "OPEN" card), transom, wall lanterns */
+{const fr=UM(0x1b2a26,{roughness:.5,metalness:.3}),brass=UM(0xd4a640,{metalness:.85,roughness:.25}),gl=UM(0xbfe3ff,{transparent:true,opacity:.28,roughness:.05,metalness:.2}),
+ inside=UM(0x6b4f35,{emissive:0x3a2614,emissiveIntensity:.4,roughness:.8}),card=UM(0xffffff,{emissive:0x55ff99,emissiveIntensity:.35}),lamp=UM(0xfff0c0,{emissive:0xffc66b,emissiveIntensity:1.3});
+ const kit=Kit();DOORS.filter(d=>d.kind==="clothing").forEach(d=>{const side=Math.sign(d.z);kit.base(mat4(d.x,0,side*9,side>0?Math.PI:0));
+  kit.add(bx(1.75,2.75,.04),inside,0,1.4,.01);[-1,1].forEach(s=>{const cx=s*.43;kit.add(bx(.84,2.55,.03),gl,cx,1.33,.12);[-1,1].forEach(e=>kit.add(bx(.07,2.6,.08),fr,cx+e*.39,1.33,.12));
+   kit.add(bx(.84,.07,.08),fr,cx,2.6,.12);kit.add(bx(.84,.28,.06),brass,cx,.2,.12);kit.add(cy(.022,.022,.75,8),brass,cx-s*.3,1.3,.2);[-.33,.33].forEach(o=>kit.add(bx(.03,.03,.08),brass,cx-s*.3,1.3+o,.16))});
+  kit.add(bx(1.9,.42,.1),fr,0,2.92,.1);kit.add(bx(1.5,.26,.02),UM(0x2c1e12,{emissive:0x553311,emissiveIntensity:.4}),0,2.92,.16);kit.add(bx(.3,.2,.01),card,.43,1.75,.14);
+  [-1.15,1.15].forEach(x=>{kit.add(bx(.06,.06,.26),fr,x,2.35,.13);kit.add(cy(.1,.08,.3,6),lamp,x,2.2,.28);kit.add(cy(.13,.04,.1,6),fr,x,2.4,.28)})});
+ kit.build(S,{name:"u_clothing_doors"})}
+/* perf: adaptive quality. Soft shadows are the single biggest per-frame cost on software GL / low-end phones (measured 2.75 -> 5.75 fps
+   on the street with shadows off). If the game runs under ~12 fps for 3 s, shadows switch off once (everything else stays). Uses wall-clock time: the frame dt is capped at 50 ms. */
+{let t0=0,n=0,slow=0;U.lowFx=false;U.anims.push(()=>{if(U.lowFx||document.hidden)return;const now=performance.now();if(!t0){t0=now;n=0;return}n++;const el=(now-t0)/1000;if(el<1)return;const fps=n/el;t0=now;n=0;slow=fps<12?slow+1:0;
+  if(slow>=3){U.lowFx=true;R.shadowMap.enabled=false;S.traverse(o=>{if(o.material)[].concat(o.material).forEach(m=>m.needsUpdate=true)});try{console.info("LevelUp: low-FPS mode (shadows off)")}catch(_){}}})}
