@@ -76,12 +76,12 @@ const _td=tryDoor;tryDoor=function(){const d=nearDoor;if(d&&d.type==="vrpod")ret
 let VRS=null;
 function ease(k){k=Math.max(0,Math.min(1,k));return k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2}
 function podStart(){if(VRS||W2.blaster||QG)return;try{document.exitPointerLock()}catch(_){}
-  VRS={vr:1,keys:{},phase:"walk",t0:performance.now(),from:{x:P.x,z:P.z,yaw:P.yaw},camFrom:cam.position.clone()};W2.blaster=VRS;POD.sits=(POD.sits||0)+1;beep(520,.08,"triangle",.05);setTimeout(()=>beep(780,.1,"triangle",.05),90)}
+  TH.x=FRONT.x+POD_DIR.z*2.2;TH.z=FRONT.z-POD_DIR.x*2.2;VRS={vr:1,keys:{},phase:"walk",t0:performance.now(),from:{x:P.x,z:P.z,yaw:P.yaw},camFrom:cam.position.clone()};W2.blaster=VRS;POD.sits=(POD.sits||0)+1;beep(520,.08,"triangle",.05);setTimeout(()=>beep(780,.1,"triangle",.05),90)}
 const SEQ={walk:800,sit:700,goggles:1700,out:900};
 function eyePos(){return new T.Vector3(SEAT.x,1.42,SEAT.z)}
 function lookOut(){return new T.Vector3(SEAT.x+POD_DIR.x*4,1.3,SEAT.z+POD_DIR.z*4)}
-const _gcV=gameCam;gameCam=function(dt){if(!VRS)return _gcV(dt);const now=performance.now(),k=(now-VRS.t0)/(SEQ[VRS.phase]||1);
-  const outside=new T.Vector3(PC.x+POD_DIR.x*4.2-POD_DIR.z*1.2,2.2,PC.z+POD_DIR.z*4.2+POD_DIR.x*1.2),podLook=new T.Vector3(PC.x,1.25,PC.z);
+const _gcV=gameCam;gameCam=function(dt){if(!VRS)return _gcV(dt);const now=performance.now();if(window.TBVRG&&TBVRG.hold!=null)VRS.t0=now-TBVRG.hold*(SEQ[VRS.phase]||1);const k=(now-VRS.t0)/(SEQ[VRS.phase]||1);
+  const outside=new T.Vector3(PC.x+POD_DIR.x*4.6-POD_DIR.z*.9,2.05,PC.z+POD_DIR.z*4.6+POD_DIR.x*.9),podLook=new T.Vector3(PC.x,1.25,PC.z);
   if(VRS.phase==="walk"){const e=ease(k);cam.position.lerpVectors(VRS.camFrom,outside,e);cam.lookAt(podLook);P.x=VRS.from.x+(FRONT.x-VRS.from.x)*e;P.z=VRS.from.z+(FRONT.z-VRS.from.z)*e;P.yaw=Math.atan2(PC.x-P.x,PC.z-P.z);if(k>=1)nextPhase("sit")}
   else if(VRS.phase==="sit"){const e=ease(k);cam.position.copy(outside);cam.lookAt(podLook);P.x=FRONT.x+(SEAT.x-FRONT.x)*e;P.z=FRONT.z+(SEAT.z-FRONT.z)*e;P.yaw=FACE;if(k>=1)nextPhase("goggles")}
   else if(VRS.phase==="goggles"){const e=ease(Math.min(1,k*1.6));cam.position.lerpVectors(outside,eyePos(),e);cam.lookAt(lookOut());

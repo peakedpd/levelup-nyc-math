@@ -11,8 +11,12 @@ module.exports = async ({ pg, f, OUT, res, sleep }) => {
   res.pod = await f.evaluate(() => ({ removed: TBPOD.removed, kids: TBPOD.g.children.length, label: (interactions().find(d => d.type === 'vrpod') || {}).label, near: nearDoor && nearDoor.type }));
   console.log('P12 pod', JSON.stringify(res.pod)); ok(res.pod.removed === 3 && res.pod.kids > 20 && /TICKET BLASTER VR/.test(res.pod.label || ''), 'old box replaced by the VR pod with an E prompt: ' + JSON.stringify(res.pod));
   // E (keyboard on desktop, the E button on phones)
+  // freeze the sit and goggles moments for a screenshot each (TBVRG.hold pins the animation), then let it run
+  await f.evaluate(() => { window.__iv = setInterval(() => { if (TBVRG.phase === 'sit') { TBVRG.hold = .7; clearInterval(__iv) } }, 5) });
   if (touch) await f.tap('#tE').catch(() => f.evaluate(() => tryDoor())); else { await pg.$('#street3d').then(e => e.focus()); await pg.keyboard.press('e') }
-  await f.waitForFunction(() => !!document.getElementById('vrvisor') && parseFloat(document.getElementById('vrvisor').style.top) > -45, null, { timeout: 8000 }).catch(() => {}); await shot('p12_goggles_on');
+  await f.waitForFunction(() => TBVRG.phase === 'sit', null, { timeout: 8000 }).catch(() => {}); await sleep(1500); await shot('p12_sit_in_pod');
+  await f.evaluate(() => { TBVRG.hold = null; window.__iv = setInterval(() => { if (TBVRG.phase === 'goggles') { TBVRG.hold = .62; clearInterval(__iv) } }, 5) });
+  await f.waitForFunction(() => TBVRG.phase === 'goggles' && !!document.getElementById('vrvisor'), null, { timeout: 8000 }).catch(() => {}); await sleep(1500); await shot('p12_goggles_on'); await f.evaluate(() => { TBVRG.hold = null });
   res.goggles = await f.evaluate(() => ({ phase: TBVRG.phase, hs: TBPOD.headset.scale.x }));
   await f.waitForFunction(() => !!document.querySelector('#vrstart'), null, { timeout: 8000 }).catch(() => {}); await sleep(600); await shot('p12_start_screen');
   res.start = await f.evaluate(() => ({ phase: TBVRG.phase, std: (document.querySelector('#vrstart [data-std]') || {}).textContent, vis: getComputedStyle(document.getElementById('vrcanvas')).display }));
@@ -37,7 +41,7 @@ module.exports = async ({ pg, f, OUT, res, sleep }) => {
   ok(!res.exit.blaster && res.exit.d < .5 && res.exit.canvas === 'none', 'goggles off: standing next to the pod: ' + JSON.stringify(res.exit));
   res.fpsAfter = await f.evaluate(() => new Promise(r => { let n = 0; const s = performance.now(); (function k() { n++; if (performance.now() - s > 1500) r(n / 1.5); else requestAnimationFrame(k) })() })); console.log('P12 fps after exit', res.fpsAfter, 'before', res.fps);
   // can move again (real keys on desktop, joystick flag on phones)
-  if (touch) { await f.evaluate(() => { JOY.z = -1 }); await sleep(3000); await f.evaluate(() => { JOY.z = 0 }) } else { await pg.$('#street3d').then(e => e.focus()); await pg.keyboard.down('w'); await sleep(3000); await pg.keyboard.up('w') }
+  if (touch) { await f.evaluate(() => { JOY.z = -1 }); for (let i = 0; i < 40 && (await f.evaluate(p => Math.hypot(P.x - p.x, P.z - p.z), res.exit)) < 1; i++) await sleep(250); await f.evaluate(() => { JOY.z = 0 }) } else { await pg.$('#street3d').then(e => e.focus()); await pg.keyboard.down('w'); for (let i = 0; i < 40 && (await f.evaluate(p => Math.hypot(P.x - p.x, P.z - p.z), res.exit)) < 1; i++) await sleep(250); await pg.keyboard.up('w') }
   res.moved = await f.evaluate(p => Math.hypot(P.x - p.x, P.z - p.z), res.exit); console.log('P12 exit', JSON.stringify(res.exit), 'moved', res.moved); ok(res.moved > .8, 'player can walk after leaving the pod: moved ' + res.moved);
   res.mastery = await pg.evaluate(() => S.learn && S.learn.m && S.learn.m.fractions ? S.learn.m.fractions.n || 0 : null); console.log('P12 mastery fractions answers', res.mastery);
   ok(res.mastery === null || res.mastery >= 3, 'round results recorded to the fractions skill: ' + res.mastery);
