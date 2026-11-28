@@ -198,3 +198,7 @@ S.traverse(o=>{if(o.isMesh&&Array.isArray(o.material)&&o.material.some(m=>m&&m.m
          if(inR.some(d=>d.type!=="skill"&&!qt(d)&&!(d.type==="game"&&d.npc==="Theo"&&!d.indoor)&&d.type!=="none"))return L;
   if(inR.length&&Math.hypot(P.x-t.x,P.z-t.z)>Math.min(t.r,1.4))return L;
   const hasQ=L.some(qt);return [{type:"tap",t,x:P.x,z:P.z,r:9,label:t.label+(hasQ?"  ·  Q 💬 talk":"")}].concat(L.filter(d=>!qt(d)))}}
+
+/* perf: rooms you're not in are hidden (all rooms always rendered before: ~1900 draw calls inside Mr. Sal's, 2 fps on CI).
+   Inside a room the camera's far plane is 150 m so the street (250+ m away) isn't drawn either. Rooms are sealed boxes, so nothing visible changes; colliders (SOL) and animations are unaffected. */
+{const _rlU=roomLights;roomLights=function(){_rlU();for(const k in ROOMS){const g=ROOMS[k].g;if(g&&g!==S&&!(window.HERO&&HERO.parent===g))g.visible=(AREA===k)}const f=AREA==="street"?400:150;if(cam.far!==f){cam.far=f;cam.updateProjectionMatrix()}};roomLights()}
