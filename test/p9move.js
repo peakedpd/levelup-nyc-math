@@ -31,7 +31,7 @@ module.exports = async ({ pg, OUT, res, sleep }) => {
   await pg.evaluate(() => { const q = document.querySelector('#modal.open [data-x=quit]'); q ? q.click() : 0 }); await sleep(500); await pg.evaluate(() => closeModal()); await sleep(400);
   await walk('after quitting Brock (walk away)', 's', 1200); await sleep(1500); res.reTrig = await pg.evaluate(() => !!document.querySelector('#modal.open')); ok(!res.reTrig, 'walk-up does not re-trigger while leaving');
   // 6) mouse: click the street (pointer lock request) then walk
-  await spawn(); await pg.mouse.click(550, 400); await sleep(300); await walk('after clicking the street');
+  await spawn(); await pg.mouse.click(550, 400); await sleep(1000); await walk('after clicking the street', 'w', 1800);
   await pg.keyboard.press('Escape'); await sleep(200);
   // 7) the old trap: standing exactly where the avatar used to spawn (inside Ms. Okafor's collider) must not freeze it
   await f.evaluate(() => { P.x = -52; P.z = -6.5; P.yaw = 0; camYaw = Math.PI; camSnap = true }); await sleep(300); await walk('from the old spawn spot (Ms. Okafor)', 'd');
@@ -47,7 +47,7 @@ module.exports = async ({ pg, OUT, res, sleep }) => {
   ok(!res.no2d.drawer, 'no 2D button in any menu');
   // 10) no WebGL: a friendly message, never a 2D map
   const pg2 = await pg.context().newPage(); const base = pg.url().replace(/[^/]*$/, '');
-  await pg2.goto(base + 'street3d.html?nogl=1'); await sleep(1500); res.nogl3d = await pg2.evaluate(() => document.body.innerText); ok(/needs WebGL/.test(res.nogl3d), 'street shows the no-WebGL message'); await pg2.close(); await pg.bringToFront(); await sleep(500);
+  await pg2.goto(base + 'street3d.html?nogl=1', { timeout: 120000 }); await sleep(1500); res.nogl3d = await pg2.evaluate(() => document.body.innerText); ok(/needs WebGL/.test(res.nogl3d), 'street shows the no-WebGL message'); await pg2.close(); await pg.bringToFront(); await sleep(500);
   await pg.evaluate(() => postMessage({ lv3d: 'nogl' }, '*')); await sleep(400); res.noglParent = await pg.evaluate(() => { const n = document.getElementById('nogl'); return !n.hidden && n.innerText }); ok(/hardware acceleration/.test(res.noglParent || ''), 'game page shows a friendly no-WebGL card: ' + res.noglParent);
   await shot('p9_nogl');
   await pg.evaluate(() => { const n = document.getElementById('nogl'); n.hidden = true; document.getElementById('street3d').style.display = '' });

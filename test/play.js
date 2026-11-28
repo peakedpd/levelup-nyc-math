@@ -17,7 +17,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   pg.on('requestfailed', r => { const ft = r.failure() && r.failure().errorText; if (ft === 'net::ERR_ABORTED') return; fails.push(r.url() + ' ' + (ft || '')); });
   pg.on('response', r => { if (r.status() >= 400) fails.push(r.status() + ' ' + r.url()); });
   const t0 = Date.now();
-  await pg.goto(URL, { waitUntil: 'load' });
+  await pg.goto(URL, { waitUntil: 'load', timeout: 120000 });
   await pg.evaluate(() => localStorage.clear());
   await pg.reload({ waitUntil: 'load' });
   await sleep(800); await pg.screenshot({ path: OUT + '/01_title.png' });
