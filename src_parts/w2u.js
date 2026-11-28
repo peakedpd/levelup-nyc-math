@@ -92,7 +92,7 @@ addEventListener("keydown",e=>{if(e.key.toLowerCase()==="m"&&U.offer&&!U.quiz&&!
 function flatAudit(){const out=[],bb=new T.Box3(),sz=new T.Vector3();S.updateMatrixWorld(true);
   S.traverse(o=>{if(!o.isMesh||!o.visible&&false)return;const mats=Array.isArray(o.material)?o.material:[o.material];
     const img=mats.find(m=>m&&m.map&&m.map.image&&!(m.map.image instanceof HTMLCanvasElement)&&!(m.alphaTest>0)&&!m.map.isVideoTexture);if(!img)return;
-    if(U.flatOK.has(o)||o.userData.flatOK)return;if(o.geometry&&o.geometry.type==="CylinderGeometry")return;/* skyline drums */
+    if(U.flatOK.has(o)||o.userData.flatOK||o.isSkinnedMesh)return;/* rigged 3D characters are never flat cards */if(o.geometry&&o.geometry.type==="CylinderGeometry")return;/* skyline drums */
     bb.setFromObject(o);bb.getSize(sz);if(sz.y<.05)return;/* floors / ceilings */
     const big=Math.max(sz.x,sz.z)>=1.4&&sz.y>=1;if(!big||bb.min.y>2.2)return;
     const cz=(bb.min.z+bb.max.z)/2;let area="street";for(const k in ROOMS){const R=ROOMS[k];const d=(R.d||RD)/2+1;if(cz>R.cz-d&&cz<R.cz+d){area=k;break}}

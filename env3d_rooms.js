@@ -1,7 +1,8 @@
 /* ---------- ENV 3D · ROOM DECOR (procedural, merged geometry) ----------
    Arcade: neon light strips along the walls and floor, hanging neon rings that turn slowly, two colored fill lights so the
    machines read, and a NEON switch by the door that cycles the color theme (with a synth sweep).
-   Hallway: cork bulletin boards with pinned notices. Apartment: rug, wall shelves with books + toy robot, floor lamp switch. */
+   Hallway: cork bulletin boards with pinned notices. Apartment: rug, wall shelves with books + toy robot, floor lamp switch.
+   Gym: wooden bleachers. Classroom: cubbies with colored bins and a coat-hook rail. */
 (()=>{
 const ENV=window.ENV3D=window.ENV3D||{};const RM=ENV.rooms={};
 const A=ROOMS.arcade;if(A){const g=A.g,w=A.w||RW,d=A.d||RD,h=A.h&&A.h<20?A.h:RH;
@@ -50,4 +51,17 @@ const AP=ROOMS.apartment;if(AP){const g=AP.g,w=AP.w||RW,kit=Kit(),bx=new T.BoxGe
   const lt=new T.PointLight(0xffc66b,0,7,1.6);lt.position.set(-6.4,1.9,-4.6);g.add(lt);RM.lamp={on:false};
   utap("apartment",-6.4,-3.7,"Press E to switch on the floor lamp 💡",()=>{const on=RM.lamp.on=!RM.lamp.on;shadeM.emissiveIntensity=on?1.1:0;lt.intensity=on?8:0;ubeep(on?600:300,.06,"square",.03);bub("💡",on?"Cozy!":"Lights out.")},1.0);
   utap("apartment",-w/2+1.2,4.2,"Press E to look at Theo's shelf 📚",()=>{ubeep(400,.1,"triangle",.03);bub("🤖","Theo's toy robot blinks. 7 books on each of 2 shelves.");setTimeout(()=>uoffer("📚","Bookshelf math!","books","aptShelf"),700)},1.0)}
+/* Gym: 3-row wooden bleachers on the left wall (sit for a cheer) */
+const GY=ROOMS.gym;if(GY){const g=GY.g,w=GY.w||22,d=GY.d||20,kit=Kit(),bx=new T.BoxGeometry(1,1,1),wood=UM(0xc8925a,{roughness:.7}),steel=UM(0x8a949c,{metalness:.6,roughness:.4});
+  const x0=-w/2+.5,len=7,zc=4.3;for(let r=0;r<3;r++){const x=x0+.45+r*.7,y=.45+r*.45;kit.add(bx,wood,x,y,zc,0,0,0,.6,.08,len);kit.add(bx,wood,x+.28,y-.22,zc,0,0,0,.05,.44,len)}
+  for(let k=0;k<5;k++){const z=zc-len/2+.2+k*(len-.4)/4;kit.add(bx,steel,x0+1.15,.7,z,0,0,-.55,.06,1.9,.06)}
+  kit.build(g,{name:"env_gym_bleachers"});usolid(GY.cx+x0,GY.cx+x0+2.2,GY.cz+zc-len/2,GY.cz+zc+len/2,1.4);RM.bleachers=true;
+  utap("gym",x0+3,zc,"Press E to cheer from the bleachers 📣",()=>{tune2([523,523,659,784]);bub("📣","Go, Level Up, go! The crowd stomps the bleachers.");setTimeout(()=>uoffer("📣","Bleacher math!","hoop","bleach"),700)},1.3)}
+/* Classroom: cubbies by the door with colorful bins and a coat hook rail */
+const CR=ROOMS.school;if(CR){const g=CR.g,d=CR.d||RD,kit=Kit(),bx=new T.BoxGeometry(1,1,1),wood=UM(0xe8d2ac,{roughness:.8}),bins=[0xe53935,0x1e88e5,0x43a047,0xfdd835,0x8e24aa,0xfb8c00].map(c=>UM(c,{roughness:.7}));
+  const zc=d/2-.45,xc=-5.2;kit.add(bx,wood,xc,.6,zc,0,0,0,3.2,1.2,.6);for(let r=0;r<2;r++)for(let c=0;c<4;c++)kit.add(bx,bins[(r*4+c)%6],xc-1.2+c*.8,.33+r*.55,zc-.12,0,0,0,.66,.4,.42);
+  kit.add(bx,UM(0x7a5236),xc,1.75,zc+.05,0,0,0,3.2,.12,.06);for(let c=0;c<5;c++)kit.add(new T.CylinderGeometry(.025,.025,.14,6),UM(0x9e9e9e,{metalness:.7}),xc-1.4+c*.7,1.7,zc-.03,Math.PI/2,0,0);
+  kit.build(g,{name:"env_class_cubbies"});usolid(CR.cx+xc-1.6,CR.cx+xc+1.6,CR.cz+zc-.3,CR.cz+zc+.3,1.2);RM.cubbies=true;
+  utap("school",xc,zc-1.1,"Press E to check the cubbies 🧺",()=>{ubeep(380,.08,"triangle",.03);bub("🧺","8 bins: crayons, glue sticks, rulers, counters…");setTimeout(()=>uoffer("🧺","Share the supplies equally!","share","cubby"),700)},1.1)}
+function tune2(n){n.forEach((f,i)=>setTimeout(()=>ubeep(f,.14,"square",.03),i*160))}
 })();

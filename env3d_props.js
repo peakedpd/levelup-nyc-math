@@ -92,7 +92,7 @@ const D=[
  {n:"floor_plant",area:"apartment",x:-8,z:-6.8,ry:0,h:1.8,anim:"wobble",label:"Press E to water Theo's plant 🪴",act:p=>{ubeep(500,.2,"sine",.015,-200);bub("🪴","Theo's plant says thanks!");return null}},
  {n:"mirror",area:"clothing",x:8.3,z:-2.6,ry:-Math.PI/2,h:2.4,anim:"pop",label:"Press E to check your look in the mirror 🪞",act:p=>{const v=p.m.getWorldPosition(new T.Vector3());v.y=1.5;cine({look:new T.Vector3(P.x,1.4,P.z),dir:{x:v.x-P.x,z:v.z-P.z},dist:1.8,h:.2,who:"🪞 Fitting-room mirror",say:"Looking sharp!",dur:2200});ubeep(880,.15,"sine",.03,220);return null}}];
 const TOT={};D.forEach(d=>TOT[d.n]=(TOT[d.n]||0)+1);
-const TPL={};function tpl(n){return TPL[n]||(TPL[n]=new Promise(res=>GL.load(url(n),g=>{const m=g.scene;m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.userData.envProp=1}});res(m)},undefined,e=>{PR.failed++;PR.err=String(e&&e.message||e);res(null)})))}
+const TPL={};function tpl(n){return TPL[n]||(TPL[n]=new Promise(res=>GL.load(url(n),g=>{const m=g.scene;m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.userData.envProp=1;/* full 3D model, not a flat card: exempt from the flat-wall audit */o.userData.flatOK=true}});res(m)},undefined,e=>{PR.failed++;PR.err=String(e&&e.message||e);res(null)})))}
 function place(d){PR.want++;return tpl(d.n).then(t=>{if(!t)return;const area=d.area,R=area==="street"?{cx:0,cz:0,g:S}:ROOMS[area];if(!R)return;const par=area==="street"?S:R.g;
   const m=t.clone(true),bb=new T.Box3().setFromObject(m),sz=bb.getSize(new T.Vector3()),sc=d.h/Math.max(sz.y,1e-3);
   const inner=new T.Group();inner.add(m);m.scale.setScalar(sc);m.position.set(-(bb.min.x+bb.max.x)/2*sc,-bb.min.y*sc,-(bb.min.z+bb.max.z)/2*sc);
@@ -111,10 +111,12 @@ function place(d){PR.want++;return tpl(d.n).then(t=>{if(!t)return;const area=d.a
   const p={d,m:inner,g,ry:0,sc:1,t0:-1e9,anim:d.anim,area,x:wx,z:wz,y,h:d.h};p.sc=inner.scale.x;if(d.anim==="pop"||d.anim==="pulse")p.sc=1;
   /* tap point: in front of the prop */ const fx=Math.sin(d.ry||0),fz=Math.cos(d.ry||0),off=(d.onTop?.9:fd+.7);const tx=wx+fx*off,tz=wz+fz*off;
   p.tap=utap(area,tx-(R.cx||0),tz-(R.cz||0),d.label,()=>{play(p);let o=null;try{o=d.act(p)}catch(e){PR.err=String(e)}p.used=(p.used||0)+1;if(o){const [em,tx2,kind]=o;setTimeout(()=>uoffer(em,tx2,kind,"prop_"+d.n+"_"+PR.list.indexOf(p)),700)}},1.25);
-  p.tx=tx;p.tz=tz;PR.list.push(p);PR.loaded++;return p})}
+  p.tx=tx;p.tz=tz;if(area==="street")g.visible=AREA==="street";PR.list.push(p);PR.loaded++;return p})}
 const byArea={};D.forEach(d=>(byArea[d.area]=byArea[d.area]||[]).push(d));PR.byArea=byArea;PR.done={};
 function loadArea(a){if(PR.done[a]||!byArea[a])return Promise.resolve();PR.done[a]=Promise.all(byArea[a].map(place));return PR.done[a]}
 PR.loadArea=loadArea;PR.D=D;
 setTimeout(()=>loadArea("street"),1500);
+/* perf: street props are hidden while you are inside a room */
+let lastA=null;U.anims.push(()=>{if(AREA===lastA)return;lastA=AREA;const on=AREA==="street";PR.list.forEach(p=>{if(p.area==="street")p.g.visible=on})});
 U.anims.push(()=>{if(AREA&&byArea[AREA]&&!PR.done[AREA])loadArea(AREA)});
 })();

@@ -17,7 +17,7 @@ const MAT={glass:M(0x1e2a3a,{roughness:.12,metalness:.65}),sky:M(0x6f8fb0,{rough
   cuR:M(0xb23a48,{roughness:.9}),cuB:M(0x3a5ab2,{roughness:.9}),cuY:M(0xd9b44a,{roughness:.9}),shade:M(0xf3e9d0,{roughness:.9,emissive:0x332a14,emissiveIntensity:.3}),
   wood:M(0x6b4423,{roughness:.9}),leaf:M(0x3f8f3a,{roughness:.9,flatShading:true}),flP:M(0xe84a8a,{roughness:.8,flatShading:true}),flY:M(0xf2c230,{roughness:.8,flatShading:true}),
   ac:M(0xc3c7cc,{metalness:.35,roughness:.5}),grill:M(0x5b6066,{metalness:.4,roughness:.6})};
-const CAST=new Set(["iron","ac","stone","wood"]);
+const CAST=new Set(["iron"]);
 const _m=new T.Matrix4(),_q=new T.Quaternion(),_e=new T.Euler(),_v=new T.Vector3(),_s=new T.Vector3();
 function ip(key,base,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0,geo){const k=key+(geo?"|ico":"");(IN[k]||(IN[k]={key,geo:geo||IB,list:[]})).list.push(new T.Matrix4().multiplyMatrices(base,_m.compose(_v.set(x,y,z),_q.setFromEuler(_e.set(rx,ry,rz)),_s.set(sx,sy,sz))));E.parts++}
 function seeded(n){let s=(n*9301+49297)%233280;return()=>{s=(s*9301+49297)%233280;return s/233280}}
@@ -75,6 +75,8 @@ UQ.G.windows=s=>{const w=E.lastWall||{rows:2,cols:4,lit:3},r=seeded(s%9973),x=w.
 for(const k in IN){const it=IN[k],im=new T.InstancedMesh(it.geo,MAT[it.key],it.list.length);it.list.forEach((m,i)=>im.setMatrixAt(i,m));im.instanceMatrix.needsUpdate=true;im.castShadow=CAST.has(it.key);im.receiveShadow=true;
   im.computeBoundingSphere&&im.computeBoundingSphere();im.frustumCulled=false;im.name="env_"+k;im.userData.env="street";S.add(im)}
 E.meshes=Object.keys(IN).length;E.buildings=B.length;
+/* perf: the street facade meshes are never culled (one mesh spans the street), so hide them while you're inside a room */
+E.ims=S.children.filter(o=>o.userData&&o.userData.env==="street");let lastA=null;U.anims.push(()=>{if(AREA===lastA)return;lastA=AREA;const on=AREA==="street";E.ims.forEach(o=>o.visible=on)});
 let lastT=performance.now();U.anims.push(()=>{const nw=performance.now(),dt=Math.min(.25,(nw-lastT)/1000);lastT=nw;if(AREA!=="street")return;for(const L of E.ladders){const w=L.down?L.maxDrop:0;if(Math.abs(L.cur-w)<.001)continue;L.cur+=(w-L.cur)*Math.min(1,dt*(L.down?9:5));L.g.position.y=L.top-L.cur}});
 /* ---- trash cans: lifting the lid now swings the camera over the rim so you can see what's inside ---- */
 try{(ST3.cans||[]).forEach(C=>{const t=C.tap;if(!t||t._env)return;const f0=t.fn;t._env=1;t.fn=function(){f0.apply(this,arguments);if(!C.open)return;const v=new T.Vector3();C.cont.getWorldPosition(v);v.y+=.02;

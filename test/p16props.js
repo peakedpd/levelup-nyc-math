@@ -34,7 +34,7 @@ module.exports = async ({ pg, f, OUT, res, sleep }) => {
   // procedural room decor: arcade NEON switch, hallway bulletin boards, apartment lamp
   res.decor = await f.evaluate(() => { const R = ENV3D.rooms, out = { boards: (R.boards || []).length, theme0: R.arcade && R.arcade.theme };
     const t = TAPS.find(t => /NEON switch/.test(t.label)); if (t) t.fn(); out.theme1 = R.arcade && R.arcade.theme; const l = TAPS.find(t => /floor lamp/.test(t.label)); if (l) l.fn(); out.lamp = R.lamp && R.lamp.on; if (l) l.fn(); return out });
-  ok(res.decor.boards === 2, 'hallway bulletin boards: ' + res.decor.boards); ok(res.decor.theme1 === (res.decor.theme0 + 1) % 4, 'NEON switch cycles the theme'); ok(res.decor.lamp === true, 'apartment lamp switches on');
+  ok(res.decor.boards === 2, 'hallway bulletin boards: ' + res.decor.boards); ok(res.decor.theme1 === (res.decor.theme0 + 1) % 4, 'NEON switch cycles the theme'); ok(res.decor.lamp === true, 'apartment lamp switches on'); ok(await f.evaluate(() => !!(ENV3D.rooms.bleachers && ENV3D.rooms.cubbies)), 'gym bleachers + classroom cubbies built');
   res.desk = await f.evaluate(() => ({ swapped: !!ENV3D.props.deskSwapped, hidden: ENV3D.props.deskHidden })); ok(res.desk.swapped, 'classroom teacher desk replaced by the 3D desk');
   res.err = await f.evaluate(() => ENV3D.props.err); ok(!res.err && !(await f.evaluate(() => ENV3D.props.failed)), 'prop errors: ' + res.err);
   await f.evaluate(() => { if (AREA !== 'street') leaveRoom() });

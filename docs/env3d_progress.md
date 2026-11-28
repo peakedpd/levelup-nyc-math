@@ -78,3 +78,21 @@ Full per-task ledger: /workspace/meshy_raw/ledger.jsonl (outside the repo).
   - floor lamp whose switch turns its warm light on and off
 - **Fix**: the room walls are 0.4 m thick, so the arcade neon strips and lightning bolts were partly buried in the wall. They now sit on the inner wall face and show.
 - **Screenshots**: shots/env3d/after3/desktop/{hall_board,arcade_neon,apt_shelf,hallway_a,apartment_a}.png
+
+## Step 4: perf pass + gym/classroom detail
+- **Perf**:
+  - The street facade meshes and street props are now hidden while you're inside a room (the facade meshes are never culled).
+  - Only fire-escape iron casts shadows.
+  - Measured locally on the software renderer (swiftshader, desktop 1100×700), before (6be782b) → after:
+
+    | area | fps | draw calls | triangles |
+    |---|---|---|---|
+    | street | 3.5 → 3.3 | 259 → 299 | 103k → 115k |
+    | arcade | 3.8 → 3.0 | 172 → 187 | 100k → 124k |
+    | clothing | 7 → 5 | 114 → 120 | 107k → 159k (Mr. Sal 3D + 9 props) |
+    | school | 4.5 → 3.5 | 97 → 90 | 108k → 122k |
+
+  - Before this pass the street env ran 362 calls / 167k triangles.
+- **Flat audit**: Meshy GLB props and rigged (skinned) characters no longer count as flat cards. Before, Brock's model tripped p13universe.
+- **Gym**: 3-row wooden bleachers with steel braces and a collider. "Cheer from the bleachers" offers a points math moment.
+- **Classroom**: cubbies by the door with 8 colored bins and a coat-hook rail. "Check the cubbies" offers a share math moment.
