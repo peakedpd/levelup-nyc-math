@@ -47,6 +47,7 @@ module.exports = async ({ pg, f, OUT, res, sleep }) => {
     if (stake !== null) { await click(`#cabui [data-stake="${stake}"]`); await sleep(200); await click(`#cabui [data-i="${await idxOf(!right)}"]`); await until(() => CABG.st.phase === 'done' && !!document.querySelector('#cabui [data-again]')); await sleep(200) }
     return dis };
   await setXP(100); let d = await claw(25, true); await shot('p13_claw_win'); let x = await getXP();
+  const z3 = await f.evaluate(() => ({ prizes: CABG.PZ.length, kinds: [...new Set(CABG.PZ.map(m => m.userData.name))].length, hidden: CABG.PZ.filter(m => !m.visible).length, mini: document.getElementById('cabui').classList.contains('mini') })); ok(z3.prizes >= 5 && z3.kinds === 5 && z3.hidden === 1 && z3.mini, 'claw: real 3D prizes (5 kinds), one went down the chute, small panel: ' + JSON.stringify(z3));
   ok(/5:1 10:1 25:1 0:1/.test(d), 'claw: at 100 XP all stakes open: ' + d); ok(x === 150, 'claw win at stake 25: 100 -> 150 XP, got ' + x);
   await closeCab();
   d = await claw(25, false); x = await getXP(); const hint = await f.evaluate(() => (document.querySelector('#cabui .hint') || {}).textContent || ''); await shot('p13_claw_loss');
