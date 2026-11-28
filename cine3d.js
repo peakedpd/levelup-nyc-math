@@ -124,11 +124,12 @@ function play(o){if(!o||!o.npc||!o.lines||!o.lines.length)return false;if(CUR)en
   try{document.exitPointerLock()}catch(_){}for(const k in K)K[k]=false;try{JOY.x=JOY.z=0}catch(_){}
   document.body.classList.add("cnOn");document.body.classList.toggle("cnQ",!!o.blockQG);bars(0)
   if(n===NPC.brock&&BRK.prop)BRK.prop.traverse(x=>{if(x.isSprite&&x.visible){x.visible=false;(CUR.hid=CUR.hid||[]).push(x)}});
+  if(o.blockQG&&QG)QG.t0=now();
   CINE.count++;CINE.log.push({npc:n.key,name:o.who||n.name,kind:CUR.kind,t:Date.now()});nextLine();return true}
 function nextLine(){const c=CUR;if(!c)return;c.i++;if(c.i>=c.o.lines.length)return end(false);
   const l=c.o.lines[c.i];c.line=l;c.lt0=now();c.vdone=false;const hero=l.who==="hero";
   $("cnW").textContent=hero?(window.PNAME||"You"):(c.o.who||c.n.name);$("cnW").style.color=hero?"#7cf7ff":"#ffd23f";$("cnS").textContent=l.text?"“"+l.text.replace(/^["“]+|["”]+$/g,"")+"”":"";
-  c.shotFor=hero?"hero":"npc";c.shot=null;c.shake=(c.kind==="confront"&&ST.motion)?now():0;
+  c.shotFor=hero?"hero":"npc";c.shot=null;c.frames=0;c.shake=(c.kind==="confront"&&ST.motion)?now():0;
   if(c.kind==="confront"&&ST.motion){const fl=$("cnFlash");fl.style.opacity=1;setTimeout(()=>fl.style.opacity=0,260)}
   speakLine()}
 function speakLine(){const c=CUR;if(!c)return;const l=c.line,key=c.line.who==="hero"?"narrator":c.n.key,id=c.i;
@@ -141,7 +142,7 @@ function end(skipped,silent){const c=CUR;if(!c)return;CUR=null;stopVoice();docum
 function lineDone(c,t){const l=c.line;if(CINE.hold&&!l.ms)return false;/* tests: wait for tap */if(l.ms)return t-c.lt0>l.ms;const minT=l.text?Math.max(1300,l.text.length*(c.vdone&&c.how==="audio"?20:58)+600):900;return c.vdone&&t-c.lt0>minT||t-c.lt0>minT+9000}
 
 /* ---------- per-frame: camera, people, bars ---------- */
-const _gc=gameCam;gameCam=function(dt){const c=CUR;if(!c||!c.cam)return _gc(dt);
+const _gc=gameCam;gameCam=function(dt){const c=CUR;if(!c||!c.cam)return _gc(dt);c.frames=(c.frames||0)+1;
   const sub=c.shotFor==="hero"?heroHead():c.n.head(),oth=c.shotFor==="hero"?c.n.head():heroHead();
   if(!c.shot||now()-(c.shotT||0)>700){const s=frame(sub,oth,{low:c.kind==="confront",side:c.kind==="confront"?(c.shotFor==="hero"?1:-1):1});if(!c.shot||s.kind!==c.shot.kind||s.pos.distanceTo(c.shot.pos)>.4){c.shot=s;c.cut=true}else{c.shot.pos.lerp(s.pos,.3)}c.shotT=now()}
   const s=c.shot,t=now(),k=Math.min(1,(t-c.lt0)/3500),e=1-Math.pow(1-k,3);
@@ -150,7 +151,7 @@ const _gc=gameCam;gameCam=function(dt){const c=CUR;if(!c||!c.cam)return _gc(dt);
   if(c.cut&&(!ST.motion||c.i===0&&t-c.t0<60||cam.position.distanceTo(want)>4)){cam.position.copy(want);c.cut=false}else cam.position.lerp(want,Math.min(1,dt*(ST.motion?4:12)));
   const look=sub.clone();if(c.shotFor==="npc"&&s.kind==="two")look.lerp(oth,.15);cam.lookAt(look);try{PR.style.display="none"}catch(_){}return true};
 function undoBob(c){for(const b of c.bob){if(b.q&&b.o.quaternion.equals(b.qa))b.o.quaternion.copy(b.q);if(b.dy&&Math.abs(b.o.position.y-b.ya)<1e-6)b.o.position.y-=b.dy}c.bob=[]}
-const _ug=updateGame;updateGame=function(dt,t){_ug(dt,t);const c=CUR;
+const _ug=updateGame;updateGame=function(dt,t){if(CUR&&CUR.o.blockQG&&QG&&QG.phase==="intro")QG.t0=t;_ug(dt,t);const c=CUR;
   if(!c){if(PEND&&PEND.go)playPending();return}
   if(QG&&c.o.blockQG&&QG.phase==="intro")QG.t0=t;
   if(c.o.until&&!c.o.until()){end(false,true);return}
@@ -206,7 +207,7 @@ const _ok=okaforSays;okaforSays=function(t){if(!enabled()||AREA!=="school")retur
 const _th=theoSays;theoSays=function(t){if(!enabled())return _th.apply(this,arguments);if(Math.hypot(TH.x-P.x,TH.z-P.z)>6){TH.x=P.x+1.3;TH.z=P.z+.9}play({npc:NPC.theo,lines:[line(t)],kind:"react"})};
 
 const CINE={play,end,next,voice,stopVoice,frame,NPC,npcFor,heroHead,settings:ST,saveST,paintST,enabled,count:0,log:[],lastVoice:null,last:null,
-  get active(){return !!CUR},get cur(){return CUR&&{npc:CUR.n.key,i:CUR.i,kind:CUR.kind,shot:CUR.shot&&CUR.shot.kind,text:CUR.line&&CUR.line.text}},
+  get active(){return !!CUR},get cur(){return CUR&&{npc:CUR.n.key,i:CUR.i,kind:CUR.kind,frames:CUR.frames||0,shot:CUR.shot&&CUR.shot.kind,text:CUR.line&&CUR.line.text}},
   register(key,d){NPC[key]=d},talk(who,lines,onEnd){const n=typeof who==="string"?(NPC[who]||npcFor(who)):who;return play({npc:n,lines:lines.map(x=>typeof x==="string"?line(x):x),onEnd})}};
 window.CINEMA=CINE;
 })();
