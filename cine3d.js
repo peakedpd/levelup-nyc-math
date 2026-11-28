@@ -120,7 +120,7 @@ let CUR=null;
 /* letterbox slide-in driven by the game loop (CSS transitions can stall in background tabs) */
 function bars(k){const e=1-Math.pow(1-k,3);$("cnT").style.transform="translateY("+(-101*(1-e))+"%)";$("cnB").style.transform="translateY("+(101*(1-e))+"%)"}
 function play(o){if(!o||!o.npc||!o.lines||!o.lines.length)return false;if(CUR)end(true,true);
-  const n=o.npc;const p0=n.pos();CUR={o,n,i:-1,t0:now(),pin:{x:p0.x,z:p0.z},kind:o.kind||"talk",cam:!o.keepCam,bob:[]};
+  const n=o.npc;const p0=n.pos();CUR={o,n,i:-1,t0:now(),pin:{x:p0.x,z:p0.z},kind:o.kind||"talk",cam:!o.keepCam,aim:!!o.aim,bob:[]};
   try{document.exitPointerLock()}catch(_){}for(const k in K)K[k]=false;try{JOY.x=JOY.z=0}catch(_){}
   document.body.classList.add("cnOn");document.body.classList.toggle("cnQ",!!o.blockQG||o.kind==="win");bars(0)
   if(n===NPC.brock&&BRK.prop)BRK.prop.traverse(x=>{if(x.isSprite&&x.visible){x.visible=false;(CUR.hid=CUR.hid||[]).push(x)}});
@@ -142,14 +142,16 @@ function end(skipped,silent){const c=CUR;if(!c)return;CUR=null;stopVoice();docum
 function lineDone(c,t){const l=c.line;if(CINE.hold&&!l.ms)return false;/* tests: wait for tap */if(l.ms)return t-c.lt0>l.ms;const minT=l.text?Math.max(1300,l.text.length*(c.vdone&&c.how==="audio"?20:58)+600):900;return c.vdone&&t-c.lt0>minT||t-c.lt0>minT+9000}
 
 /* ---------- per-frame: camera, people, bars ---------- */
-const _gc=gameCam;gameCam=function(dt){const c=CUR;if(!c||!c.cam)return _gc(dt);c.frames=(c.frames||0)+1;
+// aim at the speaker's head bone as it is when the frame is drawn (called again after every character has moved/animated)
+function aim(c){if(!c||!c.shot)return;const sub=c.shotFor==="hero"?heroHead():c.n.head(),oth=c.shotFor==="hero"?c.n.head():heroHead();const look=sub.clone();if(c.shotFor==="npc"&&c.shot.kind==="two"&&innerWidth>=innerHeight)look.lerp(oth,.15);cam.lookAt(look)}
+const _gc=gameCam;gameCam=function(dt){const c=CUR;if(!c||!(c.cam||c.aim))return _gc(dt);c.frames=(c.frames||0)+1;
   const sub=c.shotFor==="hero"?heroHead():c.n.head(),oth=c.shotFor==="hero"?c.n.head():heroHead();
   if(!c.shot||now()-(c.shotT||0)>700){const s=frame(sub,oth,{low:c.kind==="confront",side:c.kind==="confront"?(c.shotFor==="hero"?1:-1):1});if(!c.shot||s.kind!==c.shot.kind||s.pos.distanceTo(c.shot.pos)>.4){c.shot=s;c.cut=true}else{c.shot.pos.lerp(s.pos,.3)}c.shotT=now()}
   const s=c.shot,t=now(),k=Math.min(1,(t-c.lt0)/3500),e=1-Math.pow(1-k,3);
   const back=s.pos.clone().sub(s.look).normalize();const want=s.pos.clone().addScaledVector(back,ST.motion?(1-e)*.35:0);
   if(c.shake&&t-c.shake<420){const a=(1-(t-c.shake)/420)*.05;want.x+=(Math.random()-.5)*a;want.y+=(Math.random()-.5)*a;want.z+=(Math.random()-.5)*a}
   if(c.cut&&(!ST.motion||c.i===0&&t-c.t0<60||cam.position.distanceTo(want)>4)){cam.position.copy(want);c.cut=false}else cam.position.lerp(want,Math.min(1,dt*(ST.motion?4:12)));
-  const look=sub.clone();if(c.shotFor==="npc"&&s.kind==="two"&&innerWidth>=innerHeight)look.lerp(oth,.15);cam.lookAt(look);try{PR.style.display="none"}catch(_){}return true};
+  aim(c);try{PR.style.display="none"}catch(_){}return true};
 function undoBob(c){for(const b of c.bob){if(b.q&&b.o.quaternion.equals(b.qa))b.o.quaternion.copy(b.q);if(b.dy&&Math.abs(b.o.position.y-b.ya)<1e-6)b.o.position.y-=b.dy}c.bob=[]}
 const _ug=updateGame;updateGame=function(dt,t){if(CUR&&CUR.o.blockQG&&QG&&QG.phase==="intro")QG.t0=t;_ug(dt,t);const c=CUR;
   if(!c){if(PEND&&PEND.go)playPending();return}
@@ -163,7 +165,7 @@ const _ug=updateGame;updateGame=function(dt,t){if(CUR&&CUR.o.blockQG&&QG&&QG.pha
   const talking=c.line&&c.line.text&&c.line.who!=="hero"&&!c.vdone,ts=t/1000;
   if(talking&&ST.motion){const b=hb(a);if(b){const q=b.quaternion.clone();b.rotateX(Math.sin(ts*9)*.07);b.rotateY(Math.sin(ts*3.3)*.05);c.bob.push({o:b,q,qa:b.quaternion.clone()})}
     else{const m=n.bill&&n.bill();if(m){const dy=Math.abs(Math.sin(ts*10))*.035;m.position.y+=dy;c.bob.push({o:m,dy,ya:m.position.y})}}}
-  if(lineDone(c,t))nextLine()};
+  if(lineDone(c,t))nextLine();if(CUR===c&&(c.cam||c.aim))aim(c)};
 const _ub=updateBubble;updateBubble=function(t){if(CUR&&CUR.cam){BUB.style.display="none";return}return _ub(t)};
 const _bl=BLOCKIN;BLOCKIN=()=>!!CUR||_bl();
 const _bb=brockBusy;brockBusy=function(){return !!CUR||_bb()};
@@ -181,7 +183,7 @@ const _sg=startGame;startGame=function(npc){const had=QG;const r=_sg.apply(this,
   const txt=QG.intro||(n&&L[n.key]&&L[n.key].start)||"Ready? Here comes a math challenge!";if(n)play({npc:n,lines:[line(txt)],kind:"start",blockQG:true,until:()=>!!QG});return r};
 // math win: Theo/Marcia/Okafor hand over the XP orb (the game's own two-shot) with letterbox + their voice
 const _ug2=updateGame;updateGame=function(dt,t){_ug2(dt,t);if(!enabled()||CUR||!QG||QG.phase!=="hand"||QG._cine)return;QG._cine=1;const n=npcFor(QG.npc);
-  if(n&&L[n.key]&&L[n.key].win)play({npc:n,lines:[line(L[n.key].win)],kind:"win",keepCam:true,until:()=>!!QG})};
+  if(n&&L[n.key]&&L[n.key].win)play({npc:n,lines:[line(L[n.key].win)],kind:"win",keepCam:true,aim:true,until:()=>!!QG})};
 // Brock: a face-off before every challenge (dramatic low angle, shake, red flash, hero reaction shot)
 const unq=s=>String(s||"").replace(/\s*\(Press E[^)]*\)\s*$/,"").replace(/^["“\s]+|["”\s]+$/g,"");
 const _bg=brockGo;brockGo=function(){if(!enabled()||!BRK.info)return _bg.apply(this,arguments);BRK.armed=false;BRK.auto=0;

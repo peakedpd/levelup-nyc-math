@@ -40,6 +40,8 @@ module.exports = async ({ pg, f, OUT, res, sleep }) => {
   await f.evaluate(() => { const r = QG.ans.find(a => a.v === QG.q.ans); answer(r) });
   for (let i = 0; i < 40; i++) { if (await f.evaluate(() => CINEMA.active && CINEMA.cur.kind === 'win')) break; await sleep(150) } await sleep(300);
   res.marciaWin = await f.evaluate(() => ({ on: CINEMA.active && CINEMA.cur.kind, sub: document.getElementById('cnS').textContent, bar: document.body.classList.contains('cnOn') }));
+  await f.waitForFunction(() => { const c = CINEMA.cur; return !c || c.frames >= 3 && cam.position.distanceTo(CINEMA.NPC[c.npc].head()) < 4.5 }, null, { timeout: 15000 }).catch(() => {}); await sleep(300);
+  if (res.marciaWin.on) { const w = res.marciaWinShot = await probe(); console.log('P13 marcia_win', JSON.stringify(w)); if (w.active) { ok(w.front && Math.abs(w.sx) < .45 && Math.abs(w.sy) < .6, 'win scene: camera faces Ms. Marcia (head at ' + w.sx + ',' + w.sy + ')'); ok(!w.heroBlocks, 'win scene: the student\'s hair does not block her face'); ok(!w.inSolid, 'win scene: camera not inside geometry') } }
   await shot('cine_marcia_win'); ok(res.marciaWin.on === 'win' && /XP/.test(res.marciaWin.sub), 'win hand-off is a scene: ' + JSON.stringify(res.marciaWin));
   for (let i = 0; i < 40; i++) { if (await f.evaluate(() => !QG && !CINEMA.active)) break; await sleep(250) }
   // 3 Ms. Okafor in class, standing very close (used to put the camera on the back of the student's head)
