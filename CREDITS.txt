@@ -1,0 +1,35 @@
+LEVEL UP NYC — THIRD-PARTY ASSET CREDITS
+=======================================
+Everything below is CC0 1.0 (public domain). Credit is not required; it is given anyway.
+
+3D models — Kenney "Furniture Kit" (https://kenney.nl/assets/furniture-kit, CC0 1.0), downloaded via Poly Pizza
+(https://poly.pizza/bundle/Furniture-Kit-NoG1sEUD1z). Author: Kenney (https://kenney.nl).
+Used in Ms. Okafor's classroom (models/classroom/*.glb, 407 KB total):
+  - table  https://poly.pizza/m/41R2HTYj1O
+  - chair  https://poly.pizza/m/vHyrBYPBum
+  - chairDesk  https://poly.pizza/m/CKSz6PB1vO
+  - bookcaseClosedWide  https://poly.pizza/m/dUd80gOqgO
+  - bookcaseOpen  https://poly.pizza/m/MTH8ZwnA27
+  - bookcaseOpenLow  https://poly.pizza/m/KRuVwg39aX
+  - books  https://poly.pizza/m/M2cJ5sVUgJ
+  - pottedPlant  https://poly.pizza/m/23Dx9CC95C
+  - plantSmall1  https://poly.pizza/m/4f6vwL8vo9
+  - computerScreen  https://poly.pizza/m/V5Qo141OcB
+  - laptop  https://poly.pizza/m/GnbwSUiVty
+  - trashcan  https://poly.pizza/m/eoC8NFaafh
+  - rugRound  https://poly.pizza/m/jeDDiN69Ze
+  - rugRectangle  https://poly.pizza/m/k5oJLb49gw
+  - lampRoundFloor  https://poly.pizza/m/8LiDIfXVLi
+  - coatRackStanding  https://poly.pizza/m/8jXUm32dKW
+  - bench  https://poly.pizza/m/vfKIesr9bk
+  - cardboardBoxClosed  https://poly.pizza/m/zv8NvYfT9B
+  - lampSquareCeiling  https://poly.pizza/m/AAJ1hFnGaH
+  - sideTable  https://poly.pizza/m/R7Iq0qPgdr
+  - ceilingFan  https://poly.pizza/m/6UCDIZTNn3
+
+Textures — Poly Haven (https://polyhaven.com, CC0 1.0), resized and converted to WebP (tex/classroom/):
+  - Laminate Floor 02 (laminate_floor_02) — Dario Barresi, Charlotte Baglioni — https://polyhaven.com/a/laminate_floor_02  (floor diffuse / normal / roughness)
+  - Beige Wall 001 (beige_wall_001) — Dimitrios Savva, Rico Cilliers — https://polyhaven.com/a/beige_wall_001  (wall normal map)
+  - Oak Veneer 01 (oak_veneer_01) — Jenelle van Heerden — https://polyhaven.com/a/oak_veneer_01  (wood diffuse / roughness)
+
+Poster / whiteboard artwork: Canva AI (John's Canva account).

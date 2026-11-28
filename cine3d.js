@@ -122,7 +122,7 @@ function bars(k){const e=1-Math.pow(1-k,3);$("cnT").style.transform="translateY(
 function play(o){if(!o||!o.npc||!o.lines||!o.lines.length)return false;if(CUR)end(true,true);
   const n=o.npc;const p0=n.pos();CUR={o,n,i:-1,t0:now(),pin:{x:p0.x,z:p0.z},kind:o.kind||"talk",cam:!o.keepCam,bob:[]};
   try{document.exitPointerLock()}catch(_){}for(const k in K)K[k]=false;try{JOY.x=JOY.z=0}catch(_){}
-  document.body.classList.add("cnOn");document.body.classList.toggle("cnQ",!!o.blockQG||o.kind==="win");bars(0)
+  document.body.classList.add("cnOn");document.body.classList.toggle("cnQ",!!o.blockQG);bars(0)
   if(n===NPC.brock&&BRK.prop)BRK.prop.traverse(x=>{if(x.isSprite&&x.visible){x.visible=false;(CUR.hid=CUR.hid||[]).push(x)}});
   if(o.blockQG&&QG)QG.t0=now();
   CINE.count++;CINE.log.push({npc:n.key,name:o.who||n.name,kind:CUR.kind,t:Date.now()});nextLine();return true}

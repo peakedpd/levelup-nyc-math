@@ -79,6 +79,10 @@ jobs:
         run: TAG=ci_cine HOOK=./p13cine.js node test/play.js
       - name: Cinematic conversations on a phone (390x844, touch taps)
         run: TAG=ci_cine_phone W=390 H=844 TOUCH=1 HOOK=./p13cine.js node test/play.js
+      - name: Classroom 3D e2e (real 3D furniture/whiteboard/clock/windows load, walkways + collisions, Ms. Okafor station, no console errors)
+        run: TAG=ci_classroom HOOK=./p13classroom.js node test/play.js
+      - name: Classroom 3D on a phone (390x844, touch)
+        run: TAG=ci_classroom_phone W=390 H=844 TOUCH=1 HOOK=./p13classroom.js node test/play.js
       - name: Educator review page e2e
         run: node test/p3review.js
       - name: 3D street smoke (phone 390x844, touch)
